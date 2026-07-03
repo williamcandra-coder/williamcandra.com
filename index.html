@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>William Candra — Retro Arcade</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+  :root{
+    --bg-deep:#1a1230;
+    --bg-black:#0d0817;
+    --magenta:#ff2e88;
+    --cyan:#3ef3ff;
+    --amber:#ffb627;
+    --carpet-a:#241a3d;
+    --carpet-b:#2c2049;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+
+  body{
+    background:var(--bg-black);
+    font-family:'VT323', monospace;
+    color:#e8e2f5;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-height:100vh;
+    padding:24px 12px 60px;
+    image-rendering:pixelated;
+  }
+
+  .pixel{font-family:'Press Start 2P', monospace;}
+
+  /* ---------- Neon Sign ---------- */
+  .sign-wrap{
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .sign{
+    font-size:clamp(16px, 4vw, 34px);
+    letter-spacing:3px;
+    color:var(--cyan);
+    text-shadow:
+      0 0 4px var(--cyan),
+      0 0 14px var(--cyan),
+      0 0 28px rgba(62,243,255,0.6);
+    animation:flicker 4.4s infinite;
+  }
+  .sign .arcade{
+    color:var(--magenta);
+    text-shadow:
+      0 0 4px var(--magenta),
+      0 0 14px var(--magenta),
+      0 0 28px rgba(255,46,136,0.6);
+  }
+  @keyframes flicker{
+    0%,3%,6%,100%{opacity:1;}
+    4%{opacity:0.4;}
+    5%{opacity:0.85;}
+    47%{opacity:1;}
+    48%{opacity:0.5;}
+    49%{opacity:1;}
+  }
+  .subtitle{
+    font-family:'VT323', monospace;
+    font-size:18px;
+    color:#9d8fc7;
+    margin-top:6px;
+    letter-spacing:1px;
+  }
+
+  /* ---------- Room ---------- */
+  .room{
+    width:100%;
+    max-width:980px;
+    border:4px solid var(--bg-deep);
+    border-radius:4px;
+    background:
+      linear-gradient(180deg, #120b22 0%, #1a1230 38%, #1a1230 100%);
+    position:relative;
+    overflow:hidden;
+    box-shadow: 0 0 0 2px #000, 0 20px 60px rgba(0,0,0,0.6);
+  }
+
+  /* back wall window with skyline */
+  .wall{
+    height:230px;
+    position:relative;
+    background:linear-gradient(180deg,#241a3d,#1a1230);
+    border-bottom:4px solid var(--bg-black);
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    gap:14px;
+    padding-bottom:0;
+  }
+  .window{
+    width:92%;
+    max-width:900px;
+    height:190px;
+    margin-bottom:10px;
+    background:linear-gradient(180deg,#3d2a66 0%, #241a44 55%, #1c1238 100%);
+    border:3px solid #0d0817;
+    border-radius:2px;
+    position:relative;
+    overflow:hidden;
+  }
+  /* window cross-bars, like a real sill window */
+  .window::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      linear-gradient(90deg, transparent calc(50% - 1px), rgba(13,8,23,0.5) calc(50% - 1px), rgba(13,8,23,0.5) calc(50% + 1px), transparent calc(50% + 1px)),
+      linear-gradient(180deg, transparent calc(72% - 1px), rgba(13,8,23,0.5) calc(72% - 1px), rgba(13,8,23,0.5) calc(72% + 1px), transparent calc(72% + 1px));
+    z-index:5;
+    pointer-events:none;
+  }
+  .star{
+    position:absolute;
+    width:2px;height:2px;
+    background:#fff;
+    opacity:0.8;
+    animation:twinkle 3s ease-in-out infinite;
+  }
+  @keyframes twinkle{
+    0%,100%{opacity:0.8;}
+    50%{opacity:0.2;}
+  }
+  .moon{
+    position:absolute;
+    top:10px; right:24px;
+    width:18px;height:18px;
+    border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 10px var(--amber), 0 0 22px rgba(255,182,39,0.5);
+    animation:glow 5s ease-in-out infinite;
+  }
+  @keyframes glow{
+    0%,100%{box-shadow:0 0 10px var(--amber), 0 0 22px rgba(255,182,39,0.5);}
+    50%{box-shadow:0 0 14px var(--amber), 0 0 30px rgba(255,182,39,0.7);}
+  }
+
+  /* city skyline — skyscraper silhouettes with lit windows */
+  .skyline{
+    position:absolute;
+    bottom:0;left:0;right:0;
+    height:58%;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    gap:6px;
+    padding:0 12px;
+  }
+  .bldg{
+    background:var(--bg-black);
+    position:relative;
+    flex:1;
+    max-width:64px;
+    /* lit windows: tiny amber grid */
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 7px, rgba(255,182,39,0.4) 7px 9px, transparent 9px 14px),
+      repeating-linear-gradient(90deg, transparent 0 6px, rgba(255,182,39,0.22) 6px 8px, transparent 8px 13px);
+    background-color:var(--bg-black);
+    border-top:2px solid #060310;
+  }
+  .bldg:nth-child(1){height:52%;}
+  .bldg:nth-child(2){height:78%;}
+  .bldg:nth-child(3){height:60%;}
+  .bldg:nth-child(4){height:92%;}
+  .bldg:nth-child(5){height:68%;}
+  .bldg:nth-child(6){height:84%;}
+  .bldg:nth-child(7){height:55%;}
+  .bldg:nth-child(8){height:73%;}
+  /* antenna on the tallest towers */
+  .bldg:nth-child(4)::after, .bldg:nth-child(6)::after{
+    content:"";
+    position:absolute;
+    top:-12px; left:50%;
+    transform:translateX(-50%);
+    width:2px; height:12px;
+    background:#060310;
+  }
+  .bldg:nth-child(4)::before{
+    content:"";
+    position:absolute;
+    top:-14px; left:50%;
+    transform:translateX(-50%);
+    width:4px; height:4px;
+    border-radius:50%;
+    background:var(--magenta);
+    box-shadow:0 0 6px var(--magenta);
+    animation:twinkle 2s ease-in-out infinite;
+  }
+
+  .neon-strip{
+    position:absolute;
+    top:0;left:0;right:0;
+    height:3px;
+    background:repeating-linear-gradient(90deg, var(--magenta) 0 18px, var(--cyan) 18px 36px);
+    opacity:0.85;
+  }
+
+  /* carpet floor */
+  .floor{
+    min-height:300px;
+    padding:34px 22px 30px;
+    background-image:
+      repeating-conic-gradient(from 45deg, var(--carpet-a) 0% 25%, var(--carpet-b) 0% 50%);
+    background-size:28px 28px;
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:22px;
+    position:relative;
+  }
+  .floor::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(ellipse at center 30%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 100%);
+    pointer-events:none;
+  }
+
+  /* ---------- Cabinets ---------- */
+  .cab{
+    display:block;
+    text-decoration:none;
+    color:inherit;
+    position:relative;
+    z-index:1;
+    background:linear-gradient(180deg,#2a2046,#171026);
+    border:3px solid var(--bg-black);
+    border-radius:5px 5px 3px 3px;
+    padding:10px 8px 12px;
+    text-align:center;
+    cursor:pointer;
+    transition:transform 0.15s ease;
+    box-shadow:0 6px 0 rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.5);
+  }
+  .cab:hover{
+    transform:translateY(-4px);
+  }
+  .cab:hover .cab-glow{opacity:1;}
+
+  .cab-glow{
+    position:absolute;
+    inset:-6px;
+    border-radius:8px;
+    opacity:0;
+    transition:opacity 0.2s ease;
+    pointer-events:none;
+    z-index:-1;
+    filter:blur(10px);
+  }
+  .cab.pinball .cab-glow{background:var(--magenta);}
+  .cab.snake .cab-glow{background:var(--cyan);}
+  .cab.breakout .cab-glow{background:var(--amber);}
+  .cab.minesweeper .cab-glow{background:#ff5a5a;}
+  .cab.fortune .cab-glow{background:#9b6dff;}
+
+  .screen{
+    height:74px;
+    border-radius:3px;
+    margin-bottom:8px;
+    border:3px solid #000;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
+    position:relative;
+    overflow:hidden;
+  }
+  .screen::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:repeating-linear-gradient(180deg, rgba(0,0,0,0.25) 0 2px, transparent 2px 4px);
+  }
+  .pinball .screen{background:radial-gradient(circle at 50% 30%, #ff5fa8, #7a1454);}
+  .snake .screen{background:radial-gradient(circle at 50% 30%, #5ffcff, #0c6a73);}
+  .breakout .screen{background:radial-gradient(circle at 50% 30%, #ffd166, #8a5a05);}
+  .fortune .screen{background:radial-gradient(circle at 50% 30%, #c9a6ff, #4a1f7a);}
+  .minesweeper .screen{background:radial-gradient(circle at 50% 30%, #ff8a8a, #7a1f1f);}
+
+  .cab-label{
+    font-family:'Press Start 2P', monospace;
+    font-size:10px;
+    letter-spacing:1px;
+    color:#f1ecff;
+  }
+  .cab-sub{
+    font-size:14px;
+    color:#9d8fc7;
+    margin-top:4px;
+  }
+  .coin{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--amber);
+  }
+
+  /* staff door — portfolio entrance, visually distinct */
+  .staff{
+    background:linear-gradient(180deg,#1f1a14,#120e0a);
+    border:3px solid #000;
+  }
+  .staff .screen{
+    background:repeating-linear-gradient(45deg,#3a2e10 0 8px,#2a2008 8px 16px);
+  }
+  .staff .cab-label{color:var(--amber);}
+  .staff .cab-glow{background:#ffd166;}
+  .staff::before{
+    content:"DO NOT ENTER";
+    position:absolute;
+    top:-10px;left:50%;
+    transform:translateX(-50%);
+    font-family:'Press Start 2P', monospace;
+    font-size:7px;
+    background:var(--amber);
+    color:#1a1230;
+    padding:3px 6px;
+    border-radius:2px;
+    white-space:nowrap;
+  }
+
+  .fortune::before{
+    content:"DO NOT ASK";
+    position:absolute;
+    top:-10px;left:50%;
+    transform:translateX(-50%);
+    font-family:'Press Start 2P', monospace;
+    font-size:7px;
+    background:#9b6dff;
+    color:#1a1230;
+    padding:3px 6px;
+    border-radius:2px;
+    white-space:nowrap;
+  }
+
+  /* footer / hiscore strip */
+  .version-tag{
+    margin-top:16px;
+    font-size:14px;
+    color:#4a3f6b;
+    letter-spacing:1px;
+    text-align:center;
+  }
+
+  @media (max-width:480px){
+    .floor{gap:16px; padding:24px 14px 22px;}
+    .fortune::before, .staff::before{
+      font-size:6px;
+      padding:2px 4px;
+      top:-8px;
+    }
+    .cab-label{font-size:9px;}
+    .cab-sub{font-size:12px;}
+  }
+
+  @media (max-width:340px){
+    .floor{grid-template-columns:1fr;}
+  }
+
+  .marquee{
+    width:100%;
+    max-width:980px;
+    margin-top:18px;
+    background:var(--bg-deep);
+    border:3px solid var(--bg-black);
+    border-radius:4px;
+    padding:10px 16px;
+    font-size:16px;
+    color:var(--cyan);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  .note{
+    max-width:980px;
+    margin-top:20px;
+    font-size:15px;
+    color:#7a6ea3;
+    line-height:1.5;
+    text-align:center;
+  }
+
+  .waiting-caption{
+    text-align:center;
+    font-size:14px;
+    color:#9d8fc7;
+    background:var(--bg-deep);
+    padding:6px 0;
+    letter-spacing:0.5px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="sign-wrap">
+    <div class="sign pixel">WILLIAM <span class="arcade">CANDRA</span></div>
+    <div class="subtitle">— open 24 hrs, no quarters needed —</div>
+  </div>
+
+  <div class="room">
+    <div class="wall">
+      <div class="neon-strip"></div>
+      <div class="window">
+        <div class="moon"></div>
+        <div class="star" style="top:14px;left:30px;"></div>
+        <div class="star" style="top:28px;left:70px;"></div>
+        <div class="star" style="top:18px;left:120px;"></div>
+        <div class="star" style="top:40px;left:200px;"></div>
+        <div class="star" style="top:10px;left:280px;"></div>
+        <div class="star" style="top:22px;left:340px;"></div>
+
+        <div class="skyline">
+          <div class="bldg"></div><div class="bldg"></div><div class="bldg"></div><div class="bldg"></div>
+          <div class="bldg"></div><div class="bldg"></div><div class="bldg"></div><div class="bldg"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="floor">
+
+      <a class="cab pinball" href="pinball.html">
+        <div class="cab-glow"></div>
+        <div class="screen">🕹️</div>
+        <div class="cab-label">PINBALL</div>
+        <div class="cab-sub">retro flippers</div>
+        <div class="coin">PRESS PLAY</div>
+      </a>
+
+      <a class="cab snake" href="snake.html">
+        <div class="cab-glow"></div>
+        <div class="screen">🐍</div>
+        <div class="cab-label">SNAKE</div>
+        <div class="cab-sub">classic crawl</div>
+        <div class="coin">PRESS PLAY</div>
+      </a>
+
+      <a class="cab breakout" href="breakout.html">
+        <div class="cab-glow"></div>
+        <div class="screen">🧱</div>
+        <div class="cab-label">BREAKOUT</div>
+        <div class="cab-sub">brick smasher</div>
+        <div class="coin">PRESS PLAY</div>
+      </a>
+
+      <a class="cab minesweeper" href="minesweeper.html">
+        <div class="cab-glow"></div>
+        <div class="screen">💣</div>
+        <div class="cab-label">MINESWEEPER</div>
+        <div class="cab-sub">watch your step</div>
+        <div class="coin">PRESS PLAY</div>
+      </a>
+
+      <div class="cab fortune">
+        <div class="cab-glow"></div>
+        <div class="screen">🔮</div>
+        <div class="cab-label">DO NOT ASK THE<br>GOH POK TONG</div>
+        <div class="cab-sub">(he knows anyway)</div>
+        <div class="coin">COMING SOON</div>
+      </div>
+
+      <div class="cab staff">
+        <div class="cab-glow"></div>
+        <div class="screen">🚪</div>
+        <div class="cab-label">DO NOT<br>ENTER</div>
+        <div class="cab-sub">(please enter)</div>
+        <div class="coin">COMING SOON</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="marquee pixel" style="font-family:'VT323',monospace; font-size:16px;">
+    <span>HI-SCORE: WC — 999900</span>
+    <span>INSERT COIN TO CONTINUE</span>
+  </div>
+
+  <div class="version-tag">williamcandra.com · v1.0.0</div>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+# Ignore OS and editor cruft
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
