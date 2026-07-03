@@ -33,35 +33,35 @@
 
   .pixel{font-family:'Press Start 2P', monospace;}
 
-  /* ---------- Neon Sign ---------- */
+  /* ---------- Amber LCD Title ---------- */
   .sign-wrap{
     text-align:center;
     margin-bottom:18px;
   }
   .sign{
-    font-size:clamp(16px, 4vw, 34px);
-    letter-spacing:3px;
-    color:var(--cyan);
-    text-shadow:
-      0 0 4px var(--cyan),
-      0 0 14px var(--cyan),
-      0 0 28px rgba(62,243,255,0.6);
-    animation:flicker 4.4s infinite;
+    font-size:clamp(20px, 6vw, 46px);
+    letter-spacing:4px;
+    font-weight:bold;
+    color:#FFC857;
+    text-shadow: 0 0 3px rgba(255,200,87,.35), 0 0 8px rgba(255,200,87,.15);
+    animation:warmup 12s infinite;
+    position:relative;
   }
-  .sign .arcade{
-    color:var(--magenta);
-    text-shadow:
-      0 0 4px var(--magenta),
-      0 0 14px var(--magenta),
-      0 0 28px rgba(255,46,136,0.6);
+  /* faint CRT scanlines, confined to the title */
+  .sign::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:repeating-linear-gradient(180deg, #000 0 1px, transparent 1px 3px);
+    opacity:0.08;
+    pointer-events:none;
   }
-  @keyframes flicker{
-    0%,3%,6%,100%{opacity:1;}
-    4%{opacity:0.4;}
-    5%{opacity:0.85;}
-    47%{opacity:1;}
-    48%{opacity:0.5;}
-    49%{opacity:1;}
+  @keyframes warmup{
+    0%,45%,49%,100%{opacity:1;}
+    47%{opacity:0.9;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .sign{animation:none;}
   }
   .subtitle{
     font-family:'VT323', monospace;
@@ -401,7 +401,7 @@
 <body>
 
   <div class="sign-wrap">
-    <div class="sign pixel">WILLIAM <span class="arcade">CANDRA</span></div>
+    <div class="sign pixel">AFTER HOURS</div>
     <div class="subtitle">— open 24 hrs, no quarters needed —</div>
   </div>
 
@@ -482,7 +482,7 @@
     <span>INSERT COIN TO CONTINUE</span>
   </div>
 
-  <div class="version-tag">williamcandra.com · v1.0.0</div>
+  <div class="version-tag">williamcandra.com · v1.0.1</div>
 
 </body>
 </html>
