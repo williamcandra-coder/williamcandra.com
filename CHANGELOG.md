@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Do Not Ask the Goh Pok Tong" fortune-telling machine — page + concept TBD.
 - "Do Not Enter" door — About page as a retro RPG character screen.
 
+## [1.0.1] — 2026-07-03
+
+### Changed
+- Replaced the neon two-tone "WILLIAM CANDRA" header with an amber early-80s
+  LCD-style "AFTER HOURS" title: single arcade-amber color (#FFC857), softer
+  glow, subtle 12s warm-up flicker (disabled under `prefers-reduced-motion`),
+  and a faint CRT scanline overlay confined to the title.
+
 ## [1.0.0] — 2026-07-03
 
 ### Added
