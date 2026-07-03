@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OUT OF ORDER — William Candra Arcade</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+  :root{
+    --bg-deep:#1a1230; --bg-black:#0d0817;
+    --magenta:#ff2e88; --cyan:#3ef3ff; --amber:#ffb627;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg-black);
+    font-family:'VT323', monospace;
+    color:#e8e2f5;
+    min-height:100vh;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center; padding:24px;
+  }
+  .pixel{font-family:'Press Start 2P', monospace;}
+  .code{
+    font-size:clamp(40px, 14vw, 96px);
+    color:var(--magenta);
+    text-shadow:0 0 6px var(--magenta), 0 0 22px rgba(255,46,136,0.6);
+    letter-spacing:4px;
+    margin-bottom:10px;
+  }
+  .msg{
+    font-family:'Press Start 2P', monospace;
+    font-size:clamp(11px, 3.5vw, 16px);
+    color:var(--cyan);
+    text-shadow:0 0 4px var(--cyan);
+    margin-bottom:18px;
+  }
+  .sub{
+    font-size:20px; color:#9d8fc7; max-width:360px;
+    line-height:1.5; margin-bottom:28px;
+  }
+  .back-link{
+    font-family:'Press Start 2P', monospace;
+    font-size:12px;
+    color:#fff; text-decoration:none;
+    background:var(--magenta);
+    padding:14px 22px; border-radius:3px;
+    box-shadow:0 4px 0 #a1195b;
+    display:inline-block;
+  }
+  .back-link:active{transform:translateY(3px); box-shadow:0 1px 0 #a1195b;}
+  .flicker{animation:flicker 3s infinite;}
+  @keyframes flicker{
+    0%,94%,100%{opacity:1;} 95%{opacity:0.3;} 96%{opacity:1;} 97%{opacity:0.5;}
+  }
+</style>
+</head>
+<body>
+  <div class="code pixel flicker">404</div>
+  <div class="msg">CABINET OUT OF ORDER</div>
+  <div class="sub">This machine hasn't been plugged in yet. The mechanic is still working on it.</div>
+  <a href="index.html" class="back-link">&larr; BACK TO ARCADE</a>
+</body>
+</html>
