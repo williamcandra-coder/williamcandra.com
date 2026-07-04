@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Do Not Ask the Goh Pok Tong" fortune-telling machine — page + concept TBD.
 - "Do Not Enter" door — About page as a retro RPG character screen.
 
+## [1.3.0] — 2026-07-04
+
+### Added
+- Built **Snake** (`snake.html`) — a fully responsive pixel-art snake game: the
+  canvas scales to fit with no horizontal overflow from 320px to 1440px, in an
+  amber CRT palette matching the site. Swipe + on-screen d-pad touch controls
+  plus keyboard (arrows/WASD, Space to pause, Enter to restart), local
+  best-score saving, and an EVACUATE back link.
+
 ## [1.2.0] — 2026-07-04
 
 ### Added
