@@ -81,7 +81,7 @@
   /* base = phone: room fills width, capped + centered on larger screens */
   .room{
     width:100%;
-    max-width:960px;
+    max-width:1000px;
     border:4px solid var(--bg-deep);
     border-radius:4px;
     background:
@@ -361,7 +361,7 @@
   /* footer hi-score marquee — warm amber UI text */
   .marquee{
     width:100%;
-    max-width:960px;
+    max-width:1000px;
     margin-top:16px;
     background:var(--bg-deep);
     border:3px solid var(--bg-black);
@@ -378,7 +378,7 @@
   }
 
   .note{
-    max-width:960px;
+    max-width:1000px;
     margin-top:20px;
     font-size:15px;
     color:#7a6ea3;
@@ -418,17 +418,25 @@
     }
   }
 
-  /* ===== DESKTOP: 1000px+ — capped, centered room; restrained title ===== */
-  @media (min-width:1000px){
+  /* ===== SMALL DESKTOP: 1024px+ — roomier two-column spacing ===== */
+  @media (min-width:1024px){
     .wall{height:230px;}
     .window{height:190px;}
     .floor{
-      gap:24px;
-      padding:34px 26px 30px;
+      gap:26px;
+      padding:38px 30px 34px;
     }
-    .cab{padding:10px 10px 12px;}
-    .screen{height:80px; font-size:32px;}
-    .cab-label{font-size:10px;}
+    .cab{padding:14px 16px 18px;}
+    .screen{height:104px; font-size:44px;}
+    .cab-label{font-size:11px;}
+    .cab-sub{font-size:15px;}
+  }
+
+  /* ===== LARGE DESKTOP: 1200px+ — cap + center room, restrained title ===== */
+  @media (min-width:1200px){
+    .room, .marquee{max-width:1000px;}
+    .sign{font-size:clamp(30px, 3vw, 36px);}
+    .floor{gap:28px; padding:40px 34px 36px;}
   }
 </style>
 </head>
