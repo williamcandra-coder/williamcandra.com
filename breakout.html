@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BREAKOUT — After Hours Arcade</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+  :root{
+    --bg-black:#0d0817;
+    --bg-deep:#1a1230;
+    --amber:#ffc857;
+    --amber-deep:#ffb627;
+    --amber-dark:#d4882a;
+    --cyan:#3ef3ff;
+    --magenta:#ff2e88;
+    --rage:#ff4d3d;
+    --text:#e8e2f5;
+    --text-muted:#9d8fc7;
+    --panel:#241a3d;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; overflow:hidden; overscroll-behavior:none;}
+  body{
+    background:var(--bg-black);
+    font-family:'VT323', monospace;
+    color:var(--text);
+    height:100vh; height:100dvh;
+    display:flex; flex-direction:column;
+    align-items:center;
+    touch-action:none;
+    user-select:none; -webkit-user-select:none;
+  }
+  .pixel{font-family:'Press Start 2P', monospace;}
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    width:100%; max-width:520px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 12px 6px;
+    flex:0 0 auto;
+  }
+  .back-link{
+    font-size:16px; color:var(--amber); text-decoration:none;
+    border:2px solid var(--amber); padding:3px 8px; border-radius:3px;
+  }
+  .back-link:active{background:var(--amber); color:var(--bg-black);}
+  .floor-ind{
+    font-family:'Press Start 2P', monospace;
+    font-size:10px; color:var(--amber);
+    text-shadow:0 0 6px rgba(255,200,87,0.5);
+  }
+  .score-ind{font-size:20px; color:var(--text);}
+
+  /* ---------- RAGE meter ---------- */
+  .rage-wrap{
+    width:100%; max-width:520px;
+    padding:0 12px 6px;
+    flex:0 0 auto;
+  }
+  .rage-label{
+    display:flex; justify-content:space-between;
+    font-family:'Press Start 2P', monospace;
+    font-size:8px; color:var(--rage);
+    margin-bottom:3px; letter-spacing:1px;
+  }
+  .rage-bar{
+    height:14px; background:#2a1015;
+    border:2px solid #4a1f1a; border-radius:2px;
+    overflow:hidden; position:relative;
+  }
+  .rage-fill{
+    height:100%; width:0%;
+    background:linear-gradient(90deg, var(--amber-deep), var(--rage));
+    transition:width 0.15s ease-out;
+  }
+  .rage-fill.full{
+    animation:ragePulse 0.4s ease-in-out infinite;
+  }
+  @keyframes ragePulse{
+    0%,100%{filter:brightness(1);}
+    50%{filter:brightness(1.5);}
+  }
+
+  /* ---------- Game canvas ---------- */
+  .stage{
+    position:relative;
+    flex:1 1 auto;
+    width:100%; max-width:520px;
+    min-height:0;
+    display:flex; align-items:center; justify-content:center;
+    padding:4px 12px;
+  }
+  canvas{
+    display:block;
+    background:var(--bg-deep);
+    border:3px solid var(--bg-deep);
+    border-radius:4px;
+    box-shadow:0 0 0 2px #000, 0 12px 40px rgba(0,0,0,0.6);
+    max-width:100%; max-height:100%;
+    image-rendering:pixelated;
+  }
+
+  /* combo popup */
+  .combo-pop{
+    position:absolute;
+    font-family:'Press Start 2P', monospace;
+    font-size:14px; color:var(--amber);
+    text-shadow:0 0 8px var(--amber-deep);
+    pointer-events:none;
+    animation:comboFloat 0.7s ease-out forwards;
+  }
+  @keyframes comboFloat{
+    0%{opacity:1; transform:translateY(0) scale(1);}
+    100%{opacity:0; transform:translateY(-40px) scale(1.4);}
+  }
+
+  /* ---------- Weapon dock (bottom) ---------- */
+  .dock{
+    width:100%; max-width:520px;
+    display:flex; gap:8px; padding:6px 12px 14px;
+    flex:0 0 auto;
+  }
+  .weapon-btn{
+    flex:1; padding:14px 4px 10px;
+    background:var(--panel);
+    border:2px solid var(--bg-deep);
+    border-radius:6px;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    cursor:pointer; position:relative;
+    transition:transform 0.08s ease;
+  }
+  .weapon-btn .ico{font-size:22px; line-height:1;}
+  .weapon-btn .nm{
+    font-family:'Press Start 2P', monospace;
+    font-size:6px; color:var(--text-muted); letter-spacing:0.5px;
+  }
+  .weapon-btn.active{
+    border-color:var(--amber);
+    box-shadow:0 0 12px rgba(255,200,87,0.4);
+  }
+  .weapon-btn.active .nm{color:var(--amber);}
+  .weapon-btn:active{transform:scale(0.94);}
+  .weapon-btn .cd{
+    position:absolute; inset:0;
+    background:rgba(13,8,23,0.7);
+    border-radius:4px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Press Start 2P', monospace; font-size:12px; color:var(--rage);
+  }
+
+  /* ---------- Overlays ---------- */
+  .overlay{
+    position:absolute; inset:0; z-index:20;
+    background:rgba(13,8,23,0.94);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center; padding:24px; gap:16px;
+  }
+  .overlay.hidden{display:none;}
+  .overlay h1{
+    font-family:'Press Start 2P', monospace;
+    font-size:clamp(16px,5vw,26px);
+    color:var(--amber);
+    text-shadow:0 0 4px var(--amber-deep), 0 0 16px rgba(255,200,87,0.4);
+    margin:0; line-height:1.4;
+  }
+  .overlay h2{
+    font-family:'Press Start 2P', monospace;
+    font-size:clamp(11px,3vw,15px);
+    color:var(--rage); margin:0;
+  }
+  .overlay p{
+    font-size:19px; color:var(--text-muted);
+    max-width:360px; line-height:1.5; margin:0;
+  }
+  .overlay .big{
+    font-family:'Press Start 2P',monospace;
+    font-size:20px; color:var(--amber); margin:6px 0;
+  }
+  .btn{
+    font-family:'Press Start 2P', monospace;
+    font-size:13px; color:var(--bg-black);
+    background:var(--amber);
+    border:none; padding:16px 26px; border-radius:4px;
+    cursor:pointer; box-shadow:0 5px 0 var(--amber-dark);
+  }
+  .btn:active{transform:translateY(4px); box-shadow:0 1px 0 var(--amber-dark);}
+  .btn.ghost{
+    background:transparent; color:var(--amber);
+    border:2px solid var(--amber); box-shadow:none;
+  }
+  .hint{font-size:16px; color:#6b5f8f; max-width:340px; line-height:1.4;}
+
+  /* title screen flavor */
+  .title-sub{
+    font-size:20px; color:var(--text-muted);
+    max-width:360px; line-height:1.5;
+  }
+  .tagline{
+    font-family:'Press Start 2P',monospace;
+    font-size:8px; color:var(--amber-deep);
+    letter-spacing:1px; margin-top:4px;
+  }
+
+  @media (max-width:380px){
+    .weapon-btn .nm{font-size:5px;}
+    .weapon-btn .ico{font-size:18px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a href="index.html" class="back-link">&#9760; EVACUATE</a>
+    <div class="floor-ind pixel" id="floorInd">LV 1/50</div>
+    <div class="score-ind">$<span id="score">0</span></div>
+  </div>
+
+  <div class="rage-wrap">
+    <div class="rage-label pixel"><span>RAGE</span><span id="rageState">BUILDING…</span></div>
+    <div class="rage-bar"><div class="rage-fill" id="rageFill"></div></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="game"></canvas>
+
+    <div class="overlay" id="titleScreen">
+      <h1 class="pixel">BREAK<br>OUT</h1>
+      <div class="tagline pixel">CLOCK OUT. NEVER COME BACK.</div>
+      <p class="title-sub">You're the building's rogue maintenance AI. Management has become… machinery. Smash your way to the top floor and overload the whole tower.</p>
+      <button class="btn pixel" id="startBtn">CLOCK IN</button>
+      <div class="hint">Tap the machines to smash them. Fill your RAGE, then unleash it. One thumb, no mercy.</div>
+    </div>
+
+    <div class="overlay hidden" id="floorClear">
+      <h2 class="pixel">FLOOR CLEARED</h2>
+      <div class="big pixel" id="floorBonus">+$0</div>
+      <p id="floorFlavor">The printers are silent. For now.</p>
+      <button class="btn pixel" id="nextBtn">TAKE THE STAIRS ↑</button>
+    </div>
+
+    <div class="overlay hidden" id="gameOver">
+      <h1 class="pixel" style="color:var(--rage);">SECURITY<br>CALLED</h1>
+      <p>You were escorted out on floor <span id="deathFloor">1</span>.</p>
+      <div class="big pixel" id="finalScore">$0</div>
+      <p id="rank" style="color:var(--amber);">INTERN</p>
+      <button class="btn pixel" id="retryBtn">BACK TO THE GRIND</button>
+    </div>
+  </div>
+
+  <div class="dock" id="dock">
+    <div class="weapon-btn active" data-weapon="fists" id="w-fists">
+      <span class="ico">✊</span><span class="nm pixel">FISTS</span>
+    </div>
+    <div class="weapon-btn" data-weapon="saw" id="w-saw">
+      <span class="ico">🪚</span><span class="nm pixel">SAW</span>
+    </div>
+    <div class="weapon-btn" data-weapon="shotgun" id="w-shotgun">
+      <span class="ico">💥</span><span class="nm pixel">BOOMSTICK</span>
+    </div>
+    <div class="weapon-btn" data-weapon="nuke" id="w-nuke">
+      <span class="ico">☢️</span><span class="nm pixel">RAGE</span>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const stage = document.getElementById('stage');
+
+  // logical resolution (scaled to fit stage)
+  let W = 360, H = 480;
+  function fitCanvas(){
+    const availW = stage.clientWidth - 24;
+    const availH = stage.clientHeight - 8;
+    const targetRatio = 3/4;
+    let cw = availW, ch = cw / targetRatio;
+    if(ch > availH){ ch = availH; cw = ch * targetRatio; }
+    canvas.style.width = cw + 'px';
+    canvas.style.height = ch + 'px';
+    // internal resolution fixed for crisp pixel work
+    canvas.width = W; canvas.height = H;
+  }
+
+  // ---------- palette ----------
+  const C = {
+    bg:'#1a1230', floor:'#241a3d', grid:'rgba(255,200,87,0.05)',
+    amber:'#ffc857', amberDeep:'#ffb627', rage:'#ff4d3d',
+    metal:'#5a5470', metalDark:'#3a3550', metalLight:'#8a84a0',
+    screen:'#3ef3ff', warn:'#ff2e88', bolt:'#2a2540',
+    text:'#e8e2f5'
+  };
+
+  // ---------- game state ----------
+  let state = 'title'; // title, playing, floorclear, gameover
+  let floor = 1, score = 0, rage = 0, rageMax = 100;
+  let enemies = [], particles = [], floatTexts = [], shakeT = 0, shakeMag = 0;
+  let combo = 0, comboTimer = 0;
+  let weapon = 'fists';
+  let health = 100;
+  let spawnTimer = 0, floorKills = 0, floorQuota = 6, isBossFloor = false;
+  let cooldowns = { saw:0, shotgun:0, nuke:0 };
+
+  const WEAPONS = {
+    fists:   {dmg:34, radius:34, cd:0,   knock:5,  label:'FISTS'},
+    saw:     {dmg:60, radius:40, cd:40,  knock:3,  label:'SAW'},
+    shotgun: {dmg:45, radius:70, cd:70,  knock:10, label:'BOOMSTICK', splash:true},
+    nuke:    {dmg:999,radius:999,cd:0,   knock:20, label:'RAGE', needsRage:true},
+  };
+
+  // enemy roster — office monsters (creatures in business attire) + software parodies
+  // splatColor is the amber-family goop; each has a face/personality drawn in drawEnemy
+  const TYPES = {
+    // --- office monster: gentleman (blazer + tie) ---
+    suit:    {hp:38, w:40, h:54, skin:'#7bd18a', attire:'#3a4a6a', name:'MIDDLE MGR',   pts:60,  rageGain:12, speed:0.34, splat:'#ffc857'},
+    // --- office monster: lady (blazer + collar) ---
+    exec:    {hp:52, w:40, h:54, skin:'#c88ad1', attire:'#6a3a5a', name:'THE EXEC',     pts:85,  rageGain:14, speed:0.42, splat:'#ffb627'},
+    // --- office gremlin (IT headset) small + fast swarm ---
+    gremlin: {hp:20, w:28, h:32, skin:'#8ad1c8', attire:'#2a4a4a', name:'IT GREMLIN',   pts:35,  rageGain:9,  speed:0.9,  splat:'#ffd27a'},
+    // --- software parody: blue mail (spawns more when low) ---
+    inbox:   {hp:30, w:42, h:34, skin:'#4a90e2', attire:'#2a5a9a', name:'THE INBOX',    pts:55,  rageGain:13, speed:0.4,  splat:'#ffc857', soft:true},
+    // --- software parody: green spreadsheet (tanky) ---
+    sheet:   {hp:80, w:46, h:50, skin:'#4caf50', attire:'#2a6a3a', name:'SPREADSHEET',  pts:110, rageGain:18, speed:0.2,  splat:'#ffd27a', soft:true},
+    // --- software parody: orange slide deck (auto-advances = speeds up) ---
+    slides:  {hp:44, w:48, h:38, skin:'#e67e22', attire:'#a04a10', name:'SLIDE DECK',   pts:75,  rageGain:14, speed:0.3,  splat:'#ffc857', soft:true, accel:true},
+    // --- software parody: purple chat (multiplies pings) ---
+    chat:    {hp:34, w:38, h:44, skin:'#7b5ea7', attire:'#4a2a7a', name:'THE STAND-UP', pts:65,  rageGain:13, speed:0.5,  splat:'#ffb627', soft:true},
+  };
+
+  const MONSTER_TYPES = ['suit','exec','gremlin'];
+  const SOFTWARE_TYPES = ['inbox','sheet','slides','chat'];
+
+  function reset(){
+    floor = 1; score = 0; rage = 0; health = 100;
+    enemies = []; particles = []; floatTexts = [];
+    combo = 0; comboTimer = 0; weapon = 'fists';
+    cooldowns = {saw:0, shotgun:0, nuke:0};
+    setWeaponUI('fists');
+    startFloor();
+  }
+
+  function startFloor(){
+    enemies = []; particles = [];
+    floorKills = 0;
+    // boss floors every 10 (10,20,30,40,50) have a tougher, smaller quota of heavies
+    isBossFloor = (floor % 10 === 0);
+    floorQuota = isBossFloor ? 8 + floor : Math.min(45, 8 + floor*1.5);
+    spawnTimer = 0;
+    health = Math.min(100, health + (isBossFloor ? 25 : 12)); // heal before bosses
+    document.getElementById('floorInd').textContent = (isBossFloor ? 'BOSS ' : 'LV ') + floor + '/50';
+    updateHud();
+  }
+
+  function spawnEnemy(){
+    let type;
+    const roll = Math.random();
+    if(isBossFloor){
+      // boss floors: heavier mix (execs, spreadsheets, more as floor climbs)
+      const heavies = ['exec','sheet','slides'];
+      type = heavies[Math.floor(Math.random()*heavies.length)];
+    } else {
+      // progressive unlocks: more variety and heavier types deeper in
+      const pool = ['suit','gremlin','inbox'];
+      if(floor >= 5) pool.push('chat','slides');
+      if(floor >= 10) pool.push('exec');
+      if(floor >= 15) pool.push('sheet');
+      // weight toward heavier types on higher floors
+      if(floor >= 20) pool.push('exec','sheet');
+      type = pool[Math.floor(Math.random()*pool.length)];
+    }
+    const t = TYPES[type];
+    const margin = 36;
+    const x = margin + Math.random()*(W - margin*2);
+    const y = -40 - Math.random()*80;
+    // HP and speed scale up across 50 floors
+    const hpScale = 1 + (floor-1)*0.09;
+    const speedScale = 1 + (floor-1)*0.02;
+    enemies.push({
+      type, x, y, w:t.w, h:t.h,
+      hp: t.hp*hpScale, maxhp: t.hp*hpScale,
+      skin:t.skin, attire:t.attire,
+      vy: t.speed*speedScale*(0.7+Math.random()*0.4),
+      baseSpeed: t.speed*speedScale,
+      hitFlash:0, wobble:Math.random()*Math.PI*2,
+      accel: t.accel || false, soft: t.soft || false, splat: t.splat,
+      spawnMore: (type==='inbox'||type==='chat')
+    });
+  }
+
+  // ---------- input ----------
+  function canvasPoint(e){
+    const r = canvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+    return { x: cx * (W / r.width), y: cy * (H / r.height) };
+  }
+
+  function handleStrike(pt){
+    if(state !== 'playing') return;
+    const wp = WEAPONS[weapon];
+
+    if(wp.needsRage){
+      if(rage < rageMax) return;
+      // RAGE NUKE: clear everything
+      rage = 0;
+      shake(30, 24);
+      enemies.forEach(en => { killEnemy(en, true); });
+      enemies = [];
+      flash();
+      addFloat(W/2, H/2, 'OVERLOAD!', C.rage, 20);
+      updateHud();
+      return;
+    }
+
+    // cooldown check
+    if(weapon !== 'fists' && cooldowns[weapon] > 0) return;
+    if(weapon !== 'fists') cooldowns[weapon] = wp.cd;
+
+    shake(6, 4);
+    spawnHitParticles(pt.x, pt.y, C.amber, 6);
+
+    let hitAny = false;
+    // find enemies within radius
+    for(let i=enemies.length-1; i>=0; i--){
+      const en = enemies[i];
+      const dx = en.x - pt.x, dy = en.y - pt.y;
+      const dist = Math.hypot(dx, dy);
+      const reach = wp.radius + Math.max(en.w,en.h)/2;
+      if(dist < reach){
+        hitAny = true;
+        en.hp -= wp.dmg;
+        en.hitFlash = 6;
+        en.y += wp.knock * 0.4;
+        const kx = dist>0 ? dx/dist : 0;
+        en.x += kx * wp.knock;
+        spawnHitParticles(en.x, en.y, en.color, 5);
+        if(en.hp <= 0){
+          killEnemy(en);
+          enemies.splice(i,1);
+        }
+        if(!wp.splash) break; // non-splash hits one; splash hits all in radius
+      }
+    }
+
+    if(hitAny){
+      registerCombo(pt.x, pt.y);
+    } else {
+      // miss breaks combo
+      combo = 0;
+    }
+    updateHud();
+  }
+
+  function registerCombo(x,y){
+    combo++;
+    comboTimer = 90;
+    if(combo >= 3){
+      addFloat(x, y-20, combo + 'x', C.amber, 12 + Math.min(combo,10));
+    }
+  }
+
+  const KO_STAMPS = ['K.O.!', 'FIRED!', 'SMASHED!', 'LAID OFF!', 'REJECTED!', 'DELETED!'];
+
+  function killEnemy(en, silent){
+    const t = TYPES[en.type];
+    const mult = 1 + Math.floor(combo/3)*0.5;
+    const pts = Math.round(t.pts * mult);
+    score += pts;
+    rage = Math.min(rageMax, rage + t.rageGain);
+    floorKills++;
+    // amber goop splat burst
+    spawnSplat(en.x, en.y, en.splat || C.amber, 18);
+    spawnHitParticles(en.x, en.y, en.skin, 8);
+    // randomized knockout stamp
+    if(!silent){
+      const stamp = KO_STAMPS[Math.floor(Math.random()*KO_STAMPS.length)];
+      addStamp(en.x, en.y, stamp);
+      addFloat(en.x, en.y+14, '+$'+pts, C.text, 10);
+    }
+    shake(9, 7);
+
+    if(floorKills >= floorQuota){
+      clearFloor();
+    }
+  }
+
+  // big juicy knockout stamp (rotated, punchy)
+  function addStamp(x,y,text){
+    floatTexts.push({x,y,text,color:C.rage,size:16,life:1,stamp:true,rot:(Math.random()-0.5)*0.4});
+  }
+
+  function clearFloor(){
+    if(floor >= 50){
+      victory();
+      return;
+    }
+    // seamless advance — no pause. bank a bonus, flash a banner, keep playing.
+    const bonus = floor * 50 + Math.round(rage/2);
+    score += bonus;
+    floor++;
+    // brief non-blocking "LEVEL UP" banner on the canvas
+    bannerText = 'LV ' + floor + '  —  ' + pickFlavor();
+    bannerTimer = 70;
+    flash();
+    startFloor();
+  }
+
+  let bannerText = '', bannerTimer = 0;
+  function pickFlavor(){
+    const flavors = [
+      'KEEP GOING','DON\'T LOOK BACK','MORE INCOMING','SMASH ON',
+      'NO BRAKES','HIGHER','THEY KEEP COMING','GET LOUDER'
+    ];
+    return flavors[Math.floor(Math.random()*flavors.length)];
+  }
+
+  function victory(){
+    state='gameover';
+    score += 5000;
+    document.getElementById('deathFloor').textContent = '50 — THE TOP';
+    document.getElementById('finalScore').textContent = '$'+score;
+    document.querySelector('#gameOver h1').innerHTML = 'BUILDING<br>OVERLOADED';
+    document.querySelector('#gameOver h1').style.color = 'var(--amber)';
+    document.querySelector('#gameOver p:first-of-type').innerHTML = 'You reached the top floor and pulled the plug on the whole tower.';
+    document.getElementById('rank').textContent = 'THE NEW CEO (OF RUBBLE)';
+    document.getElementById('retryBtn').textContent = 'BACK TO THE GRIND';
+    show('gameOver');
+  }
+
+  // ---------- particles / juice ----------
+  function spawnHitParticles(x,y,color,n){
+    for(let i=0;i<n;i++){
+      const a = Math.random()*Math.PI*2;
+      const sp = 1 + Math.random()*4;
+      particles.push({
+        x,y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - 1,
+        life:1, color, size:2+Math.random()*3
+      });
+    }
+  }
+  // amber goop splat: bigger, blobby, sticks briefly
+  function spawnSplat(x,y,color,n){
+    for(let i=0;i<n;i++){
+      const a = Math.random()*Math.PI*2;
+      const sp = 2 + Math.random()*6;
+      particles.push({
+        x,y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - 2,
+        life:1.4, color, size:3+Math.random()*5, goop:true
+      });
+    }
+  }
+  function addFloat(x,y,text,color,size){
+    floatTexts.push({x,y,text,color,size,life:1});
+  }
+  function shake(dur,mag){ shakeT = Math.max(shakeT,dur); shakeMag = Math.max(shakeMag,mag); }
+  function flash(){
+    const f = document.createElement('div');
+    f.style.cssText = 'position:absolute;inset:0;background:rgba(255,200,87,0.4);z-index:15;pointer-events:none;';
+    stage.appendChild(f);
+    requestAnimationFrame(()=>{ f.style.transition='opacity 0.3s'; f.style.opacity='0'; });
+    setTimeout(()=>f.remove(), 320);
+  }
+
+  // ---------- HUD ----------
+  function updateHud(){
+    document.getElementById('score').textContent = score;
+    const pct = (rage/rageMax)*100;
+    const fill = document.getElementById('rageFill');
+    fill.style.width = pct + '%';
+    const st = document.getElementById('rageState');
+    if(rage >= rageMax){
+      fill.classList.add('full');
+      st.textContent = 'UNLEASH IT!';
+      document.getElementById('w-nuke').classList.add('ready');
+    } else {
+      fill.classList.remove('full');
+      st.textContent = 'BUILDING…';
+    }
+  }
+
+  // ---------- weapons UI ----------
+  function setWeaponUI(w){
+    weapon = w;
+    document.querySelectorAll('.weapon-btn').forEach(b=>{
+      b.classList.toggle('active', b.dataset.weapon===w);
+    });
+  }
+  document.querySelectorAll('.weapon-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const w = btn.dataset.weapon;
+      if(w==='nuke'){
+        // nuke is a fire-and-forget: tap to unleash if full
+        if(rage>=rageMax){ handleStrike({x:W/2,y:H/2}); }
+        return;
+      }
+      setWeaponUI(w);
+    });
+  });
+
+  // canvas strikes
+  ['touchstart','mousedown'].forEach(ev=>{
+    canvas.addEventListener(ev, e=>{
+      e.preventDefault();
+      handleStrike(canvasPoint(e));
+    }, {passive:false});
+  });
+
+  // ---------- overlays ----------
+  function show(id){
+    ['titleScreen','floorClear','gameOver'].forEach(o=>{
+      document.getElementById(o).classList.add('hidden');
+    });
+    if(id) document.getElementById(id).classList.remove('hidden');
+  }
+  document.getElementById('startBtn').onclick = ()=>{ show(null); state='playing'; reset(); };
+  document.getElementById('nextBtn').onclick = ()=>{ floor++; show(null); state='playing'; startFloor(); };
+  document.getElementById('retryBtn').onclick = ()=>{ show(null); state='playing'; reset(); };
+
+  function gameOver(){
+    state='gameover';
+    document.getElementById('deathFloor').textContent = floor;
+    document.getElementById('finalScore').textContent = '$'+score;
+    const ranks = [[0,'INTERN'],[500,'ASSOCIATE'],[1500,'MANAGER'],[3500,'DIRECTOR'],[7000,'VP'],[12000,'C-SUITE']];
+    let rank='INTERN';
+    ranks.forEach(([t,r])=>{ if(score>=t) rank=r; });
+    document.getElementById('rank').textContent = rank;
+    show('gameOver');
+  }
+
+  // ---------- draw ----------
+  function drawEnemy(en){
+    ctx.save();
+    ctx.translate(en.x, en.y);
+    const flash = en.hitFlash>0;
+    const w=en.w, h=en.h;
+
+    // shadow
+    ctx.fillStyle='rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(0, h/2-1, w/2.2, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    if(en.soft){
+      // ---- SOFTWARE PARODY (app-window creature) ----
+      const body = flash ? '#ffffff' : en.skin;
+      // window body
+      ctx.fillStyle = body;
+      ctx.fillRect(-w/2, -h/2, w, h);
+      // title bar
+      ctx.fillStyle = flash ? '#dddddd' : en.attire;
+      ctx.fillRect(-w/2, -h/2, w, 9);
+      // window dots
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(-w/2+4,-h/2+3,3,3);
+      ctx.fillRect(-w/2+10,-h/2+3,3,3);
+      if(!flash){
+        // type-specific glyph face
+        ctx.fillStyle='#0d0817';
+        if(en.type==='inbox'){
+          // envelope
+          ctx.fillRect(-w/2+8,-h/2+16,w-16,h-24);
+          ctx.fillStyle=en.skin;
+          ctx.beginPath();
+          ctx.moveTo(-w/2+8,-h/2+16); ctx.lineTo(0,-h/2+16+ (h-24)/2); ctx.lineTo(w/2-8,-h/2+16);
+          ctx.fill();
+        } else if(en.type==='sheet'){
+          // grid + angry #REF eyes
+          ctx.strokeStyle='#0d0817'; ctx.lineWidth=1;
+          for(let gx=-w/2+8; gx<w/2-4; gx+=8){ ctx.beginPath(); ctx.moveTo(gx,-h/2+14); ctx.lineTo(gx,h/2-6); ctx.stroke(); }
+          for(let gy=-h/2+14; gy<h/2-4; gy+=8){ ctx.beginPath(); ctx.moveTo(-w/2+6,gy); ctx.lineTo(w/2-6,gy); ctx.stroke(); }
+          ctx.fillStyle=C.rage; ctx.font='7px monospace'; ctx.textAlign='center';
+          ctx.fillText('#REF', 0, 2);
+        } else if(en.type==='slides'){
+          // play triangle (auto-advancing)
+          ctx.fillStyle='#0d0817';
+          ctx.beginPath();
+          ctx.moveTo(-6,-4); ctx.lineTo(-6,10); ctx.lineTo(8,3);
+          ctx.fill();
+        } else if(en.type==='chat'){
+          // video grid of little squares, one "frozen"
+          ctx.fillStyle='#0d0817';
+          for(let r=0;r<2;r++) for(let c=0;c<2;c++){
+            ctx.fillRect(-w/2+8+c*(w/2-6), -h/2+16+r*((h-22)/2), w/2-12, (h-22)/2-2);
+          }
+          ctx.fillStyle=C.rage; ctx.fillRect(-w/2+8,-h/2+16,w/2-12,(h-22)/2-2); // frozen tile
+        }
+      }
+    } else {
+      // ---- OFFICE MONSTER (creature in business attire) ----
+      const skin = flash ? '#ffffff' : en.skin;
+      const attire = flash ? '#dddddd' : en.attire;
+      const headH = h*0.42, bodyH = h - headH;
+      // body / attire (blazer)
+      ctx.fillStyle = attire;
+      ctx.fillRect(-w/2, -h/2+headH, w, bodyH);
+      // collar / shirt V
+      ctx.fillStyle = '#f4f1ea';
+      ctx.beginPath();
+      ctx.moveTo(-6,-h/2+headH); ctx.lineTo(6,-h/2+headH); ctx.lineTo(0,-h/2+headH+12);
+      ctx.fill();
+      // tie (gents) or necklace dot (lady)
+      if(en.type==='suit'){
+        ctx.fillStyle = C.rage;
+        ctx.fillRect(-2,-h/2+headH, 4, 14);
+      } else if(en.type==='exec'){
+        ctx.fillStyle = C.amber;
+        ctx.fillRect(-3,-h/2+headH+8, 6, 3);
+      }
+      // head (monster skin)
+      ctx.fillStyle = skin;
+      ctx.fillRect(-w/2+4, -h/2, w-8, headH);
+      if(!flash){
+        // googly eyes
+        ctx.fillStyle='#ffffff';
+        ctx.fillRect(-w/2+9,-h/2+6,7,7);
+        ctx.fillRect(w/2-16,-h/2+6,7,7);
+        ctx.fillStyle='#0d0817';
+        ctx.fillRect(-w/2+12,-h/2+9,3,3);
+        ctx.fillRect(w/2-13,-h/2+9,3,3);
+        // angry brow
+        ctx.strokeStyle='#0d0817'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(-w/2+8,-h/2+4); ctx.lineTo(-w/2+16,-h/2+7); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(w/2-8,-h/2+4); ctx.lineTo(w/2-16,-h/2+7); ctx.stroke();
+        // fangs / grimace
+        ctx.fillStyle='#0d0817';
+        ctx.fillRect(-6,-h/2+headH-8, 12, 3);
+        ctx.fillStyle='#ffffff';
+        ctx.fillRect(-5,-h/2+headH-8, 2, 4);
+        ctx.fillRect(3,-h/2+headH-8, 2, 4);
+        // lanyard for gremlin
+        if(en.type==='gremlin'){
+          ctx.strokeStyle=C.amber; ctx.lineWidth=2;
+          ctx.beginPath(); ctx.moveTo(-6,-h/2+headH); ctx.lineTo(0,-h/2+headH+8); ctx.lineTo(6,-h/2+headH); ctx.stroke();
+          ctx.fillStyle='#fff'; ctx.fillRect(-3,-h/2+headH+8,6,5); // ID badge
+        }
+      }
+    }
+
+    // health bar if damaged
+    if(en.hp < en.maxhp){
+      ctx.fillStyle='#2a1015';
+      ctx.fillRect(-w/2, -h/2-8, w, 4);
+      ctx.fillStyle=C.rage;
+      ctx.fillRect(-w/2, -h/2-8, w*(en.hp/en.maxhp), 4);
+    }
+    ctx.restore();
+  }
+
+  function draw(){
+    // shake offset
+    let ox=0, oy=0;
+    if(shakeT>0){ ox=(Math.random()-0.5)*shakeMag; oy=(Math.random()-0.5)*shakeMag; }
+
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    ctx.translate(ox,oy);
+
+    // bg
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(-10,-10,W+20,H+20);
+
+    // floor grid (office tiles)
+    ctx.strokeStyle = C.grid; ctx.lineWidth=1;
+    for(let x=0;x<=W;x+=30){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for(let y=0;y<=H;y+=30){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+    // enemies
+    enemies.forEach(drawEnemy);
+
+    // particles
+    particles.forEach(p=>{
+      ctx.globalAlpha = Math.max(0, Math.min(1,p.life));
+      ctx.fillStyle = p.color;
+      if(p.goop){
+        // blobby goop: draw as small circle
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size/1.5, 0, Math.PI*2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(p.x-p.size/2, p.y-p.size/2, p.size, p.size);
+      }
+    });
+    ctx.globalAlpha=1;
+
+    // float texts + knockout stamps
+    floatTexts.forEach(f=>{
+      ctx.globalAlpha=Math.max(0,f.life);
+      if(f.stamp){
+        ctx.save();
+        ctx.translate(f.x, f.y);
+        ctx.rotate(f.rot||0);
+        const s = f.size * (1 + (1-f.life)*0.5); // pop-scale
+        ctx.font=`${s}px "Press Start 2P", monospace`;
+        ctx.textAlign='center';
+        ctx.lineWidth=3; ctx.strokeStyle='#0d0817';
+        ctx.strokeText(f.text,0,0);
+        ctx.fillStyle=f.color;
+        ctx.fillText(f.text,0,0);
+        ctx.restore();
+      } else {
+        ctx.fillStyle=f.color;
+        ctx.font=`${f.size}px "Press Start 2P", monospace`;
+        ctx.textAlign='center';
+        ctx.fillText(f.text, f.x, f.y);
+      }
+    });
+    ctx.globalAlpha=1;
+
+    ctx.restore();
+
+    // health bar (bottom of canvas, drawn without shake)
+    ctx.fillStyle='#2a1015';
+    ctx.fillRect(8, H-14, W-16, 8);
+    ctx.fillStyle = health>30 ? '#4dff88' : C.rage;
+    ctx.fillRect(8, H-14, (W-16)*(health/100), 8);
+    ctx.fillStyle=C.text;
+    ctx.font='8px "Press Start 2P", monospace'; ctx.textAlign='left';
+    ctx.fillText('INTEGRITY', 10, H-18);
+
+    // non-blocking level-up banner
+    if(bannerTimer > 0){
+      const a = Math.min(1, bannerTimer/20);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = C.amber;
+      ctx.font = '13px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 4; ctx.strokeStyle = '#0d0817';
+      ctx.strokeText(bannerText, W/2, H*0.28);
+      ctx.fillText(bannerText, W/2, H*0.28);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // ---------- update ----------
+  let last=0;
+  function loop(ts){
+    const dt = Math.min(2, (ts-last)/16.67 || 1); last=ts;
+
+    if(state==='playing'){
+      // spawn
+      spawnTimer -= dt;
+      const spawnRate = Math.max(8, 34 - floor*2);
+      if(spawnTimer<=0 && enemies.length < 14 && (floorKills + enemies.length) < floorQuota){
+        spawnEnemy();
+        // burst spawns on higher floors for overwhelming pressure
+        if(floor >= 8 && Math.random() < 0.4) spawnEnemy();
+        if(floor >= 20 && Math.random() < 0.4) spawnEnemy();
+        spawnTimer = spawnRate;
+      }
+
+      // cooldowns
+      for(const k in cooldowns){ if(cooldowns[k]>0){ cooldowns[k]-=dt; updateCd(k);} }
+
+      // enemies advance (toward bottom = reaching your floor exit)
+      enemies.forEach(en=>{
+        // slide-deck accelerates as it descends (auto-advancing)
+        if(en.accel){ en.vy = Math.min(en.baseSpeed*2.2, en.vy + 0.004*dt); }
+        en.y += en.vy*dt;
+        en.wobble += 0.1*dt;
+        en.x += Math.sin(en.wobble)*0.3;
+        if(en.hitFlash>0) en.hitFlash-=dt;
+        // reached bottom = damage
+        if(en.y > H-24){
+          health -= 12;
+          shake(12,8);
+          spawnHitParticles(en.x, H-24, C.rage, 10);
+          en._dead=true;
+          combo=0;
+          if(health<=0){ health=0; gameOver(); }
+        }
+      });
+      enemies = enemies.filter(e=>!e._dead);
+
+      // combo timer
+      if(comboTimer>0){ comboTimer-=dt; if(comboTimer<=0) combo=0; }
+      if(bannerTimer>0) bannerTimer-=dt;
+      updateHud();
+    }
+
+    // particles physics (always)
+    particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.life-=0.03; });
+    particles = particles.filter(p=>p.life>0);
+    floatTexts.forEach(f=>{ f.y-=0.6; f.life-=0.02; });
+    floatTexts = floatTexts.filter(f=>f.life>0);
+
+    if(shakeT>0) shakeT-=dt; else shakeMag=0;
+
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function updateCd(k){
+    const btn = document.getElementById('w-'+k);
+    if(!btn) return;
+    let cdEl = btn.querySelector('.cd');
+    if(cooldowns[k]>0){
+      if(!cdEl){ cdEl=document.createElement('div'); cdEl.className='cd'; btn.appendChild(cdEl); }
+      cdEl.textContent = Math.ceil(cooldowns[k]/10);
+    } else if(cdEl){ cdEl.remove(); }
+  }
+
+  // ---------- boot ----------
+  function onResize(){ fitCanvas(); }
+  window.addEventListener('resize', onResize);
+  fitCanvas();
+  show('titleScreen');
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
