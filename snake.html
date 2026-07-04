@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SNAKE — After Hours Arcade</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+  :root{
+    --bg-black:#0d0817;
+    --bg-deep:#1a1230;
+    --amber:#ffc857;
+    --amber-deep:#ffb627;
+    --amber-dark:#d4882a;
+    --rage:#ff4d3d;
+    --text:#e8e2f5;
+    --text-muted:#9d8fc7;
+    --panel:#241a3d;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; overflow:hidden; overscroll-behavior:none;}
+  body{
+    background:var(--bg-black);
+    font-family:'VT323', monospace;
+    color:var(--text);
+    height:100vh; height:100dvh;
+    display:flex; flex-direction:column; align-items:center;
+    touch-action:none;
+    user-select:none; -webkit-user-select:none;
+  }
+  .pixel{font-family:'Press Start 2P', monospace;}
+
+  .topbar{
+    width:100%; max-width:520px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 12px 6px; flex:0 0 auto;
+  }
+  .back-link{
+    font-size:16px; color:var(--amber); text-decoration:none;
+    border:2px solid var(--amber); padding:3px 8px; border-radius:3px;
+  }
+  .back-link:active{background:var(--amber); color:var(--bg-black);}
+  .title{
+    font-family:'Press Start 2P', monospace;
+    font-size:12px; color:var(--amber);
+    text-shadow:0 0 6px rgba(255,200,87,0.5);
+  }
+
+  .hud{
+    width:100%; max-width:520px;
+    display:flex; justify-content:space-between;
+    font-size:20px; color:var(--amber); padding:0 14px 6px; flex:0 0 auto;
+  }
+
+  .stage{
+    position:relative;
+    flex:1 1 auto; width:100%; max-width:520px; min-height:0;
+    display:flex; align-items:center; justify-content:center;
+    padding:4px 12px;
+  }
+  canvas{
+    display:block;
+    background:#160f28;
+    border:3px solid var(--bg-deep);
+    border-radius:4px;
+    box-shadow:0 0 0 2px #000, 0 12px 40px rgba(0,0,0,0.6);
+    max-width:100%; max-height:100%;
+    image-rendering:pixelated;
+  }
+
+  .overlay{
+    position:absolute; inset:0; z-index:20;
+    background:rgba(13,8,23,0.93);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center; padding:24px; gap:14px;
+  }
+  .overlay.hidden{display:none;}
+  .overlay h2{
+    font-family:'Press Start 2P', monospace;
+    font-size:clamp(15px,5vw,22px); color:var(--amber);
+    text-shadow:0 0 4px var(--amber-deep), 0 0 16px rgba(255,200,87,0.4);
+    margin:0;
+  }
+  .overlay p{
+    font-size:19px; color:var(--text-muted);
+    max-width:320px; line-height:1.5; margin:0;
+  }
+  .btn{
+    font-family:'Press Start 2P', monospace;
+    font-size:13px; color:var(--bg-black);
+    background:var(--amber); border:none;
+    padding:16px 26px; border-radius:4px; cursor:pointer;
+    box-shadow:0 5px 0 var(--amber-dark);
+  }
+  .btn:active{transform:translateY(4px); box-shadow:0 1px 0 var(--amber-dark);}
+
+  .dpad{
+    flex:0 0 auto;
+    display:grid;
+    grid-template-columns:repeat(3, 52px);
+    grid-template-rows:repeat(3, 52px);
+    gap:6px; margin:6px 0 14px;
+  }
+  .dpad button{
+    font-family:'Press Start 2P', monospace; font-size:15px;
+    background:var(--panel); color:var(--amber);
+    border:2px solid var(--amber-deep); border-radius:4px;
+    cursor:pointer;
+  }
+  .dpad button:active{background:var(--amber); color:var(--bg-black);}
+  #dpad-up{grid-column:2; grid-row:1;}
+  #dpad-left{grid-column:1; grid-row:2;}
+  #dpad-right{grid-column:3; grid-row:2;}
+  #dpad-down{grid-column:2; grid-row:3;}
+
+  .hint{
+    font-size:15px; color:#6b5f8f; text-align:center;
+    max-width:520px; line-height:1.4; padding:0 12px 10px; flex:0 0 auto;
+  }
+
+  @media (min-width:760px){
+    .dpad{grid-template-columns:repeat(3, 46px); grid-template-rows:repeat(3, 46px);}
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a href="index.html" class="back-link">&#9760; EVACUATE</a>
+    <div class="title pixel">SNAKE</div>
+    <div style="width:64px;"></div>
+  </div>
+
+  <div class="hud">
+    <span>SCORE: <span id="score">0</span></span>
+    <span>BEST: <span id="best">0</span></span>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="board"></canvas>
+    <div class="overlay" id="overlay">
+      <h2 class="pixel">SNAKE</h2>
+      <p>Swipe or use the arrows to move. Eat the dots. Don't bite yourself or the wall.</p>
+      <button class="btn pixel" id="start-btn">PRESS PLAY</button>
+    </div>
+  </div>
+
+  <div class="dpad" id="dpad">
+    <button id="dpad-up">&#9650;</button>
+    <button id="dpad-left">&#9664;</button>
+    <button id="dpad-right">&#9654;</button>
+    <button id="dpad-down">&#9660;</button>
+  </div>
+
+  <div class="hint">Keyboard: arrows / WASD to move &middot; Space to pause &middot; Enter to restart</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('board');
+  const ctx = canvas.getContext('2d');
+  const stage = document.getElementById('stage');
+
+  const GRID = 20;
+  let CELL = 18;
+  let W = GRID*CELL, H = GRID*CELL;
+
+  const COL = {
+    bg:'#160f28',
+    grid:'rgba(255,200,87,0.05)',
+    head:'#ffc857',
+    body:'#d4882a',
+    bodyAlt:'#b8721f',
+    food:'#ff4d3d',
+    foodGlow:'rgba(255,77,61,0.5)',
+    eye:'#0d0817'
+  };
+
+  function fitCanvas(){
+    const availW = stage.clientWidth - 24;
+    const availH = stage.clientHeight - 8;
+    const size = Math.max(120, Math.min(availW, availH));
+    CELL = Math.floor(size / GRID);
+    W = GRID*CELL; H = GRID*CELL;
+    canvas.width = W; canvas.height = H;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+  }
+
+  let snake, dir, nextDir, food, score, best, running=false, paused=false, gameOver=false, tickMs=130, acc=0, lastT=0;
+
+  best = parseInt(localStorage.getItem('wc-snake-best')||'0',10);
+  document.getElementById('best').textContent = best;
+
+  function reset(){
+    snake = [{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+    dir = {x:1,y:0}; nextDir = {x:1,y:0};
+    score = 0; tickMs = 130; gameOver=false; paused=false;
+    placeFood(); updateScore();
+  }
+
+  function placeFood(){
+    let ok=false;
+    while(!ok){
+      food = {x:Math.floor(Math.random()*GRID), y:Math.floor(Math.random()*GRID)};
+      ok = !snake.some(s=>s.x===food.x && s.y===food.y);
+    }
+  }
+
+  function updateScore(){
+    document.getElementById('score').textContent = score;
+    if(score>best){
+      best=score;
+      document.getElementById('best').textContent=best;
+      localStorage.setItem('wc-snake-best', best);
+    }
+  }
+
+  function setDir(x,y){
+    if(dir.x===-x && dir.y===-y) return;
+    nextDir = {x,y};
+  }
+
+  function tick(){
+    if(paused||gameOver||!running) return;
+    dir = nextDir;
+    const head = {x:snake[0].x+dir.x, y:snake[0].y+dir.y};
+    if(head.x<0||head.x>=GRID||head.y<0||head.y>=GRID || snake.some(s=>s.x===head.x&&s.y===head.y)){
+      return endGame();
+    }
+    snake.unshift(head);
+    if(head.x===food.x && head.y===food.y){
+      score+=10; updateScore(); placeFood();
+      if(tickMs>60) tickMs-=2;
+    } else {
+      snake.pop();
+    }
+  }
+
+  function endGame(){
+    gameOver=true; running=false;
+    show('GAME OVER',
+      `Final score: ${score}${score>=best&&score>0?' — new best!':''}`,'PLAY AGAIN');
+  }
+
+  function draw(){
+    ctx.fillStyle=COL.bg; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle=COL.grid; ctx.lineWidth=1;
+    for(let i=0;i<=GRID;i++){
+      ctx.beginPath(); ctx.moveTo(i*CELL,0); ctx.lineTo(i*CELL,H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,i*CELL); ctx.lineTo(W,i*CELL); ctx.stroke();
+    }
+    ctx.save();
+    ctx.shadowColor=COL.foodGlow; ctx.shadowBlur=12;
+    ctx.fillStyle=COL.food;
+    ctx.fillRect(food.x*CELL+3, food.y*CELL+3, CELL-6, CELL-6);
+    ctx.restore();
+    snake.forEach((s,i)=>{
+      ctx.fillStyle = i===0?COL.head : (i%2===0?COL.body:COL.bodyAlt);
+      ctx.fillRect(s.x*CELL+1, s.y*CELL+1, CELL-2, CELL-2);
+    });
+    const hd=snake[0]; ctx.fillStyle=COL.eye;
+    const hx=hd.x*CELL, hy=hd.y*CELL;
+    const off = eyeOffsets(dir);
+    off.forEach(([ex,ey])=> ctx.fillRect(hx+ex, hy+ey, Math.max(2,CELL/7), Math.max(2,CELL/7)) );
+  }
+
+  function eyeOffsets(d){
+    const q=CELL*0.28, f=CELL*0.62;
+    if(d.x===1) return [[f,q],[f,f]];
+    if(d.x===-1) return [[q*0.6,q],[q*0.6,f]];
+    if(d.y===1) return [[q,f],[f,f]];
+    return [[q,q*0.6],[f,q*0.6]];
+  }
+
+  function loop(ts){
+    const dt = ts-lastT; lastT=ts;
+    if(running && !paused && !gameOver){
+      acc += dt;
+      while(acc >= tickMs){ tick(); acc-=tickMs; }
+    }
+    draw();
+    if(paused && running && !gameOver){
+      ctx.fillStyle='rgba(13,8,23,0.7)'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#ffc857';
+      ctx.font=`${Math.max(12,CELL)}px "Press Start 2P", monospace`;
+      ctx.textAlign='center';
+      ctx.fillText('PAUSED', W/2, H/2);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  function show(title,msg,btn){
+    const o=document.getElementById('overlay');
+    o.classList.remove('hidden');
+    o.querySelector('h2').textContent=title;
+    o.querySelector('p').textContent=msg;
+    document.getElementById('start-btn').textContent=btn;
+  }
+  function hide(){ document.getElementById('overlay').classList.add('hidden'); }
+
+  function startGame(){
+    reset(); hide(); running=true; paused=false; acc=0;
+  }
+  document.getElementById('start-btn').addEventListener('click', startGame);
+
+  document.addEventListener('keydown', e=>{
+    switch(e.key){
+      case 'ArrowUp': case 'w': case 'W': setDir(0,-1); e.preventDefault(); break;
+      case 'ArrowDown': case 's': case 'S': setDir(0,1); e.preventDefault(); break;
+      case 'ArrowLeft': case 'a': case 'A': setDir(-1,0); e.preventDefault(); break;
+      case 'ArrowRight': case 'd': case 'D': setDir(1,0); e.preventDefault(); break;
+      case ' ': if(running&&!gameOver) paused=!paused; e.preventDefault(); break;
+      case 'Enter': if(gameOver) startGame(); break;
+    }
+  });
+
+  function bindTap(id, fn){
+    const el=document.getElementById(id);
+    ['click','touchstart'].forEach(ev=>el.addEventListener(ev, e=>{e.preventDefault(); fn();}, {passive:false}));
+  }
+  bindTap('dpad-up', ()=>setDir(0,-1));
+  bindTap('dpad-down', ()=>setDir(0,1));
+  bindTap('dpad-left', ()=>setDir(-1,0));
+  bindTap('dpad-right', ()=>setDir(1,0));
+
+  let ts0=null;
+  canvas.addEventListener('touchstart', e=>{ ts0={x:e.touches[0].clientX,y:e.touches[0].clientY}; }, {passive:true});
+  canvas.addEventListener('touchend', e=>{
+    if(!ts0) return;
+    const dx=e.changedTouches[0].clientX-ts0.x, dy=e.changedTouches[0].clientY-ts0.y;
+    if(Math.abs(dx)<12 && Math.abs(dy)<12){ ts0=null; return; }
+    if(Math.abs(dx)>Math.abs(dy)) setDir(dx>0?1:-1,0);
+    else setDir(0,dy>0?1:-1);
+    ts0=null;
+  }, {passive:true});
+
+  window.addEventListener('resize', ()=>{ fitCanvas(); });
+  fitCanvas();
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
