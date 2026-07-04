@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>William Candra — Retro Arcade</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
@@ -19,6 +20,7 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
 
+  /* mobile-first base: phone layout */
   body{
     background:var(--bg-black);
     font-family:'VT323', monospace;
@@ -27,8 +29,9 @@
     flex-direction:column;
     align-items:center;
     min-height:100vh;
-    padding:24px 12px 60px;
+    padding:20px 10px 44px;
     image-rendering:pixelated;
+    overflow-x:hidden;
   }
 
   .pixel{font-family:'Press Start 2P', monospace;}
@@ -39,10 +42,11 @@
     margin-bottom:18px;
   }
   .sign{
-    font-size:clamp(20px, 6vw, 46px);
-    letter-spacing:4px;
+    font-size:clamp(26px, 8vw, 36px);
+    letter-spacing:2px;
     font-weight:bold;
     color:#FFC857;
+    line-height:1.15;
     text-shadow: 0 0 3px rgba(255,200,87,.35), 0 0 8px rgba(255,200,87,.15);
     animation:warmup 12s infinite;
     position:relative;
@@ -61,20 +65,23 @@
     47%{opacity:0.9;}
   }
   @media (prefers-reduced-motion: reduce){
-    .sign{animation:none;}
+    .sign, .star, .moon,
+    .bldg:nth-child(4)::before{ animation:none; }
   }
   .subtitle{
     font-family:'VT323', monospace;
-    font-size:18px;
+    font-size:16px;
     color:#9d8fc7;
     margin-top:6px;
     letter-spacing:1px;
+    padding:0 8px;
   }
 
   /* ---------- Room ---------- */
+  /* base = phone: room fills width, capped + centered on larger screens */
   .room{
     width:100%;
-    max-width:980px;
+    max-width:960px;
     border:4px solid var(--bg-deep);
     border-radius:4px;
     background:
@@ -84,9 +91,9 @@
     box-shadow: 0 0 0 2px #000, 0 20px 60px rgba(0,0,0,0.6);
   }
 
-  /* back wall window with skyline */
+  /* back wall window with skyline — taller on phone so it isn't a thin strip */
   .wall{
-    height:230px;
+    height:200px;
     position:relative;
     background:linear-gradient(180deg,#241a3d,#1a1230);
     border-bottom:4px solid var(--bg-black);
@@ -99,7 +106,7 @@
   .window{
     width:92%;
     max-width:900px;
-    height:190px;
+    height:168px;
     margin-bottom:10px;
     background:linear-gradient(180deg,#3d2a66 0%, #241a44 55%, #1c1238 100%);
     border:3px solid #0d0817;
@@ -190,29 +197,30 @@
     transform:translateX(-50%);
     width:4px; height:4px;
     border-radius:50%;
-    background:var(--magenta);
-    box-shadow:0 0 6px var(--magenta);
+    background:var(--amber);
+    box-shadow:0 0 6px var(--amber);
     animation:twinkle 2s ease-in-out infinite;
   }
 
+  /* lit marquee bar — warm amber to agree with the AFTER HOURS title */
   .neon-strip{
     position:absolute;
     top:0;left:0;right:0;
-    height:3px;
-    background:repeating-linear-gradient(90deg, var(--magenta) 0 18px, var(--cyan) 18px 36px);
-    opacity:0.85;
+    height:4px;
+    background:repeating-linear-gradient(90deg, #FFC857 0 18px, #ffb627 18px 36px);
+    box-shadow:0 0 8px rgba(255,200,87,0.55);
+    opacity:0.95;
   }
 
-  /* carpet floor */
+  /* carpet floor — base = phone: single column, roomy taps */
   .floor{
-    min-height:300px;
-    padding:34px 22px 30px;
+    padding:22px 16px 24px;
     background-image:
       repeating-conic-gradient(from 45deg, var(--carpet-a) 0% 25%, var(--carpet-b) 0% 50%);
     background-size:28px 28px;
     display:grid;
-    grid-template-columns:repeat(2, 1fr);
-    gap:22px;
+    grid-template-columns:1fr;
+    gap:18px;
     position:relative;
   }
   .floor::before{
@@ -232,8 +240,8 @@
     z-index:1;
     background:linear-gradient(180deg,#2a2046,#171026);
     border:3px solid var(--bg-black);
-    border-radius:5px 5px 3px 3px;
-    padding:10px 8px 12px;
+    border-radius:6px 6px 4px 4px;
+    padding:14px 14px 18px;
     text-align:center;
     cursor:pointer;
     transition:transform 0.15s ease;
@@ -260,15 +268,16 @@
   .cab.minesweeper .cab-glow{background:#ff5a5a;}
   .cab.fortune .cab-glow{background:#9b6dff;}
 
+  /* base = phone: large, tappable cabinet art */
   .screen{
-    height:74px;
-    border-radius:3px;
-    margin-bottom:8px;
+    height:120px;
+    border-radius:4px;
+    margin-bottom:10px;
     border:3px solid #000;
     display:flex;
     align-items:center;
     justify-content:center;
-    font-size:28px;
+    font-size:52px;
     position:relative;
     overflow:hidden;
   }
@@ -286,18 +295,19 @@
 
   .cab-label{
     font-family:'Press Start 2P', monospace;
-    font-size:10px;
+    font-size:12px;
+    line-height:1.5;
     letter-spacing:1px;
     color:#f1ecff;
   }
   .cab-sub{
-    font-size:14px;
+    font-size:15px;
     color:#9d8fc7;
-    margin-top:4px;
+    margin-top:6px;
   }
   .coin{
-    margin-top:8px;
-    font-size:12px;
+    margin-top:10px;
+    font-size:13px;
     color:var(--amber);
   }
 
@@ -348,39 +358,27 @@
     text-align:center;
   }
 
-  @media (max-width:480px){
-    .floor{gap:16px; padding:24px 14px 22px;}
-    .fortune::before, .staff::before{
-      font-size:6px;
-      padding:2px 4px;
-      top:-8px;
-    }
-    .cab-label{font-size:9px;}
-    .cab-sub{font-size:12px;}
-  }
-
-  @media (max-width:340px){
-    .floor{grid-template-columns:1fr;}
-  }
-
+  /* footer hi-score marquee — warm amber UI text */
   .marquee{
     width:100%;
-    max-width:980px;
-    margin-top:18px;
+    max-width:960px;
+    margin-top:16px;
     background:var(--bg-deep);
     border:3px solid var(--bg-black);
     border-radius:4px;
-    padding:10px 16px;
-    font-size:16px;
-    color:var(--cyan);
+    padding:12px 16px;
+    font-size:15px;
+    color:#FFC857;
+    text-shadow:0 0 4px rgba(255,200,87,0.25);
     display:flex;
-    justify-content:space-between;
+    justify-content:center;
+    text-align:center;
     flex-wrap:wrap;
-    gap:8px;
+    gap:6px 18px;
   }
 
   .note{
-    max-width:980px;
+    max-width:960px;
     margin-top:20px;
     font-size:15px;
     color:#7a6ea3;
@@ -395,6 +393,42 @@
     background:var(--bg-deep);
     padding:6px 0;
     letter-spacing:0.5px;
+  }
+
+  /* ===== TABLET: 600px+ — two-column arcade floor ===== */
+  @media (min-width:600px){
+    body{padding:24px 16px 56px;}
+    .sign{letter-spacing:4px;}
+    .subtitle{font-size:18px;}
+    .wall{height:220px;}
+    .window{height:184px;}
+    .floor{
+      grid-template-columns:repeat(2, 1fr);
+      gap:22px;
+      padding:30px 22px 28px;
+    }
+    .cab{padding:12px 12px 14px;}
+    .screen{height:96px; font-size:40px;}
+    .cab-label{font-size:11px;}
+    .cab-sub{font-size:14px;}
+    .marquee{
+      justify-content:space-between;
+      text-align:left;
+      font-size:16px;
+    }
+  }
+
+  /* ===== DESKTOP: 1000px+ — capped, centered room; restrained title ===== */
+  @media (min-width:1000px){
+    .wall{height:230px;}
+    .window{height:190px;}
+    .floor{
+      gap:24px;
+      padding:34px 26px 30px;
+    }
+    .cab{padding:10px 10px 12px;}
+    .screen{height:80px; font-size:32px;}
+    .cab-label{font-size:10px;}
   }
 </style>
 </head>
@@ -477,12 +511,12 @@
     </div>
   </div>
 
-  <div class="marquee pixel" style="font-family:'VT323',monospace; font-size:16px;">
+  <div class="marquee" style="font-family:'VT323',monospace;">
     <span>HI-SCORE: WC — 999900</span>
     <span>INSERT COIN TO CONTINUE</span>
   </div>
 
-  <div class="version-tag">williamcandra.com · v1.0.1</div>
+  <div class="version-tag">williamcandra.com · v1.1.0</div>
 
 </body>
 </html>
