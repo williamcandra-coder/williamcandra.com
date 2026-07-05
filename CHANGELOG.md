@@ -20,6 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Do Not Ask the Goh Pok Tong" fortune-telling machine — page + concept TBD.
 - "Do Not Enter" door — About page as a retro RPG character screen.
 
+## [1.4.0] — 2026-07-05
+
+### Added
+- Added **RAGE WINGS** (`rage-wings.html`) — a one-tap Flappy-Bird-style game in
+  the amber CRT palette: tap / click / Space to flap, responsive portrait canvas,
+  teal pipes contrasting a warm angry-bird, local best-score saving, and an
+  EVACUATE back link. The homepage cabinet gets a custom pixel angry-bird icon.
+
+### Removed
+- Removed the Pinball game and its homepage cabinet (replaced by RAGE WINGS).
+
 ## [1.3.1] — 2026-07-04
 
 ### Changed
