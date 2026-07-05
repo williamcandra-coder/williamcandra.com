@@ -20,6 +20,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Do Not Ask the Goh Pok Tong" fortune-telling machine — page + concept TBD.
 - "Do Not Enter" door — About page as a retro RPG character screen.
 
+## [1.3.1] — 2026-07-04
+
+### Changed
+- Shrank the "AFTER HOURS" header font-size clamp and forced it onto a single
+  line (`white-space:nowrap`) so it no longer touches the screen edges or wraps
+  on small phones.
+
 ## [1.3.0] — 2026-07-04
 
 ### Added
