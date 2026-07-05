@@ -11,10 +11,10 @@ deploys straight to GitHub Pages.
 
 ## Current status
 
-- **v1.0.0** — Homepage (`index.html`) is complete and deployable.
-- Game pages (`pinball.html`, `snake.html`, `breakout.html`, `minesweeper.html`)
-  are **not built yet**. Their cabinet links are live but will show the
-  on-brand `404.html` until each game ships. See `CHANGELOG.md` for the roadmap.
+- **v1.4.0** — Homepage (`index.html`) plus three playable games: **RAGE WINGS**
+  (`rage-wings.html`), **Snake** (`snake.html`), and **Breakout** (`breakout.html`).
+- **Minesweeper** (`minesweeper.html`) isn't built yet — its cabinet link shows
+  the on-brand `404.html` until it ships. See `CHANGELOG.md` for the roadmap.
 
 ---
 
@@ -22,12 +22,12 @@ deploys straight to GitHub Pages.
 
 ```
 /
-├── index.html        # Homepage — the arcade room (v1.0.0)
+├── index.html        # Homepage — the arcade room
 ├── 404.html          # On-brand "cabinet out of order" fallback
-├── pinball.html      # (planned) retro pinball
-├── snake.html        # (planned) snake
-├── breakout.html     # (planned) hard breakout
-├── minesweeper.html  # (planned) max-difficulty minesweeper
+├── rage-wings.html   # RAGE WINGS — one-tap flappy-style game
+├── snake.html        # Snake
+├── breakout.html     # Breakout rage game
+├── minesweeper.html  # (planned) max-difficulty minesweeper — cabinet 404s for now
 ├── CNAME             # Custom domain for GitHub Pages (williamcandra.com)
 ├── .gitignore
 ├── CHANGELOG.md      # Version history (semantic versioning)
