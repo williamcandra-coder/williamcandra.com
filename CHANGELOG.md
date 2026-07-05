@@ -13,10 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- `pinball.html` — retro pinball game (flagship).
-- `breakout.html` — a hard, complex Breakout.
 - `minesweeper.html` — classic Minesweeper at maximum difficulty.
-- `snake.html` — Snake game (already prototyped, to be added to repo).
 - "Do Not Ask the Goh Pok Tong" fortune-telling machine — page + concept TBD.
 - "Do Not Enter" door — About page as a retro RPG character screen.
 
