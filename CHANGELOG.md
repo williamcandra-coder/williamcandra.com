@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Do Not Ask the Goh Pok Tong" fortune-telling machine — page + concept TBD.
 - "Do Not Enter" door — About page as a retro RPG character screen.
 
+## [1.4.2] — 2026-07-05
+
+### Added
+- Added `goh-pok-tong.html` as an unlinked preview; cabinet remains COMING SOON
+  pending polish.
+
 ## [1.4.1] — 2026-07-05
 
 ### Changed
