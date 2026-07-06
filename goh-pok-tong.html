@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DO NOT ASK THE GOH POK TONG — After Hours Arcade</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+  :root{
+    --bg-black:#0d0817; --bg-deep:#1a1230;
+    --amber:#ffc857; --amber-deep:#ffb627; --amber-dark:#d4882a;
+    --purple:#7b5ea7; --purple-deep:#2a1a4a;
+    --rage:#ff4d3d; --text:#e8e2f5; --text-muted:#9d8fc7; --panel:#241a3d;
+    --wood:#5fbf6a; --fire:#ff6b5a; --earth:#e0a94f; --metal:#d8d0e8; --water:#5aa9e6;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    background:var(--bg-black);
+    font-family:'VT323', monospace; color:var(--text);
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:16px 12px 50px;
+  }
+  .pixel{font-family:'Press Start 2P', monospace;}
+  .topbar{
+    width:100%; max-width:560px;
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;
+  }
+  .back-link{
+    font-size:16px; color:var(--amber); text-decoration:none;
+    border:2px solid var(--amber); padding:4px 10px; border-radius:3px;
+  }
+  .back-link:active,.back-link:hover{background:var(--amber); color:var(--bg-black);}
+
+  .header{ text-align:center; margin-bottom:8px; }
+  .header .name{
+    font-family:'Press Start 2P', monospace;
+    font-size:clamp(15px,4.5vw,24px); color:var(--purple);
+    text-shadow:0 0 4px var(--purple), 0 0 16px rgba(123,94,167,0.5);
+    line-height:1.5;
+  }
+  .header .sub{ font-size:18px; color:var(--text-muted); margin-top:8px; }
+
+  .crystal{ font-size:44px; text-align:center; margin:6px 0 4px; filter:drop-shadow(0 0 12px rgba(123,94,167,0.6)); }
+
+  .panel{
+    width:100%; max-width:560px;
+    background:var(--bg-deep); border:3px solid var(--panel); border-radius:8px;
+    padding:18px 16px; margin-bottom:16px;
+    box-shadow:0 0 0 2px #000, 0 12px 40px rgba(0,0,0,0.5);
+  }
+  .panel h2{
+    font-family:'Press Start 2P', monospace; font-size:11px; color:var(--amber);
+    margin:0 0 14px; letter-spacing:1px;
+  }
+
+  label{ display:block; font-size:17px; color:var(--text-muted); margin:10px 0 4px; }
+  input, select{
+    width:100%; font-family:'VT323', monospace; font-size:19px;
+    background:#0d0817; color:var(--text);
+    border:2px solid var(--panel); border-radius:4px; padding:8px 10px;
+  }
+  input:focus, select:focus{ outline:none; border-color:var(--amber); }
+  .row{ display:flex; gap:8px; }
+  .row > div{ flex:1; }
+  .dob-row{ display:flex; gap:6px; }
+  .dob-row select{ flex:1; }
+
+  .ask-btn{
+    width:100%; margin-top:18px;
+    font-family:'Press Start 2P', monospace; font-size:13px; color:var(--bg-black);
+    background:var(--amber); border:none; padding:16px; border-radius:5px;
+    cursor:pointer; box-shadow:0 5px 0 var(--amber-dark);
+  }
+  .ask-btn:active{ transform:translateY(4px); box-shadow:0 1px 0 var(--amber-dark); }
+  .ask-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+
+  .disclaimer{ font-size:14px; color:#6b5f8f; margin-top:12px; line-height:1.4; text-align:center; }
+
+  /* ---- reading output ---- */
+  .reading{ display:none; }
+  .reading.show{ display:block; }
+
+  .chart-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:6px 0 16px;
+  }
+  .pillar{
+    background:#0d0817; border:2px solid var(--panel); border-radius:6px;
+    padding:10px 4px; text-align:center;
+  }
+  .pillar .plabel{ font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
+  .pillar .pstem{ font-family:'Press Start 2P',monospace; font-size:10px; margin:8px 0 4px; }
+  .pillar .pbranch{ font-size:16px; color:var(--text-muted); }
+  .pillar .panimal{ font-size:14px; color:var(--amber-deep); margin-top:2px; }
+
+  .elements{ display:flex; gap:4px; margin:4px 0 16px; height:22px; border-radius:4px; overflow:hidden; border:2px solid var(--panel); }
+  .el-seg{ display:flex; align-items:center; justify-content:center; font-size:12px; color:#0d0817; font-weight:bold; min-width:2px; }
+
+  .section{ margin-bottom:16px; }
+  .section .stitle{
+    font-family:'Press Start 2P', monospace; font-size:10px; color:var(--purple);
+    margin-bottom:6px; letter-spacing:1px;
+  }
+  .section .stext{ font-size:19px; line-height:1.55; color:var(--text); }
+
+  .gpt-quote{
+    border-left:3px solid var(--amber); padding:4px 0 4px 12px; margin:4px 0;
+    font-size:19px; line-height:1.5; color:#e8e2f5;
+  }
+
+  .divider{ height:2px; background:var(--panel); margin:16px 0; }
+
+  /* ask-one-more */
+  .ask-more{ margin-top:8px; }
+  .ask-more input{ margin-bottom:8px; }
+  .ask-more-btn{
+    width:100%; font-family:'Press Start 2P', monospace; font-size:11px;
+    color:var(--amber); background:transparent; border:2px solid var(--amber);
+    padding:14px; border-radius:5px; cursor:pointer;
+  }
+  .ask-more-btn:active{ background:var(--amber); color:var(--bg-black); }
+  .ask-more-btn:disabled{ opacity:0.4; }
+  .gpt-answer{ margin-top:12px; font-size:19px; line-height:1.55; color:var(--text); display:none; }
+  .gpt-answer.show{ display:block; }
+  .coming-soon-note{ font-size:14px; color:#6b5f8f; text-align:center; margin-top:8px; }
+
+  .loading{ text-align:center; font-size:18px; color:var(--amber); padding:20px; display:none; }
+  .loading.show{ display:block; }
+  .err{ color:var(--rage); font-size:16px; text-align:center; margin-top:8px; }
+
+  .restart{
+    display:block; margin:8px auto 0; font-family:'Press Start 2P',monospace; font-size:11px;
+    color:var(--text-muted); background:transparent; border:2px solid var(--panel);
+    padding:12px 18px; border-radius:5px; cursor:pointer;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="index.html" class="back-link">&#9760; EVACUATE</a>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="crystal">🔮</div>
+  <div class="header">
+    <div class="name pixel">DO NOT ASK THE<br>GOH POK TONG</div>
+    <div class="sub">(he knows anyway)</div>
+  </div>
+
+  <!-- ===== FORM ===== -->
+  <div class="panel" id="formPanel">
+    <h2 class="pixel">STATE YOUR BUSINESS</h2>
+    <div class="row">
+      <div>
+        <label>First Name</label>
+        <input type="text" id="firstName" placeholder="Ah">
+      </div>
+      <div>
+        <label>Last Name</label>
+        <input type="text" id="lastName" placeholder="Beng">
+      </div>
+    </div>
+
+    <label>Date of Birth</label>
+    <div class="dob-row">
+      <select id="dobDay"></select>
+      <select id="dobMonth"></select>
+      <select id="dobYear"></select>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Time of Birth</label>
+        <input type="time" id="dobTime" value="12:00">
+      </div>
+      <div>
+        <label>Gender</label>
+        <select id="gender">
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Country</label>
+        <select id="country"></select>
+      </div>
+      <div>
+        <label>City</label>
+        <input type="text" id="city" placeholder="Surabaya">
+      </div>
+    </div>
+
+    <button class="ask-btn pixel" id="askBtn">CONSULT THE UNCLE</button>
+    <div class="disclaimer">
+      For entertainment only. Uncle is not a licensed anything. Your details are used to
+      calculate your chart and may be stored to improve the readings.
+    </div>
+  </div>
+
+  <!-- ===== READING ===== -->
+  <div class="reading" id="reading">
+    <div class="panel">
+      <h2 class="pixel">YOUR CHART (八字)</h2>
+      <div class="chart-grid" id="chartGrid"></div>
+      <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">ELEMENT BALANCE</div>
+      <div class="elements" id="elements"></div>
+      <div id="tstNote" style="font-size:13px;color:#6b5f8f;margin-top:8px;line-height:1.4;"></div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <div class="stitle pixel">▸ UNCLE'S OPENING REMARK</div>
+        <div class="gpt-quote" id="opener"></div>
+      </div>
+      <div class="section">
+        <div class="stitle pixel">▸ WHO YOU ARE</div>
+        <div class="stext" id="personality"></div>
+      </div>
+      <div class="section">
+        <div class="stitle pixel">▸ MONEY & CAREER</div>
+        <div class="stext" id="career"></div>
+      </div>
+      <div class="section">
+        <div class="stitle pixel">▸ LOVE & FAMILY</div>
+        <div class="stext" id="love"></div>
+      </div>
+      <div class="section">
+        <div class="stitle pixel">▸ WHAT'S COMING</div>
+        <div class="stext" id="luck"></div>
+      </div>
+      <div class="section">
+        <div class="stitle pixel">▸ UNCLE'S PARTING SHOT</div>
+        <div class="gpt-quote" id="closer"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2 class="pixel">ASK UNCLE ONE MORE THING</h2>
+      <div class="ask-more">
+        <input type="text" id="question" placeholder="e.g. will I be rich? should I quit my job?">
+        <button class="ask-more-btn pixel" id="askMoreBtn">ASK (1 QUESTION)</button>
+        <div class="loading" id="loading">Uncle is thinking… and judging…</div>
+        <div class="gpt-answer" id="gptAnswer"></div>
+        <div class="err" id="askErr"></div>
+        <div class="coming-soon-note" id="comingSoon"></div>
+      </div>
+    </div>
+
+    <button class="restart pixel" id="restartBtn">ASK ABOUT SOMEONE ELSE</button>
+  </div>
+
+<script>
+/* ============================================================
+   CONFIG — fill these after you set up the Worker + Google Sheet
+   ============================================================ */
+const CONFIG = {
+  // Cloudflare Worker URL for the paid "ask one more question" button.
+  // Leave "" to show a "coming soon" note instead of calling Claude.
+  WORKER_URL: "",
+
+  // Google Apps Script web-app URL for storing submissions (timestamp + form fields).
+  // Leave "" to disable storage.
+  SHEET_URL: ""
+};
+
+/* ============================================================
+   BAZI ENGINE (client-side, calibrated)
+   ============================================================ */
+const STEMS = ['Jia','Yi','Bing','Ding','Wu','Ji','Geng','Xin','Ren','Gui'];
+const STEM_EL = ['Wood','Wood','Fire','Fire','Earth','Earth','Metal','Metal','Water','Water'];
+const STEM_YY = ['Yang','Yin','Yang','Yin','Yang','Yin','Yang','Yin','Yang','Yin'];
+const BRANCHES = ['Zi','Chou','Yin','Mao','Chen','Si','Wu','Wei','Shen','You','Xu','Hai'];
+const BRANCH_EL = ['Water','Earth','Wood','Wood','Earth','Fire','Fire','Earth','Metal','Metal','Earth','Water'];
+const ANIMAL = ['Rat','Ox','Tiger','Rabbit','Dragon','Snake','Horse','Goat','Monkey','Rooster','Dog','Pig'];
+// hidden stems in each branch (simplified principal element weighting)
+const BRANCH_HIDDEN = {
+  0:['Gui'],1:['Ji','Gui','Xin'],2:['Jia','Bing','Wu'],3:['Yi'],4:['Wu','Yi','Gui'],
+  5:['Bing','Wu','Geng'],6:['Ding','Ji'],7:['Ji','Ding','Yi'],8:['Geng','Ren','Wu'],
+  9:['Xin'],10:['Wu','Xin','Ding'],11:['Ren','Jia']
+};
+
+function jdn(y,m,d){ let a=Math.floor((14-m)/12); let yy=y+4800-a; let mm=m+12*a-3;
+  return d+Math.floor((153*mm+2)/5)+365*yy+Math.floor(yy/4)-Math.floor(yy/100)+Math.floor(yy/400)-32045; }
+
+function yearPillar(y){ let s=((y-1984)%10+10)%10; let b=((y-1984)%12+12)%12; return {s,b}; }
+
+// month pillar: solar-term approximated by month; stem derived from year stem
+function monthPillar(y,m){
+  // branch: month 1(Feb start)... approximate by calendar month mapped to branch (Yin=Feb)
+  // Using simplified: branch index = (m+1)%12 mapping Feb->Yin(2)
+  const branch = ((m+1)%12+12)%12;
+  const yStem = yearPillar(y).s;
+  // month stem formula: (yearStem%5)*2 + monthOrder, standard "Five Tigers" rule (approx)
+  const monthOrder = ((m+10)%12); // Feb=0
+  const stem = ((yStem%5)*2 + 2 + monthOrder)%10;
+  return {s:stem, b:branch};
+}
+
+function dayPillar(y,m,d){ let idx=((jdn(y,m,d)+49)%60+60)%60; return {s:idx%10, b:idx%12, idx}; }
+
+// hour pillar: branch from hour, stem from day stem (Five Rats rule)
+function hourPillar(dayStem, hour){
+  const branch = Math.floor(((hour+1)%24)/2)%12;
+  const stem = ((dayStem%5)*2 + branch)%10;
+  return {s:stem, b:branch};
+}
+
+/* ---- True Solar Time correction ----
+   Adjusts the birth clock time to actual solar time using birth longitude.
+   TST = clock time + longitude correction + equation of time.
+   Longitude correction: 4 min per degree from the timezone's standard meridian. */
+const CITY_LON = {
+  // Indonesia
+  'surabaya':112.75,'jakarta':106.85,'bandung':107.6,'medan':98.67,'semarang':110.42,
+  'makassar':119.42,'denpasar':115.22,'yogyakarta':110.37,'malang':112.63,
+  // SE Asia / East Asia
+  'singapore':103.82,'kuala lumpur':101.69,'penang':100.33,'johor bahru':103.76,
+  'bangkok':100.5,'manila':120.98,'ho chi minh city':106.66,'hanoi':105.85,
+  'beijing':116.4,'shanghai':121.47,'guangzhou':113.26,'shenzhen':114.06,'hong kong':114.17,
+  'taipei':121.56,'kaohsiung':120.3,'tokyo':139.69,'osaka':135.5,'seoul':126.98,
+  // West
+  'new york':-74.0,'los angeles':-118.24,'chicago':-87.63,'san francisco':-122.42,
+  'london':-0.13,'manchester':-2.24,'sydney':151.21,'melbourne':144.96,'mumbai':72.88,'delhi':77.1
+};
+// rough timezone UTC offset per country (standard, no DST — good enough for TST)
+const COUNTRY_TZ = {
+  'Indonesia':7,'Singapore':8,'Malaysia':8,'China':8,'Taiwan':8,'Hong Kong':8,
+  'United States':-6,'United Kingdom':0,'Australia':10,'Japan':9,'South Korea':9,
+  'India':5.5,'Philippines':8,'Thailand':7,'Vietnam':7,'Other':0
+};
+
+function dayOfYear(y,m,d){ const a=new Date(Date.UTC(y,m-1,d)); const s=new Date(Date.UTC(y,0,0)); return Math.floor((a-s)/86400000); }
+function equationOfTime(doy){ const B=2*Math.PI*(doy-81)/364; return 9.87*Math.sin(2*B)-7.53*Math.cos(B)-1.5*Math.sin(B); }
+
+function trueSolarHour(y,mo,d, clockHour, clockMin, city, country){
+  const lon = CITY_LON[(city||'').trim().toLowerCase()];
+  const tz = COUNTRY_TZ[country] ?? 0;
+  let totalMin = clockHour*60 + clockMin;
+  let corrected = totalMin;
+  let precise = false;
+  if(lon !== undefined){
+    const standardMeridian = tz*15;
+    const lonCorr = (lon - standardMeridian)*4;        // minutes
+    const eot = equationOfTime(dayOfYear(y,mo,d));      // minutes
+    corrected = totalMin + lonCorr + eot;
+    precise = true;
+  }
+  // wrap into 0..1440
+  corrected = ((corrected % 1440) + 1440) % 1440;
+  return { hour: Math.floor(corrected/60), minute: Math.round(corrected%60), precise };
+}
+
+function computeBazi(y,mo,d,clockHour,clockMin,city,country){
+  const tst = trueSolarHour(y,mo,d,clockHour,clockMin,city,country);
+  const yp=yearPillar(y), mp=monthPillar(y,mo), dp=dayPillar(y,mo,d), hp=hourPillar(dp.s,tst.hour);
+  const tally={Wood:0,Fire:0,Earth:0,Metal:0,Water:0};
+  [yp,mp,dp,hp].forEach(p=>{ tally[STEM_EL[p.s]]+=2; tally[BRANCH_EL[p.b]]+=1; });
+  return {yp,mp,dp,hp,tally, dayMaster:dp.s, tst};
+}
+
+/* ============================================================
+   READING TEMPLATES — chaotic uncle voice
+   ============================================================ */
+const EL_COLOR={Wood:'var(--wood)',Fire:'var(--fire)',Earth:'var(--earth)',Metal:'var(--metal)',Water:'var(--water)'};
+
+const DAYMASTER_PERSONALITY = {
+  Jia:"You're a big tree — Yang Wood. Stubborn, upright, you don't bend for nonsense. Also you cannot take a hint. People lean on you and you let them, then you complain about it. Aiyoh.",
+  Yi:"Yin Wood — you're a vine, not a tree. Flexible, charming, you survive by wrapping around whatever's stronger nearby. Clever. Some people call it adaptable. Uncle calls it 'knowing which boss to follow.'",
+  Bing:"Yang Fire — the sun itself. You walk in, everyone notices, you cannot help it. Warm, dramatic, generous. Also you burn out fast and sulk. Big light, small battery.",
+  Ding:"Yin Fire — a candle, a lamp. You don't blast, you glow. Thoughtful, a bit moody, secretly very sharp. You notice everything and say nothing. Scary, actually.",
+  Wu:"Yang Earth — a mountain. Steady, reliable, immovable. People trust you. But uncle will say it plain: sometimes 'steady' is just 'refusing to change.' Move a little, ah.",
+  Ji:"Yin Earth — a field, a garden. Nurturing, practical, you make things grow. You take care of everyone. Question: who is taking care of YOU? Hm? Thought so.",
+  Geng:"Yang Metal — an axe, a blade. Direct, tough, you cut through nonsense. Loyal but blunt. You've hurt feelings by 'just being honest.' Uncle respects it but your friends are tired.",
+  Xin:"Yin Metal — jewelry, a fine knife. Refined, particular, you like nice things and you have taste. Also a bit vain, let's be honest. You'd rather look good than be comfortable.",
+  Ren:"Yang Water — the ocean. Big ideas, always moving, hard to pin down. Smart and restless. You start ten things. You finish… we don't talk about that.",
+  Gui:"Yin Water — mist, rain, a quiet stream. Gentle, intuitive, you feel everything. Deep thinker. Also you overthink until 3am about a text from 2019. Uncle sees you."
+};
+
+const CAREER_BY_STRONG = {
+  Wood:"Your Wood is loud. You need to BUILD things — projects, teams, plans that grow. Bad at boring maintenance jobs. Start something. Just finish it also, please.",
+  Fire:"Fire is strong in you. You shine in front of people — selling, presenting, leading, performing. Put you in a back office and you'll wilt. Get seen. Get paid for being seen.",
+  Earth:"Heavy Earth. You're the reliable one, the foundation, the operations person everyone needs. Property, land, food, logistics — solid money there. Not flashy. Rich quietly.",
+  Metal:"Strong Metal. You cut, decide, execute. Finance, law, surgery, engineering, anything with precision and consequences. You're wasted on wishy-washy work. Go where sharp matters.",
+  Water:"Water dominant. Ideas, movement, communication, trade. You connect things and people. Great at strategy, terrible at sitting still. Money comes when you flow, not when you force."
+};
+
+const CAREER_BY_WEAK = {
+  Wood:"Your Wood is thin — you struggle to start and grow things alone. Partner with builders. Don't try to be the visionary; be the one who makes the vision real.",
+  Fire:"Low Fire — visibility is not your natural game. That's fine. Work behind the scenes where depth beats sparkle. Let louder people do the stage; you do the substance.",
+  Earth:"Weak Earth — you lack ballast, you scatter. You need structure and routine you didn't choose yourself. A stable company, a steady partner. Don't freelance into chaos.",
+  Metal:"Thin Metal — decisions haunt you, you second-guess. Build systems that decide for you. Avoid careers that are ALL judgment calls. You'll exhaust yourself.",
+  Water:"Low Water — ideas don't flow easily, you get stuck. Surround yourself with clever, mobile people. Your gift is elsewhere: probably in steadiness, not innovation."
+};
+
+const LOVE_BY_YY = {
+  Yang:"In love you lead, you chase, you decide — and you scare the soft ones a bit. You need someone who won't fold under you but won't fight you for the wheel either. Rare. Keep them.",
+  Yin:"In love you receive, you sense, you wait to be chosen — and then complain nobody chose. Aiyoh. You feel deeply but hide it. Say what you want out loud, ONE time, and watch."
+};
+
+const OPENERS = [
+  "Sit. Don't touch anything. Let uncle look at you… mm. MM. Okay. I see it already.",
+  "Ah, another one. Give me your birthday, not your whole life story. Good. Now quiet.",
+  "You came to a machine in an arcade for your destiny. Bold. Okay lah, uncle will oblige.",
+  "Before you ask — yes, uncle already knows why you're here. But go on, pretend.",
+  "Hmph. Interesting chart. Not good, not bad. Interesting. Like a curry with too much salt."
+];
+const CLOSERS = [
+  "That's all uncle will say for free. The rest, you already know but don't want to admit. Go.",
+  "Now go bother someone your own age. Uncle is tired. But… you'll be fine. Mostly.",
+  "Remember: the chart shows the weather, not whether you bring an umbrella. That part is you.",
+  "Uncle has spoken. Screenshot it, forget it, live your life. Come back when you ignore this advice.",
+  "Don't cry. It's not that bad. Actually — okay it's a little bad. But you're stubborn enough. Go."
+];
+
+function pick(arr,seed){ return arr[Math.abs(seed)%arr.length]; }
+
+function strongestWeakest(tally){
+  let entries=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
+  return {strong:entries[0][0], weak:entries[entries.length-1][0]};
+}
+
+function buildReading(b, name){
+  const dm = STEMS[b.dayMaster];
+  const yy = STEM_YY[b.dayMaster];
+  const {strong,weak}=strongestWeakest(b.tally);
+  const seed = b.dp.idx + b.yp.s + b.yp.b;
+  const strongIsHigh = b.tally[strong] >= 5; // rough "day master supported" proxy
+  return {
+    opener: pick(OPENERS, seed),
+    personality: DAYMASTER_PERSONALITY[dm],
+    career: strongIsHigh ? CAREER_BY_STRONG[strong] : CAREER_BY_WEAK[weak],
+    love: LOVE_BY_YY[yy] + " Your strongest element is "+strong+", so you bring a lot of that energy into a room — for better and for worse.",
+    luck: "Right now your "+weak+" is running low, and life will keep poking exactly there until you deal with it. The next couple of years reward patience over hustle. Uncle means it. Stop forcing.",
+    closer: pick(CLOSERS, seed+3)
+  };
+}
+
+/* ============================================================
+   UI WIRING
+   ============================================================ */
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const COUNTRIES=['Indonesia','Singapore','Malaysia','China','Taiwan','Hong Kong','United States','United Kingdom','Australia','Japan','South Korea','India','Philippines','Thailand','Vietnam','Other'];
+
+function initForm(){
+  const dayS=document.getElementById('dobDay'), moS=document.getElementById('dobMonth'), yrS=document.getElementById('dobYear');
+  for(let d=1;d<=31;d++) dayS.add(new Option(String(d).padStart(2,'0'),d));
+  MONTHS.forEach((m,i)=> moS.add(new Option(m,i+1)));
+  const now=new Date().getFullYear();
+  for(let y=now;y>=1920;y--) yrS.add(new Option(y,y));
+  yrS.value=1990;
+  const cS=document.getElementById('country');
+  COUNTRIES.forEach(c=> cS.add(new Option(c,c)));
+  cS.value='Indonesia';
+}
+initForm();
+
+document.getElementById('askBtn').addEventListener('click', onConsult);
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  document.getElementById('reading').classList.remove('show');
+  document.getElementById('formPanel').style.display='block';
+  window.scrollTo(0,0);
+});
+
+async function onConsult(){
+  const first=document.getElementById('firstName').value.trim();
+  const last=document.getElementById('lastName').value.trim();
+  const d=+document.getElementById('dobDay').value;
+  const mo=+document.getElementById('dobMonth').value;
+  const y=+document.getElementById('dobYear').value;
+  const time=document.getElementById('dobTime').value||'12:00';
+  const gender=document.getElementById('gender').value;
+  const country=document.getElementById('country').value;
+  const city=document.getElementById('city').value.trim();
+  if(!first){ alert('Uncle needs at least your first name, ah.'); return; }
+  const [hh,mm]=time.split(':').map(n=>parseInt(n,10));
+
+  const bazi=computeBazi(y,mo,d,hh,mm||0,city,country);
+  const reading=buildReading(bazi, first);
+  renderReading(bazi, reading);
+
+  // store submission (timestamp + form fields only) — if configured
+  storeSubmission({
+    timestamp:new Date().toISOString(),
+    first, last,
+    dob:`${String(d).padStart(2,'0')}-${MONTHS[mo-1]}-${y}`,
+    time, gender, country, city
+  });
+
+  window._baziContext={first,gender,chart:bazi,reading};
+}
+
+function renderReading(b, r){
+  document.getElementById('formPanel').style.display='none';
+  const grid=document.getElementById('chartGrid');
+  const pillars=[['HOUR',b.hp],['DAY',b.dp],['MONTH',b.mp],['YEAR',b.yp]];
+  grid.innerHTML=pillars.map(([lbl,p])=>`
+    <div class="pillar">
+      <div class="plabel">${lbl}</div>
+      <div class="pstem" style="color:${EL_COLOR[STEM_EL[p.s]]}">${STEMS[p.s]}</div>
+      <div class="pbranch">${BRANCHES[p.b]}</div>
+      <div class="panimal">${ANIMAL[p.b]}</div>
+    </div>`).join('');
+
+  const total=Object.values(b.tally).reduce((a,c)=>a+c,0);
+  document.getElementById('elements').innerHTML=Object.entries(b.tally).map(([el,v])=>{
+    const pct=(v/total*100);
+    return pct>0?`<div class="el-seg" style="background:${EL_COLOR[el]};flex:${v}" title="${el}">${pct>10?el[0]:''}</div>`:'';
+  }).join('');
+
+  // True Solar Time transparency note
+  const tstNote=document.getElementById('tstNote');
+  if(tstNote){
+    tstNote.textContent = b.tst.precise
+      ? `⌖ Hour pillar uses True Solar Time (adjusted for your city's longitude).`
+      : `⌖ City not in longitude list — hour pillar uses clock time (slightly less precise).`;
+  }
+
+  document.getElementById('opener').textContent=r.opener;
+  document.getElementById('personality').textContent=r.personality;
+  document.getElementById('career').textContent=r.career;
+  document.getElementById('love').textContent=r.love;
+  document.getElementById('luck').textContent=r.luck;
+  document.getElementById('closer').textContent=r.closer;
+
+  document.getElementById('reading').classList.add('show');
+  // configure ask-more availability
+  const comingSoon=document.getElementById('comingSoon');
+  const askMoreBtn=document.getElementById('askMoreBtn');
+  if(!CONFIG.WORKER_URL){
+    askMoreBtn.disabled=true;
+    comingSoon.textContent="(Uncle's deeper wisdom is coming soon — the live chat isn't switched on yet.)";
+  } else {
+    askMoreBtn.disabled=false; comingSoon.textContent="";
+  }
+  window.scrollTo(0,0);
+  document.getElementById('reading').scrollIntoView({behavior:'smooth'});
+}
+
+/* ---- Google Sheets storage (optional) ---- */
+async function storeSubmission(data){
+  if(!CONFIG.SHEET_URL) return; // storage disabled
+  try{
+    // no-cors form-style POST to Google Apps Script (avoids CORS preflight issues)
+    await fetch(CONFIG.SHEET_URL,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(data)
+    });
+  }catch(e){ /* silent — storage must never block the reading */ }
+}
+
+/* ---- Ask one more (LLM via Worker) ---- */
+document.getElementById('askMoreBtn').addEventListener('click', async ()=>{
+  const q=document.getElementById('question').value.trim();
+  if(!q){ document.getElementById('askErr').textContent="Ask something first, ah."; return; }
+  if(!CONFIG.WORKER_URL) return;
+  const btn=document.getElementById('askMoreBtn'), loading=document.getElementById('loading'),
+        ans=document.getElementById('gptAnswer'), err=document.getElementById('askErr');
+  err.textContent=''; ans.classList.remove('show'); loading.classList.add('show'); btn.disabled=true;
+  try{
+    const ctx=window._baziContext;
+    const chartStr=`Day Master ${STEMS[ctx.chart.dayMaster]} (${STEM_EL[ctx.chart.dayMaster]}), elements ${JSON.stringify(ctx.chart.tally)}`;
+    const res=await fetch(CONFIG.WORKER_URL,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ question:q, name:ctx.first, gender:ctx.gender, chart:chartStr })
+    });
+    if(!res.ok) throw new Error('Uncle is busy (error '+res.status+')');
+    const data=await res.json();
+    ans.textContent=data.answer || "Uncle went quiet. Try again.";
+    ans.classList.add('show');
+  }catch(e){
+    err.textContent=e.message||"Something broke. Uncle blames you.";
+  }finally{
+    loading.classList.remove('show'); btn.disabled=false;
+  }
+});
+</script>
+</body>
+</html>
