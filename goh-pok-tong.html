@@ -252,6 +252,8 @@
     <button class="restart pixel" id="restartBtn">ASK ABOUT SOMEONE ELSE</button>
   </div>
 
+<!-- Bazi engine (bundled from bazi-calculator-by-alvamind, MIT license, trimmed to 1960+) -->
+<script src="bazi-engine.min.js"></script>
 <script>
 /* ============================================================
    CONFIG — fill these after you set up the Worker + Google Sheet
@@ -263,7 +265,7 @@ const CONFIG = {
 
   // Google Apps Script web-app URL for storing submissions (timestamp + form fields).
   // Leave "" to disable storage.
-  SHEET_URL: "https://script.google.com/macros/s/AKfycby9tkYovPNMtyEIzQJRKJB72gXdMG4oeu2zn5IRcgmAFa-AQtSTYvJkFothdrc4ItsB/exec"
+  SHEET_URL: ""
 };
 
 /* ============================================================
@@ -353,12 +355,32 @@ function trueSolarHour(y,mo,d, clockHour, clockMin, city, country){
   return { hour: Math.floor(corrected/60), minute: Math.round(corrected%60), precise };
 }
 
+/* ---- Adapter: alvamind engine → template-friendly shape ----
+   Engine returns Chinese chars + UPPERCASE elements; templates use
+   romanized stems (Jia/Yi...) + TitleCase elements. This maps between them
+   and keeps the True Solar Time hour correction. */
+const CN_TO_STEM = {'甲':0,'乙':1,'丙':2,'丁':3,'戊':4,'己':5,'庚':6,'辛':7,'壬':8,'癸':9};
+const CN_TO_BRANCH = {'子':0,'丑':1,'寅':2,'卯':3,'辰':4,'巳':5,'午':6,'未':7,'申':8,'酉':9,'戌':10,'亥':11};
+
+function pillarFromChinese(s){
+  return { s: CN_TO_STEM[s.charAt(0)], b: CN_TO_BRANCH[s.charAt(1)] };
+}
+
+const MIN_YEAR = 1960; // engine data trimmed to 1960+
+
 function computeBazi(y,mo,d,clockHour,clockMin,city,country){
+  if(y < MIN_YEAR) throw new Error('YEAR_RANGE');
   const tst = trueSolarHour(y,mo,d,clockHour,clockMin,city,country);
-  const yp=yearPillar(y), mp=monthPillar(y,mo), dp=dayPillar(y,mo,d), hp=hourPillar(dp.s,tst.hour);
-  const tally={Wood:0,Fire:0,Earth:0,Metal:0,Water:0};
-  [yp,mp,dp,hp].forEach(p=>{ tally[STEM_EL[p.s]]+=2; tally[BRANCH_EL[p.b]]+=1; });
-  return {yp,mp,dp,hp,tally, dayMaster:dp.s, tst};
+  const calc = new BaziCalculator(y, mo, d, tst.hour, 'male');
+  const full = calc.getCompleteAnalysis();
+  const P = full.mainPillars;
+  const yp=pillarFromChinese(P.year.chinese);
+  const mp=pillarFromChinese(P.month.chinese);
+  const dp=pillarFromChinese(P.day.chinese);
+  const hp=pillarFromChinese(P.time.chinese);
+  const ff = full.basicAnalysis.fiveFactors;
+  const tally={Wood:ff.WOOD||0, Fire:ff.FIRE||0, Earth:ff.EARTH||0, Metal:ff.METAL||0, Water:ff.WATER||0};
+  return {yp,mp,dp,hp,tally, dayMaster:dp.s, tst, engine:full};
 }
 
 /* ============================================================
@@ -426,8 +448,9 @@ function buildReading(b, name){
   const dm = STEMS[b.dayMaster];
   const yy = STEM_YY[b.dayMaster];
   const {strong,weak}=strongestWeakest(b.tally);
-  const seed = b.dp.idx + b.yp.s + b.yp.b;
-  const strongIsHigh = b.tally[strong] >= 5; // rough "day master supported" proxy
+  const seed = b.dp.s*12 + b.dp.b + b.yp.s + b.yp.b;
+  const avg = (b.tally.Wood+b.tally.Fire+b.tally.Earth+b.tally.Metal+b.tally.Water)/5;
+  const strongIsHigh = b.tally[strong] >= avg*1.2; // day-master-supported proxy from engine factors
   return {
     opener: pick(OPENERS, seed),
     personality: DAYMASTER_PERSONALITY[dm],
@@ -449,7 +472,7 @@ function initForm(){
   for(let d=1;d<=31;d++) dayS.add(new Option(String(d).padStart(2,'0'),d));
   MONTHS.forEach((m,i)=> moS.add(new Option(m,i+1)));
   const now=new Date().getFullYear();
-  for(let y=now;y>=1920;y--) yrS.add(new Option(y,y));
+  for(let y=now;y>=1960;y--) yrS.add(new Option(y,y));
   yrS.value=1990;
   const cS=document.getElementById('country');
   COUNTRIES.forEach(c=> cS.add(new Option(c,c)));
@@ -477,8 +500,18 @@ async function onConsult(){
   if(!first){ alert('Uncle needs at least your first name, ah.'); return; }
   const [hh,mm]=time.split(':').map(n=>parseInt(n,10));
 
-  const bazi=computeBazi(y,mo,d,hh,mm||0,city,country);
-  const reading=buildReading(bazi, first);
+  let bazi, reading;
+  try{
+    bazi=computeBazi(y,mo,d,hh,mm||0,city,country);
+    reading=buildReading(bazi, first);
+  }catch(err){
+    if(String(err.message).includes('YEAR_RANGE')){
+      alert("Aiyoh, that's too far back for uncle's machine — it only reads birthdays from 1960 onward. Sorry ah.");
+    } else {
+      alert("Uncle's crystal ball hiccuped. Check your birth date and try again.");
+    }
+    return;
+  }
   renderReading(bazi, reading);
 
   // store submission (timestamp + form fields only) — if configured
