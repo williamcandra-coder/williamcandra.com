@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Do Not Ask the Goh Pok Tong" fortune-telling machine — page + concept TBD.
 - "Do Not Enter" door — About page as a retro RPG character screen.
 
+## [1.4.4] — 2026-07-06
+
+### Changed
+- Goh Pok Tong: real Bazi engine + storage wired. The page now loads
+  `bazi-engine.min.js` and posts submissions to the Google Sheet (`SHEET_URL`
+  set); the paid "ask one more" button stays disabled (`WORKER_URL` empty).
+  (Footer version tag left at v1.4.3 since index.html is not modified.)
+
 ## [1.4.3] — 2026-07-06
 
 ### Changed
