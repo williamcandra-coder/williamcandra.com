@@ -1,0 +1,9 @@
+[
+  {
+    "ruleId": "WEAK_DM_STRONG_WEALTH",
+    "version": "0.1",
+    "status": "hypothesis",
+    "finding": "Opportunity appetite may exceed carrying capacity.",
+    "uncle": "You got money antenna, but battery low. Build the system first."
+  }
+]

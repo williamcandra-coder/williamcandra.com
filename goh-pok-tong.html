@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GOH POK TONG — After Hours</title>
+<meta name="description" content="Feed the machine your birthday. Uncle reads your Four Pillars and tells you what he sees. No refunds. No guarantee.">
+<meta name="theme-color" content="#0d0c10">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="After Hours">
+<meta property="og:title" content="GOH POK TONG — I already know. sit down first">
+<meta property="og:description" content="Feed the machine your birthday. Uncle reads your Four Pillars and tells you what he sees. No refunds. No guarantee.">
+<meta property="og:image" content="og-goh-pok-tong.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="GOH POK TONG — I already know. sit down first">
+<meta name="twitter:description" content="Feed the machine your birthday. Uncle reads your Four Pillars and tells you what he sees.">
+<meta name="twitter:image" content="og-goh-pok-tong.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@500&family=VT323&display=swap');
 :root{
@@ -120,6 +133,61 @@ input::placeholder{color:#4a4753;}
 .err{color:var(--rage);font-family:'VT323',monospace;font-size:18px;text-align:center;margin-top:8px;}
 .restart{display:block;margin:8px auto 0;font-family:'Press Start 2P',monospace;font-size:10px;color:var(--text-muted);background:transparent;border:2px solid var(--panel);padding:12px 18px;border-radius:6px;}
 
+/* ---- unknown birth time ---- */
+.tcheck{display:flex;align-items:center;gap:7px;margin-top:7px;}
+.tcheck input[type=checkbox]{width:16px;height:16px;flex:0 0 auto;margin:0;padding:0;accent-color:var(--violet);}
+.tcheck label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);
+  margin:0;letter-spacing:0;text-transform:none;}
+input:disabled{opacity:.4;}
+
+/* ---- chart heading + directions ---- */
+.rpanel h2 .who{color:var(--cream);}
+.dirline{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);
+  margin-top:10px;line-height:1.5;}
+.dirline b{color:var(--cream);font-weight:500;}
+.pillar.unknown .pstem,.pillar.unknown .pbranch,.pillar.unknown .panimal{color:var(--dim);}
+
+/* ---- share ---- */
+.sharewrap{display:flex;gap:8px;margin-top:10px;}
+.share-btn{flex:1;font-family:'Press Start 2P',monospace;font-size:9px;line-height:1.3;
+  color:var(--violet);background:transparent;border:2px solid var(--violet);padding:12px 8px;border-radius:6px;}
+.share-btn:active{background:var(--violet);color:var(--bezel);}
+.sharemsg{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--comment);
+  text-align:center;margin-top:7px;min-height:14px;}
+@media (min-width:820px){.share-btn{font-size:12px;}.dirline,.sharemsg,.tcheck label{font-size:13px;}}
+
+/* ---- ENGINE V3 EVIDENCE PANEL — development only ----
+   Every rule below is scoped under #v3Panel, which is only ever inserted into
+   the DOM when the page is loaded with ?engine=v3. Nothing here can reach the
+   approved production rendering. */
+#v3Panel{width:100%;background:#12111a;border:2px dashed var(--violet-deep);border-radius:10px;
+  padding:16px 14px;margin:16px 0 0;box-shadow:inset 0 0 30px rgba(0,0,0,.4);text-align:left;}
+#v3Panel .v3head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+#v3Panel h2{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--violet);margin:0;letter-spacing:1px;}
+#v3Panel .v3tag{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;
+  border:1px solid var(--rage);color:var(--rage);border-radius:3px;padding:2px 5px;}
+#v3Panel .v3sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);
+  line-height:1.5;margin:6px 0 14px;}
+#v3Panel h3{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--cream);
+  letter-spacing:1px;margin:16px 0 7px;}
+#v3Panel table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px;}
+#v3Panel th,#v3Panel td{text-align:left;padding:4px 6px;border-bottom:1px solid #241f2b;
+  color:var(--text);vertical-align:top;word-break:break-word;}
+#v3Panel th{color:var(--text-muted);font-weight:500;white-space:nowrap;}
+#v3Panel td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+#v3Panel ul{margin:0;padding-left:16px;font-family:'JetBrains Mono',monospace;font-size:11px;
+  line-height:1.6;color:var(--text);}
+#v3Panel .v3note{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);
+  line-height:1.5;margin-top:6px;}
+#v3Panel .v3empty{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+#v3Panel .v3err{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--rage);line-height:1.5;}
+#v3Panel code{font-family:'JetBrains Mono',monospace;color:var(--comment);}
+@media (min-width:820px){
+  #v3Panel h2{font-size:12px;}#v3Panel h3{font-size:10px;}
+  #v3Panel table,#v3Panel ul,#v3Panel .v3empty,#v3Panel .v3err{font-size:12px;}
+  #v3Panel .v3sub,#v3Panel .v3note{font-size:11px;}
+}
+
 @media (prefers-reduced-motion: reduce){.screen,.logotype,.select-label .cur{animation:none !important;}}
 
 /* desktop == index rhythm */
@@ -174,12 +242,16 @@ input::placeholder{color:#4a4753;}
       <select id="dobDay"></select><select id="dobMonth"></select><select id="dobYear"></select>
     </div>
     <div class="row">
-      <div><label>Time of Birth</label><input type="time" id="dobTime" value="12:00"></div>
+      <div><label>Time of Birth</label><input type="time" id="dobTime" value="12:00">
+        <div class="tcheck"><input type="checkbox" id="timeUnknown"><label for="timeUnknown">I don't know</label></div>
+      </div>
       <div><label>Gender</label><select id="gender"><option value="male">Male</option><option value="female">Female</option></select></div>
     </div>
     <div class="row">
       <div><label>Country</label><select id="country"></select></div>
-      <div><label>City</label><input type="text" id="city" placeholder="Surabaya"></div>
+      <div><label>City</label><input type="text" id="city" placeholder="Surabaya" list="cityList" autocomplete="off">
+        <datalist id="cityList"></datalist>
+      </div>
     </div>
     <button class="ask-btn pixel" id="askBtn"><svg class="crystal-btn" viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="1" width="4" height="1" fill="#e8dcff"/><rect x="4" y="2" width="1" height="1" fill="#e8dcff"/><rect x="5" y="2" width="6" height="1" fill="#a98fd6"/><rect x="11" y="2" width="1" height="1" fill="#e8dcff"/><rect x="3" y="3" width="1" height="1" fill="#e8dcff"/><rect x="4" y="3" width="8" height="1" fill="#a98fd6"/><rect x="12" y="3" width="1" height="1" fill="#e8dcff"/><rect x="2" y="4" width="1" height="1" fill="#e8dcff"/><rect x="3" y="4" width="3" height="1" fill="#a98fd6"/><rect x="6" y="4" width="1" height="1" fill="#f2ede3"/><rect x="7" y="4" width="6" height="1" fill="#a98fd6"/><rect x="13" y="4" width="1" height="1" fill="#e8dcff"/><rect x="2" y="5" width="1" height="1" fill="#e8dcff"/><rect x="3" y="5" width="2" height="1" fill="#a98fd6"/><rect x="5" y="5" width="2" height="1" fill="#f2ede3"/><rect x="7" y="5" width="6" height="1" fill="#a98fd6"/><rect x="13" y="5" width="1" height="1" fill="#e8dcff"/><rect x="2" y="6" width="3" height="1" fill="#a98fd6"/><rect x="5" y="6" width="1" height="1" fill="#f2ede3"/><rect x="6" y="6" width="6" height="1" fill="#a98fd6"/><rect x="12" y="6" width="1" height="1" fill="#7d68b0"/><rect x="13" y="6" width="1" height="1" fill="#a98fd6"/><rect x="2" y="7" width="9" height="1" fill="#a98fd6"/><rect x="11" y="7" width="2" height="1" fill="#7d68b0"/><rect x="13" y="7" width="1" height="1" fill="#a98fd6"/><rect x="2" y="8" width="8" height="1" fill="#a98fd6"/><rect x="10" y="8" width="3" height="1" fill="#7d68b0"/><rect x="13" y="8" width="1" height="1" fill="#a98fd6"/><rect x="2" y="9" width="1" height="1" fill="#e8dcff"/><rect x="3" y="9" width="6" height="1" fill="#a98fd6"/><rect x="9" y="9" width="4" height="1" fill="#7d68b0"/><rect x="13" y="9" width="1" height="1" fill="#e8dcff"/><rect x="3" y="10" width="1" height="1" fill="#e8dcff"/><rect x="4" y="10" width="3" height="1" fill="#a98fd6"/><rect x="7" y="10" width="5" height="1" fill="#7d68b0"/><rect x="12" y="10" width="1" height="1" fill="#e8dcff"/><rect x="4" y="11" width="1" height="1" fill="#e8dcff"/><rect x="5" y="11" width="1" height="1" fill="#a98fd6"/><rect x="6" y="11" width="5" height="1" fill="#7d68b0"/><rect x="11" y="11" width="1" height="1" fill="#e8dcff"/><rect x="5" y="12" width="6" height="1" fill="#3a3350"/><rect x="4" y="13" width="1" height="1" fill="#3a3350"/><rect x="5" y="13" width="6" height="1" fill="#f2d4ae"/><rect x="11" y="13" width="1" height="1" fill="#3a3350"/><rect x="4" y="14" width="1" height="1" fill="#3a3350"/><rect x="5" y="14" width="6" height="1" fill="#f2d4ae"/><rect x="11" y="14" width="1" height="1" fill="#3a3350"/><rect x="5" y="15" width="6" height="1" fill="#3a3350"/></svg><span>CONSULT THE UNCLE</span></button>
     <div class="disclaimer">No refunds. No guarantee. The uncle says what he sees.</div>
@@ -187,10 +259,11 @@ input::placeholder{color:#4a4753;}
 
   <div class="reading" id="reading">
     <div class="rpanel">
-      <h2 class="pixel">YOUR CHART (八字)</h2>
+      <h2 class="pixel" id="chartTitle">YOUR CHART (八字)</h2>
       <div class="chart-grid" id="chartGrid"></div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);margin-bottom:4px;">ELEMENT BALANCE</div>
       <div class="elements" id="elements"></div>
+      <div class="dirline" id="dirLine"></div>
       <div id="tstNote" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);margin-top:8px;line-height:1.4;"></div>
       <div class="divider"></div>
       <div class="section"><div class="stitle pixel">&#9656; UNCLE'S OPENING REMARK</div><div class="gpt-quote" id="opener"></div></div>
@@ -211,14 +284,21 @@ input::placeholder{color:#4a4753;}
         <div class="coming-soon-note" id="comingSoon"></div>
       </div>
     </div>
+    <div class="sharewrap">
+      <button class="share-btn pixel" id="shareBtn">SEND TO SOMEONE</button>
+    </div>
+    <div class="sharemsg" id="shareMsg"></div>
     <button class="restart pixel" id="restartBtn">ASK ABOUT SOMEONE ELSE</button>
+    <!-- Engine v3 evidence panel mounts here, and ONLY when ?engine=v3 is set.
+         Empty and invisible in production. -->
+    <div id="v3Mount"></div>
   </div>
 
     </div>
   </div>
 </div>
-<!-- Bazi engine (bundled from bazi-calculator-by-alvamind, MIT license, trimmed to 1960+) -->
-<script src="bazi-engine.min.js"></script>
+<!-- Bazi engine (bundled from bazi-calculator-by-alvamind, MIT license, trimmed to 1960+)
+     is no longer loaded here: it is fetched on idle / on first CONSULT. See loadBaziEngine(). -->
 <script>
 /* ============================================================
    CONFIG — fill these after you set up the Worker + Google Sheet
@@ -240,39 +320,40 @@ const STEMS = ['Jia','Yi','Bing','Ding','Wu','Ji','Geng','Xin','Ren','Gui'];
 const STEM_EL = ['Wood','Wood','Fire','Fire','Earth','Earth','Metal','Metal','Water','Water'];
 const STEM_YY = ['Yang','Yin','Yang','Yin','Yang','Yin','Yang','Yin','Yang','Yin'];
 const BRANCHES = ['Zi','Chou','Yin','Mao','Chen','Si','Wu','Wei','Shen','You','Xu','Hai'];
-const BRANCH_EL = ['Water','Earth','Wood','Wood','Earth','Fire','Fire','Earth','Metal','Metal','Earth','Water'];
 const ANIMAL = ['Rat','Ox','Tiger','Rabbit','Dragon','Snake','Horse','Goat','Monkey','Rooster','Dog','Pig'];
-// hidden stems in each branch (simplified principal element weighting)
-const BRANCH_HIDDEN = {
-  0:['Gui'],1:['Ji','Gui','Xin'],2:['Jia','Bing','Wu'],3:['Yi'],4:['Wu','Yi','Gui'],
-  5:['Bing','Wu','Geng'],6:['Ding','Ji'],7:['Ji','Ding','Yi'],8:['Geng','Ren','Wu'],
-  9:['Xin'],10:['Wu','Xin','Ding'],11:['Ren','Jia']
-};
 
-function jdn(y,m,d){ let a=Math.floor((14-m)/12); let yy=y+4800-a; let mm=m+12*a-3;
-  return d+Math.floor((153*mm+2)/5)+365*yy+Math.floor(yy/4)-Math.floor(yy/100)+Math.floor(yy/400)-32045; }
+/* REMOVED: legacy pillar calculator (BRANCH_EL, BRANCH_HIDDEN, jdn, yearPillar,
+   monthPillar, dayPillar, hourPillar).
+   It was a second, unreachable pillar implementation that disagreed with the
+   shipping engine — monthPillar approximated solar terms by calendar month.
+   Verified unreachable before removal: every one of those identifiers occurred
+   exactly once in this file (its own definition) or only inside another member
+   of the same dead group. bazi-engine.min.js is the single source of truth for
+   birth date -> Four Pillars. See ROLLBACK.md if this needs restoring. */
 
-function yearPillar(y){ let s=((y-1984)%10+10)%10; let b=((y-1984)%12+12)%12; return {s,b}; }
-
-// month pillar: solar-term approximated by month; stem derived from year stem
-function monthPillar(y,m){
-  // branch: month 1(Feb start)... approximate by calendar month mapped to branch (Yin=Feb)
-  // Using simplified: branch index = (m+1)%12 mapping Feb->Yin(2)
-  const branch = ((m+1)%12+12)%12;
-  const yStem = yearPillar(y).s;
-  // month stem formula: (yearStem%5)*2 + monthOrder, standard "Five Tigers" rule (approx)
-  const monthOrder = ((m+10)%12); // Feb=0
-  const stem = ((yStem%5)*2 + 2 + monthOrder)%10;
-  return {s:stem, b:branch};
-}
-
-function dayPillar(y,m,d){ let idx=((jdn(y,m,d)+49)%60+60)%60; return {s:idx%10, b:idx%12, idx}; }
-
-// hour pillar: branch from hour, stem from day stem (Five Rats rule)
-function hourPillar(dayStem, hour){
-  const branch = Math.floor(((hour+1)%24)/2)%12;
-  const stem = ((dayStem%5)*2 + branch)%10;
-  return {s:stem, b:branch};
+/* ============================================================
+   LAZY ENGINE LOADER
+   ============================================================
+   bazi-engine.min.js is ~2.5 MB of source (~180 KB over the wire) and parsing
+   it costs real time on a mid-range phone, including for visitors who bounce.
+   It is now fetched on idle after first paint, and awaited on CONSULT if it
+   has not arrived yet. */
+const ENGINE_SRC = 'bazi-engine.min.js';
+let _enginePromise = null;
+function loadBaziEngine(){
+  if(window.BaziCalculator) return Promise.resolve(window.BaziCalculator);
+  if(_enginePromise) return _enginePromise;
+  _enginePromise = new Promise(function(resolve,reject){
+    const sc=document.createElement('script');
+    sc.src=ENGINE_SRC; sc.async=true;
+    sc.onload=function(){
+      window.BaziCalculator ? resolve(window.BaziCalculator)
+                            : reject(new Error('loaded '+ENGINE_SRC+' but BaziCalculator is missing'));
+    };
+    sc.onerror=function(){ _enginePromise=null; reject(new Error('could not load '+ENGINE_SRC)); };
+    document.head.appendChild(sc);
+  });
+  return _enginePromise;
 }
 
 /* ---- True Solar Time correction ----
@@ -280,17 +361,65 @@ function hourPillar(dayStem, hour){
    TST = clock time + longitude correction + equation of time.
    Longitude correction: 4 min per degree from the timezone's standard meridian. */
 const CITY_LON = {
-  // Indonesia
-  'surabaya':112.75,'jakarta':106.85,'bandung':107.6,'medan':98.67,'semarang':110.42,
-  'makassar':119.42,'denpasar':115.22,'yogyakarta':110.37,'malang':112.63,
-  // SE Asia / East Asia
+  /* Indonesia — WIB (+7) */
+  'jakarta':106.85,'surabaya':112.75,'bandung':107.60,'medan':98.67,'semarang':110.42,
+  'yogyakarta':110.37,'jogja':110.37,'malang':112.63,'bekasi':106.99,'tangerang':106.63,
+  'tangerang selatan':106.72,'depok':106.82,'bogor':106.80,'palembang':104.75,
+  'bandar lampung':105.27,'padang':100.35,'pekanbaru':101.45,'batam':104.03,'jambi':103.61,
+  'bengkulu':102.27,'banda aceh':95.32,'lhokseumawe':97.14,'binjai':98.49,
+  'pematang siantar':99.06,'dumai':101.45,'tanjungpinang':104.45,'pangkalpinang':106.13,
+  'serang':106.15,'cilegon':106.05,'sukabumi':106.93,'cirebon':108.55,'tasikmalaya':108.22,
+  'garut':107.90,'cimahi':107.54,'tegal':109.14,'pekalongan':109.67,'surakarta':110.83,
+  'solo':110.83,'salatiga':110.50,'magelang':110.22,'kudus':110.84,'purwokerto':109.23,
+  'sidoarjo':112.72,'gresik':112.65,'mojokerto':112.43,'pasuruan':112.90,'probolinggo':113.22,
+  'jember':113.70,'banyuwangi':114.37,'kediri':112.02,'blitar':112.17,'madiun':111.52,
+  'tulungagung':111.90,'bojonegoro':111.88,'lamongan':112.32,'tuban':112.05,'bangkalan':112.75,
+  'pamekasan':113.48,'sumenep':113.87,'batu':112.53,'pontianak':109.33,'singkawang':108.98,
+  'palangkaraya':113.92,'sampit':112.95,
+  /* Indonesia — WITA (+8) */
+  'denpasar':115.22,'bali':115.22,'singaraja':115.09,'mataram':116.12,'bima':118.72,
+  'kupang':123.58,'maumere':122.21,'ende':121.66,'makassar':119.42,'parepare':119.63,
+  'palopo':120.20,'palu':119.87,'kendari':122.51,'manado':124.85,'bitung':125.19,
+  'gorontalo':123.06,'balikpapan':116.83,'samarinda':117.15,'bontang':117.50,
+  'tarakan':117.60,'banjarmasin':114.59,'banjarbaru':114.83,
+  /* Indonesia — WIT (+9) */
+  'ambon':128.19,'ternate':127.38,'tual':132.75,'sorong':131.25,'manokwari':134.06,
+  'jayapura':140.70,'timika':136.88,'merauke':140.40,'nabire':135.50,'biak':136.09,
+  /* SE Asia / East Asia */
   'singapore':103.82,'kuala lumpur':101.69,'penang':100.33,'johor bahru':103.76,
-  'bangkok':100.5,'manila':120.98,'ho chi minh city':106.66,'hanoi':105.85,
-  'beijing':116.4,'shanghai':121.47,'guangzhou':113.26,'shenzhen':114.06,'hong kong':114.17,
-  'taipei':121.56,'kaohsiung':120.3,'tokyo':139.69,'osaka':135.5,'seoul':126.98,
-  // West
-  'new york':-74.0,'los angeles':-118.24,'chicago':-87.63,'san francisco':-122.42,
-  'london':-0.13,'manchester':-2.24,'sydney':151.21,'melbourne':144.96,'mumbai':72.88,'delhi':77.1
+  'ipoh':101.08,'malacca':102.25,'melaka':102.25,'kuching':110.34,'kota kinabalu':116.07,
+  'bangkok':100.50,'chiang mai':98.99,'manila':120.98,'cebu':123.89,'davao':125.61,
+  'ho chi minh city':106.66,'hanoi':105.85,'da nang':108.22,
+  'beijing':116.40,'shanghai':121.47,'guangzhou':113.26,'shenzhen':114.06,'chengdu':104.07,
+  'hong kong':114.17,'taipei':121.56,'kaohsiung':120.30,'taichung':120.68,
+  'tokyo':139.69,'osaka':135.50,'nagoya':136.91,'fukuoka':130.40,'sapporo':141.35,
+  'seoul':126.98,'busan':129.08,
+  /* West */
+  'new york':-74.00,'los angeles':-118.24,'chicago':-87.63,'san francisco':-122.42,
+  'houston':-95.37,'seattle':-122.33,'boston':-71.06,'washington dc':-77.04,'miami':-80.19,
+  'atlanta':-84.39,'las vegas':-115.14,'denver':-104.99,'phoenix':-112.07,
+  'london':-0.13,'manchester':-2.24,'birmingham':-1.90,'edinburgh':-3.19,'glasgow':-4.25,
+  'sydney':151.21,'melbourne':144.96,'brisbane':153.03,'perth':115.86,'adelaide':138.60,
+  'canberra':149.13,
+  'mumbai':72.88,'delhi':77.10,'new delhi':77.21,'bangalore':77.59,'chennai':80.27,
+  'kolkata':88.36,'hyderabad':78.49,'pune':73.86,'ahmedabad':72.57
+};
+
+/* Timezone override where a city's zone differs from its country default.
+   This one matters: a wrong offset is a 60-minute error, which CAN move the
+   hour branch. Indonesia spans WIB +7 / WITA +8 / WIT +9; the United States
+   spans -5 to -8; Australia spans +8 to +10. */
+const CITY_TZ = {
+  'denpasar':8,'bali':8,'singaraja':8,'mataram':8,'bima':8,'kupang':8,'maumere':8,'ende':8,
+  'makassar':8,'parepare':8,'palopo':8,'palu':8,'kendari':8,'manado':8,'bitung':8,
+  'gorontalo':8,'balikpapan':8,'samarinda':8,'bontang':8,'tarakan':8,'banjarmasin':8,
+  'banjarbaru':8,
+  'ambon':9,'ternate':9,'tual':9,'sorong':9,'manokwari':9,'jayapura':9,'timika':9,
+  'merauke':9,'nabire':9,'biak':9,
+  'new york':-5,'boston':-5,'washington dc':-5,'miami':-5,'atlanta':-5,
+  'chicago':-6,'houston':-6,'denver':-7,'phoenix':-7,
+  'los angeles':-8,'san francisco':-8,'seattle':-8,'las vegas':-8,
+  'perth':8,'adelaide':9.5
 };
 // rough timezone UTC offset per country (standard, no DST — good enough for TST)
 const COUNTRY_TZ = {
@@ -302,9 +431,16 @@ const COUNTRY_TZ = {
 function dayOfYear(y,m,d){ const a=new Date(Date.UTC(y,m-1,d)); const s=new Date(Date.UTC(y,0,0)); return Math.floor((a-s)/86400000); }
 function equationOfTime(doy){ const B=2*Math.PI*(doy-81)/364; return 9.87*Math.sin(2*B)-7.53*Math.cos(B)-1.5*Math.sin(B); }
 
+function cityKey(city){ return (city||'').trim().toLowerCase().replace(/\s+/g,' '); }
+
+/* Returns the corrected solar time AND the calendar date it belongs to.
+   Correcting the clock can push a birth across midnight in either direction.
+   Previously the clock was wrapped and the date was left alone, which produced
+   a day pillar from one date and an hour pillar from another. */
 function trueSolarHour(y,mo,d, clockHour, clockMin, city, country){
-  const lon = CITY_LON[(city||'').trim().toLowerCase()];
-  const tz = COUNTRY_TZ[country] ?? 0;
+  const key = cityKey(city);
+  const lon = CITY_LON[key];
+  const tz  = (CITY_TZ[key] !== undefined) ? CITY_TZ[key] : (COUNTRY_TZ[country] ?? 0);
   let totalMin = clockHour*60 + clockMin;
   let corrected = totalMin;
   let precise = false;
@@ -315,9 +451,23 @@ function trueSolarHour(y,mo,d, clockHour, clockMin, city, country){
     corrected = totalMin + lonCorr + eot;
     precise = true;
   }
-  // wrap into 0..1440
+  let dayShift = Math.floor(corrected/1440);
   corrected = ((corrected % 1440) + 1440) % 1440;
-  return { hour: Math.floor(corrected/60), minute: Math.round(corrected%60), precise };
+
+  let ty=y, tmo=mo, td=d;
+  if(dayShift !== 0){
+    const dt = new Date(Date.UTC(y, mo-1, d));
+    dt.setUTCDate(dt.getUTCDate() + dayShift);
+    if(dt.getUTCFullYear() < MIN_YEAR){ dayShift = 0; }   // never shift outside the engine table
+    else { ty=dt.getUTCFullYear(); tmo=dt.getUTCMonth()+1; td=dt.getUTCDate(); }
+  }
+  return {
+    hour: Math.floor(corrected/60),
+    minute: Math.floor(corrected%60),
+    precise, dayShift,
+    y: ty, mo: tmo, d: td,
+    tzUsed: tz, lonUsed: lon
+  };
 }
 
 /* ---- Adapter: alvamind engine → template-friendly shape ----
@@ -333,10 +483,11 @@ function pillarFromChinese(s){
 
 const MIN_YEAR = 1960; // engine data trimmed to 1960+
 
-function computeBazi(y,mo,d,clockHour,clockMin,city,country){
+function computeBazi(y,mo,d,clockHour,clockMin,city,country,gender,hourKnown){
   if(y < MIN_YEAR) throw new Error('YEAR_RANGE');
   const tst = trueSolarHour(y,mo,d,clockHour,clockMin,city,country);
-  const calc = new BaziCalculator(y, mo, d, tst.hour, 'male');
+  // gender is now passed through: it drives lifeGua and the Eight Mansions directions
+  const calc = new BaziCalculator(tst.y, tst.mo, tst.d, tst.hour, gender==='female'?'female':'male');
   const full = calc.getCompleteAnalysis();
   const P = full.mainPillars;
   const yp=pillarFromChinese(P.year.chinese);
@@ -345,7 +496,11 @@ function computeBazi(y,mo,d,clockHour,clockMin,city,country){
   const hp=pillarFromChinese(P.time.chinese);
   const ff = full.basicAnalysis.fiveFactors;
   const tally={Wood:ff.WOOD||0, Fire:ff.FIRE||0, Earth:ff.EARTH||0, Metal:ff.METAL||0, Water:ff.WATER||0};
-  return {yp,mp,dp,hp,tally, dayMaster:dp.s, tst, engine:full};
+  return {yp,mp,dp,hp,tally, dayMaster:dp.s, tst,
+          hourKnown: hourKnown!==false,
+          directions: full.basicAnalysis.eightMansions,
+          lifeGua: full.basicAnalysis.lifeGua,
+          engine:full};
 }
 
 /* ============================================================
@@ -387,22 +542,38 @@ const LOVE_BY_YY = {
   Yin:"In love you receive, you sense, you wait to be chosen — and then complain nobody chose. Aiyoh. You feel deeply but hide it. Say what you want out loud, ONE time, and watch."
 };
 
+/* {name} is replaced with the visitor's first name. The form already demands
+   a first name; there was no reason for uncle never to use it. */
 const OPENERS = [
-  "Sit. Don't touch anything. Let uncle look at you… mm. MM. Okay. I see it already.",
-  "Ah, another one. Give me your birthday, not your whole life story. Good. Now quiet.",
-  "You came to a machine in an arcade for your destiny. Bold. Okay lah, uncle will oblige.",
-  "Before you ask — yes, uncle already knows why you're here. But go on, pretend.",
-  "Hmph. Interesting chart. Not good, not bad. Interesting. Like a curry with too much salt."
+  "Sit, {name}. Don't touch anything. Let uncle look at you\u2026 mm. MM. Okay. I see it already.",
+  "Ah, {name}. Another one. Give me your birthday, not your whole life story. Good. Now quiet.",
+  "{name}. You came to a machine in an arcade for your destiny. Bold. Okay lah, uncle will oblige.",
+  "Before you ask \u2014 yes, uncle already knows why you're here, {name}. But go on, pretend.",
+  "Hmph. Interesting chart, {name}. Not good, not bad. Interesting. Like a curry with too much salt.",
+  "{name}, is it. Sit properly. Uncle has read ten thousand of these and yours is\u2026 okay, hold on.",
+  "Eh, {name}. You look exactly like your chart. Uncle is not going to explain what that means.",
+  "Come, {name}, sit. No need to look so nervous. It's only your whole life. Relax."
 ];
 const CLOSERS = [
-  "That's all uncle will say for free. The rest, you already know but don't want to admit. Go.",
-  "Now go bother someone your own age. Uncle is tired. But… you'll be fine. Mostly.",
-  "Remember: the chart shows the weather, not whether you bring an umbrella. That part is you.",
-  "Uncle has spoken. Screenshot it, forget it, live your life. Come back when you ignore this advice.",
-  "Don't cry. It's not that bad. Actually — okay it's a little bad. But you're stubborn enough. Go."
+  "That's all uncle will say for free, {name}. The rest, you already know but don't want to admit. Go.",
+  "Now go bother someone your own age. Uncle is tired. But\u2026 you'll be fine, {name}. Mostly.",
+  "Remember, {name}: the chart shows the weather, not whether you bring an umbrella. That part is you.",
+  "Uncle has spoken. Screenshot it, forget it, live your life. Come back when you ignore this advice, {name}.",
+  "Don't cry, {name}. It's not that bad. Actually \u2014 okay it's a little bad. But you're stubborn enough. Go.",
+  "Off you go, {name}. Send this to the friend who needs it more than you do. You know the one.",
+  "Uncle said what he saw, {name}. If you don't like it, that's between you and your ancestors.",
+  "Enough. Go eat something, {name}. Half your problems are just low blood sugar anyway."
 ];
 
 function pick(arr,seed){ return arr[Math.abs(seed)%arr.length]; }
+function fillName(s,name){ return s.split('{name}').join(name); }
+
+/* Light title-casing so "william" is not shouted back exactly as typed. */
+function tidyName(n){
+  return (n||'').trim().split(/\s+/).map(function(w){
+    return w.length ? w.charAt(0).toUpperCase()+w.slice(1) : w;
+  }).join(' ');
+}
 
 function strongestWeakest(tally){
   let entries=Object.entries(tally).sort((a,b)=>b[1]-a[1]);
@@ -416,14 +587,260 @@ function buildReading(b, name){
   const seed = b.dp.s*12 + b.dp.b + b.yp.s + b.yp.b;
   const avg = (b.tally.Wood+b.tally.Fire+b.tally.Earth+b.tally.Metal+b.tally.Water)/5;
   const strongIsHigh = b.tally[strong] >= avg*1.2; // day-master-supported proxy from engine factors
+  const who = name || 'you';
+
+  let luck = "Right now your "+weak+" is running low, and life will keep poking exactly there until you deal with it. The next couple of years reward patience over hustle. Uncle means it. Stop forcing.";
+  if(!b.hourKnown){
+    luck += " And "+who+" \u2014 you didn't know your birth hour, so uncle reads three pillars, not four. The shape is right. The fine detail, don't quote me on.";
+  }
+
   return {
-    opener: pick(OPENERS, seed),
+    opener: fillName(pick(OPENERS, seed), who),
     personality: DAYMASTER_PERSONALITY[dm],
     career: strongIsHigh ? CAREER_BY_STRONG[strong] : CAREER_BY_WEAK[weak],
-    love: LOVE_BY_YY[yy] + " Your strongest element is "+strong+", so you bring a lot of that energy into a room — for better and for worse.",
-    luck: "Right now your "+weak+" is running low, and life will keep poking exactly there until you deal with it. The next couple of years reward patience over hustle. Uncle means it. Stop forcing.",
-    closer: pick(CLOSERS, seed+3)
+    love: LOVE_BY_YY[yy] + " Your strongest element is "+strong+", so you bring a lot of that energy into a room \u2014 for better and for worse.",
+    luck: luck,
+    closer: fillName(pick(CLOSERS, seed+3), who)
   };
+}
+
+/* ============================================================
+   ENGINE V3 — DEVELOPMENT FEATURE FLAG  (?engine=v3)
+   ============================================================
+   OFF BY DEFAULT. With the flag absent nothing below executes, no extra file
+   is requested, and the reading is identical to production.
+
+   bazi-engine.min.js remains the ONLY source of birth date -> Four Pillars.
+   Engine v3 never calculates a pillar. It consumes the normalized pillars
+   that computeBazi() has already produced.
+   ============================================================ */
+
+const V3_FLAG = (function(){
+  try{ return new URLSearchParams(window.location.search).get('engine')==='v3'; }
+  catch(e){ return false; }
+})();
+const V3_SRC = 'engine-v3/engine-v3.browser.js';
+let _v3Promise = null;
+
+/* Loaded by injecting a classic <script>, not by import().
+   ES modules require an http(s) origin and fail under file://, which is how
+   this page is opened for local testing. A classic script loads from both,
+   with no bundler and no build step. */
+function loadV3(){
+  if(window.BaziV3) return Promise.resolve(window.BaziV3);
+  if(_v3Promise) return _v3Promise;
+  _v3Promise = new Promise(function(resolve,reject){
+    const s=document.createElement('script');
+    s.src=V3_SRC; s.async=true;
+    s.onload=function(){
+      window.BaziV3 ? resolve(window.BaziV3)
+                    : reject(new Error('loaded '+V3_SRC+' but window.BaziV3 is missing'));
+    };
+    s.onerror=function(){ reject(new Error('could not load '+V3_SRC)); };
+    document.head.appendChild(s);
+  });
+  return _v3Promise;
+}
+
+/* ---- ADAPTER: computeBazi() output -> engine v3 pillar input ----
+   Index -> name only, reusing the STEMS and BRANCHES arrays declared above.
+   Their index order matches the engine's key order exactly, so there is no
+   translation table and no second definition of the cycle anywhere.
+
+   Returns EXACTLY four keys. analyseBazi() iterates every own key of the
+   object it is handed, so any extra property makes it throw. Never spread
+   the bazi object into this. */
+function toV3Pillars(b){
+  function nm(p){ return { stem: STEMS[p.s], branch: BRANCHES[p.b] }; }
+  return { year: nm(b.yp), month: nm(b.mp), day: nm(b.dp), hour: nm(b.hp) };
+}
+
+/* ---- evidence panel rendering (development only) ---- */
+function v3esc(v){
+  return String(v).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+  });
+}
+function v3n(x){ return String(Math.round(x*1000)/1000); }
+function v3sec(title, body){
+  return '<h3>'+v3esc(title)+'</h3>'+body;
+}
+function v3kv(pairs){
+  return '<table>'+pairs.map(function(r){
+    return '<tr><th>'+v3esc(r[0])+'</th><td>'+r[1]+'</td></tr>';
+  }).join('')+'</table>';
+}
+function v3shell(inner){
+  return '<div id="v3Panel">'
+       + '<div class="v3head"><h2>ENGINE V3 — EVIDENCE</h2>'
+       + '<span class="v3tag">DEV</span><span class="v3tag">UNVALIDATED</span></div>'
+       + '<div class="v3sub">Diagnostic output only. Not shown to visitors and not used to write '
+       + 'the reading above. Enabled by <code>?engine=v3</code>.</div>'
+       + inner + '</div>';
+}
+
+function v3panel(bazi, pillars, a, V3){
+  const P = bazi.engine && bazi.engine.mainPillars;
+  const order = [['year','yp','year'],['month','mp','month'],['day','dp','day'],['hour','hp','time']];
+  let html = '';
+
+  /* 1. normalized pillars, with the engine's own characters shown for provenance */
+  html += v3sec('NORMALIZED PILLARS',
+    '<table><tr><th>POS</th><th>STEM</th><th>BRANCH</th><th>SOURCE</th></tr>'
+    + order.map(function(o){
+        const src = P && P[o[2]] ? P[o[2]].chinese : '—';
+        return '<tr><th>'+o[0]+'</th><td>'+v3esc(pillars[o[0]].stem)+'</td><td>'
+             + v3esc(pillars[o[0]].branch)+'</td><td>'+v3esc(src)+'</td></tr>';
+      }).join('')
+    + '</table>'
+    + '<div class="v3note">SOURCE column is the raw output of bazi-engine.min.js. '
+    + 'The adapter only maps index to name; it does not compute pillars.'
+    + (bazi.hourKnown ? '' : ' HOUR IS ASSUMED \u2014 the visitor said the birth time is unknown, so noon was used.')
+    + '</div>');
+
+  /* 2. hidden stems */
+  html += v3sec('HIDDEN STEMS',
+    '<table><tr><th>BRANCH</th><th>HIDDEN (stem : depth)</th></tr>'
+    + order.map(function(o){
+        const br = pillars[o[0]].branch;
+        const hid = V3.BRANCHES[br].hidden.map(function(h){ return v3esc(h[0])+' : '+v3n(h[1]); }).join(', ');
+        return '<tr><th>'+v3esc(br)+'</th><td>'+hid+'</td></tr>';
+      }).join('')
+    + '</table>');
+
+  /* 3. element scores, side by side with what the visitor's bar actually shows */
+  const es = a.elementScores;
+  html += v3sec('ELEMENT SCORES',
+    '<table><tr><th>ELEMENT</th><th>V3 WEIGHTED</th><th>BAR ABOVE</th></tr>'
+    + ['Wood','Fire','Earth','Metal','Water'].map(function(e){
+        return '<tr><th>'+e+'</th><td class="num">'+v3n(es[e])+'</td><td class="num">'
+             + v3n(bazi.tally[e])+'%</td></tr>';
+      }).join('')
+    + '</table>'
+    + '<div class="v3note">BAR ABOVE is bazi-engine.min.js fiveFactors, which is not an element '
+    + 'count: it weights each element by its relationship to the Day Master '
+    + '(Resource 3.0, Companion 2.5, Output 2.0, Wealth 1.2, Control 1.2) and ignores position, '
+    + 'hidden-stem depth and season. The two columns are not expected to agree.</div>');
+
+  /* 4. ten gods */
+  const tg = Object.keys(a.tenGodScores).sort(function(x,y){ return a.tenGodScores[y]-a.tenGodScores[x]; });
+  html += v3sec('TEN GOD SCORES',
+    '<table><tr><th>TEN GOD</th><th>SCORE</th></tr>'
+    + tg.map(function(k){ return '<tr><th>'+v3esc(k)+'</th><td class="num">'+v3n(a.tenGodScores[k])+'</td></tr>'; }).join('')
+    + '</table>');
+
+  /* 5. strength + roots */
+  const roots = a.strengthEvidence.roots;
+  html += v3sec('STRENGTH', v3kv([
+    ['Day Master', v3esc(a.dayMaster)+' ('+v3esc(a.dayMasterElement)+')'],
+    ['Classification', v3esc(a.strength.classification)],
+    ['Diagnostic score', '<span class="num">'+v3esc(a.strength.diagnosticScore)+'</span> / 100'],
+    ['Model status', v3esc(a.strength.status)],
+    ['Roots', roots.length
+        ? roots.map(function(r){ return v3esc(r.position)+' ('+v3esc(r.branch)+')'; }).join(', ')
+        : '<span class="v3empty">none detected</span>']
+  ]) + '<div class="v3note">'+v3esc(a.strengthEvidence.caveat)+'</div>');
+
+  /* 6. candidate structure */
+  const st = a.structure;
+  html += v3sec('CANDIDATE STRUCTURE', v3kv([
+    ['Candidate', v3esc(st.candidate)],
+    ['Secondary', v3esc(st.secondary)],
+    ['Confidence', v3esc(st.confidence)],
+    ['Status', v3esc(st.status)]
+  ]) + '<table><tr><th>GROUP</th><th>SCORE</th></tr>'
+    + Object.keys(st.scores).sort(function(x,y){ return st.scores[y]-st.scores[x]; })
+        .map(function(k){ return '<tr><th>'+v3esc(k)+'</th><td class="num">'+v3n(st.scores[k])+'</td></tr>'; }).join('')
+    + '</table>'
+    + '<div class="v3note">Confidence is Medium only when the top two groups differ by 1.5 or more. '
+    + 'This threshold is undocumented in the candidate package.</div>');
+
+  /* 7. branch relationships */
+  html += v3sec('BRANCH RELATIONSHIPS',
+    a.dynamics.length
+      ? '<table><tr><th>TYPE</th><th>BRANCHES</th><th>STATUS</th></tr>'
+        + a.dynamics.map(function(d){
+            return '<tr><th>'+v3esc(d.type)+'</th><td>'+v3esc(d.branches.join(' + '))
+                 + '</td><td>'+v3esc(d.status)+'</td></tr>';
+          }).join('') + '</table>'
+      : '<div class="v3empty">none detected</div>');
+
+  /* 8. three harmony / three meeting */
+  html += v3sec('THREE HARMONY / THREE MEETING',
+    a.groupInteractions.length
+      ? '<table><tr><th>TYPE</th><th>BRANCHES</th><th>ELEMENT</th><th>STATUS</th></tr>'
+        + a.groupInteractions.map(function(g){
+            return '<tr><th>'+v3esc(g.type)+'</th><td>'+v3esc(g.branches.join(' + '))
+                 + '</td><td>'+v3esc(g.element)+'</td><td>'+v3esc(g.status)+'</td></tr>';
+          }).join('') + '</table>'
+      : '<div class="v3empty">none detected</div>');
+  html += '<div class="v3note">A detected set is a relationship only. Completion of transformation '
+        + 'is not asserted anywhere in this build.</div>';
+
+  /* 9. useful element method statuses */
+  const um = a.usefulElementMethods;
+  html += v3sec('USEFUL ELEMENT METHODS',
+    '<table><tr><th>METHOD</th><th>STATUS</th></tr>'
+    + Object.keys(um).filter(function(k){ return k!=='resolutionStatus'; })
+        .map(function(k){ return '<tr><th>'+v3esc(k)+'</th><td>'+v3esc(um[k].status)+'</td></tr>'; }).join('')
+    + '<tr><th>resolution</th><td>'+v3esc(um.resolutionStatus)+'</td></tr></table>');
+
+  /* 10. rule matching */
+  html += v3sec('MATCHED RULES',
+    '<div class="v3empty">'+v3esc(V3.RULE_MATCHING.status)+'</div>'
+    + '<div class="v3note">'+v3esc(V3.RULE_MATCHING.detail)+'</div>');
+
+  /* 11. luck */
+  html += v3sec('LUCK PILLAR INTERACTION',
+    '<div class="v3empty">'+v3esc(a.luckInteraction.status)+'</div>'
+    + '<div class="v3note">The application does not compute luck pillars. Direction and start age '
+    + 'are not calculated by this engine.</div>');
+
+  /* 12. true solar time, as actually applied by computeBazi */
+  html += v3sec('TRUE SOLAR TIME', v3kv([
+    ['Longitude applied', bazi.tst.precise ? v3esc(bazi.tst.lonUsed)+'\u00B0' : 'no (city not in list)'],
+    ['UTC offset used', '<span class="num">'+v3esc(bazi.tst.tzUsed)+'</span>'],
+    ['Solar time', '<span class="num">'+v3esc(bazi.tst.hour)+':'+String(bazi.tst.minute).padStart(2,'0')+'</span>'],
+    ['Date passed to engine', v3esc(bazi.tst.y+'-'+bazi.tst.mo+'-'+bazi.tst.d)],
+    ['Calendar day shift', '<span class="num">'+v3esc(bazi.tst.dayShift)+'</span>'],
+    ['Birth hour known', bazi.hourKnown ? 'yes' : 'no \u2014 noon assumed']
+  ]) + '<div class="v3note">Remaining limits: solar terms are encoded at day granularity, so a '
+     + 'birth on a term boundary day is not resolved to the hour, and daylight saving is not '
+     + 'modelled for countries that observe it.</div>');
+
+  /* 13. provenance */
+  html += v3sec('ENGINE', v3kv([
+    ['Version', v3esc(a.engineVersion)],
+    ['Certification', v3esc(a.certification)],
+    ['Build', v3esc(V3.BUILD)],
+    ['Pillar source of truth', 'bazi-engine.min.js']
+  ]));
+
+  html += v3sec('LIMITATIONS',
+    '<ul>'+a.limitations.map(function(l){ return '<li>'+v3esc(l)+'</li>'; }).join('')+'</ul>');
+
+  return v3shell(html);
+}
+
+function runV3(bazi){
+  const mount=document.getElementById('v3Mount');
+  if(!mount) return;
+  mount.innerHTML = v3shell('<div class="v3empty">Running engine v3&hellip;</div>');
+
+  let pillars;
+  try{ pillars = toV3Pillars(bazi); }
+  catch(e){ mount.innerHTML = v3shell('<div class="v3err">Adapter failed: '+v3esc(e.message)+'</div>'); return; }
+
+  loadV3().then(function(V3){
+    let a;
+    try{ a = V3.analyseAdvanced(pillars); }
+    catch(e){ mount.innerHTML = v3shell('<div class="v3err">analyseAdvanced() threw: '+v3esc(e.message)+'</div>'); return; }
+    try{ mount.innerHTML = v3panel(bazi, pillars, a, V3); }
+    catch(e){ mount.innerHTML = v3shell('<div class="v3err">Panel render failed: '+v3esc(e.message)+'</div>'); }
+    window._baziV3 = { pillars: pillars, result: a };
+  }).catch(function(e){
+    mount.innerHTML = v3shell('<div class="v3err">Engine v3 did not load: '+v3esc(e.message)+'</div>');
+  });
 }
 
 /* ============================================================
@@ -431,6 +848,27 @@ function buildReading(b, name){
    ============================================================ */
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const COUNTRIES=['Indonesia','Singapore','Malaysia','China','Taiwan','Hong Kong','United States','United Kingdom','Australia','Japan','South Korea','India','Philippines','Thailand','Vietnam','Other'];
+
+function daysInMonth(y,m){
+  if(!y||!m) return 31;
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+/* Rebuild the day list whenever month or year changes, so 31 February can
+   never be submitted. It used to reach the engine and come back as the
+   generic "crystal ball hiccuped" alert. */
+function syncDayList(){
+  const dayS=document.getElementById('dobDay');
+  const m=+document.getElementById('dobMonth').value;
+  const y=+document.getElementById('dobYear').value;
+  const max=daysInMonth(y,m);
+  const want=Math.min(+dayS.value||1, max);
+  if(dayS.options.length!==max){
+    dayS.innerHTML='';
+    for(let d=1;d<=max;d++) dayS.add(new Option(String(d).padStart(2,'0'),d));
+  }
+  dayS.value=want;
+}
 
 function initForm(){
   const dayS=document.getElementById('dobDay'), moS=document.getElementById('dobMonth'), yrS=document.getElementById('dobYear');
@@ -442,8 +880,32 @@ function initForm(){
   const cS=document.getElementById('country');
   COUNTRIES.forEach(c=> cS.add(new Option(c,c)));
   cS.value='Indonesia';
+
+  /* City suggestions from the longitude table, so visitors land on a key we
+     actually have. Free text still works; it just falls back to clock time. */
+  const dl=document.getElementById('cityList');
+  if(dl){
+    Object.keys(CITY_LON).sort().forEach(function(k){
+      dl.appendChild(new Option(k.replace(/\b\w/g,function(c){return c.toUpperCase();})));
+    });
+  }
+
+  moS.addEventListener('change', syncDayList);
+  yrS.addEventListener('change', syncDayList);
+  syncDayList();
+
+  const tu=document.getElementById('timeUnknown'), tin=document.getElementById('dobTime');
+  tu.addEventListener('change', function(){ tin.disabled=tu.checked; });
 }
 initForm();
+
+/* Warm the engine after first paint so CONSULT feels instant, without blocking
+   the initial render for visitors who never press it. */
+(function preloadEngine(){
+  const go=function(){ loadBaziEngine().catch(function(){}); };
+  if('requestIdleCallback' in window) requestIdleCallback(go,{timeout:3000});
+  else setTimeout(go,1200);
+})();
 
 document.getElementById('askBtn').addEventListener('click', onConsult);
 /* --- Enter-to-submit (desktop keyboard) --- */
@@ -461,58 +923,102 @@ document.getElementById('askBtn').addEventListener('click', onConsult);
 document.getElementById('restartBtn').addEventListener('click', ()=>{
   document.getElementById('reading').classList.remove('show');
   document.getElementById('formPanel').style.display='block';
+  document.getElementById('shareMsg').textContent='';
+  const mount=document.getElementById('v3Mount'); if(mount) mount.innerHTML='';
+  try{ history.replaceState(null,'',location.pathname+(V3_FLAG?'?engine=v3':'')); }catch(e){}
   window.scrollTo(0,0);
 });
 
-async function onConsult(){
-  const first=document.getElementById('firstName').value.trim();
-  const last=document.getElementById('lastName').value.trim();
-  const d=+document.getElementById('dobDay').value;
-  const mo=+document.getElementById('dobMonth').value;
-  const y=+document.getElementById('dobYear').value;
-  const time=document.getElementById('dobTime').value||'12:00';
-  const gender=document.getElementById('gender').value;
-  const country=document.getElementById('country').value;
-  const city=document.getElementById('city').value.trim();
-  if(!first){ alert('Uncle needs at least your first name, ah.'); return; }
-  const [hh,mm]=time.split(':').map(n=>parseInt(n,10));
+function readForm(){
+  const timeUnknown=document.getElementById('timeUnknown').checked;
+  return {
+    first: tidyName(document.getElementById('firstName').value),
+    last:  tidyName(document.getElementById('lastName').value),
+    d: +document.getElementById('dobDay').value,
+    mo:+document.getElementById('dobMonth').value,
+    y: +document.getElementById('dobYear').value,
+    time: timeUnknown ? '12:00' : (document.getElementById('dobTime').value||'12:00'),
+    timeUnknown,
+    gender: document.getElementById('gender').value,
+    country: document.getElementById('country').value,
+    city: document.getElementById('city').value.trim()
+  };
+}
+
+async function onConsult(fromLink){
+  const f=readForm();
+  if(!f.first){ alert('Uncle needs at least your first name, ah.'); return; }
+  const [hh,mm]=f.time.split(':').map(n=>parseInt(n,10));
+
+  const btn=document.getElementById('askBtn'), lbl=btn.querySelector('span');
+  const prevLabel=lbl.textContent;
+  btn.disabled=true; lbl.textContent='WARMING UP\u2026';
+  try{ await loadBaziEngine(); }
+  catch(e){
+    btn.disabled=false; lbl.textContent=prevLabel;
+    alert("Uncle's machine is still waking up. Check your connection and try again.");
+    return;
+  }
+  btn.disabled=false; lbl.textContent=prevLabel;
 
   let bazi, reading;
   try{
-    bazi=computeBazi(y,mo,d,hh,mm||0,city,country);
-    reading=buildReading(bazi, first);
+    bazi=computeBazi(f.y,f.mo,f.d,hh,mm||0,f.city,f.country,f.gender,!f.timeUnknown);
+    /* Engine v3 hook. Not awaited, and wrapped so that no v3 failure can ever
+       reach the visitor's reading. Runs only under ?engine=v3. */
+    if(V3_FLAG){ try{ runV3(bazi); }catch(e){ console.error('[engine v3]', e); } }
+    reading=buildReading(bazi, f.first);
   }catch(err){
     if(String(err.message).includes('YEAR_RANGE')){
-      alert("Aiyoh, that's too far back for uncle's machine — it only reads birthdays from 1960 onward. Sorry ah.");
+      alert("Aiyoh, that's too far back for uncle's machine \u2014 it only reads birthdays from 1960 onward. Sorry ah.");
     } else {
       alert("Uncle's crystal ball hiccuped. Check your birth date and try again.");
     }
     return;
   }
-  renderReading(bazi, reading);
+  renderReading(bazi, reading, f);
 
-  // store submission (timestamp + form fields only) — if configured
-  storeSubmission({
-    timestamp:new Date().toISOString(),
-    first, last,
-    dob:`${String(d).padStart(2,'0')}-${MONTHS[mo-1]}-${y}`,
-    time, gender, country, city
-  });
+  /* store submission (timestamp + form fields only) — if configured.
+     Skipped when replaying a shared link, so one shared reading does not
+     create a fresh record every time somebody opens it. */
+  if(!fromLink){
+    storeSubmission({
+      timestamp:new Date().toISOString(),
+      first:f.first, last:f.last,
+      dob:`${String(f.d).padStart(2,'0')}-${MONTHS[f.mo-1]}-${f.y}`,
+      time:f.timeUnknown?'unknown':f.time,
+      gender:f.gender, country:f.country, city:f.city
+    });
+  }
 
-  window._baziContext={first,gender,chart:bazi,reading};
+  window._baziContext={first:f.first,gender:f.gender,chart:bazi,reading};
+  window._baziForm=f;
 }
 
-function renderReading(b, r){
+function renderReading(b, r, f){
   document.getElementById('formPanel').style.display='none';
+
+  /* last name finally does something: it names the chart */
+  const title=document.getElementById('chartTitle');
+  const full=[f.first,f.last].filter(Boolean).join(' ');
+  title.textContent = full ? full.toUpperCase()+"'S CHART (\u516B\u5B57)" : 'YOUR CHART (\u516B\u5B57)';
+
   const grid=document.getElementById('chartGrid');
   const pillars=[['HOUR',b.hp],['DAY',b.dp],['MONTH',b.mp],['YEAR',b.yp]];
-  grid.innerHTML=pillars.map(([lbl,p])=>`
+  grid.innerHTML=pillars.map(([lbl,p])=>{
+    if(lbl==='HOUR' && !b.hourKnown){
+      return '<div class="pillar unknown"><div class="plabel">HOUR</div>'
+           + '<div class="pstem">?</div><div class="pbranch">unknown</div>'
+           + '<div class="panimal">&mdash;</div></div>';
+    }
+    return `
     <div class="pillar">
       <div class="plabel">${lbl}</div>
       <div class="pstem" style="color:${EL_COLOR[STEM_EL[p.s]]}">${STEMS[p.s]}</div>
       <div class="pbranch">${BRANCHES[p.b]}</div>
       <div class="panimal">${ANIMAL[p.b]}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   const total=Object.values(b.tally).reduce((a,c)=>a+c,0);
   document.getElementById('elements').innerHTML=Object.entries(b.tally).map(([el,v])=>{
@@ -520,12 +1026,31 @@ function renderReading(b, r){
     return pct>0?`<div class="el-seg" style="background:${EL_COLOR[el]};flex:${v}" title="${el}">${pct>10?el[0]:''}</div>`:'';
   }).join('');
 
+  /* Eight Mansions directions — engine output that used to be discarded, and
+     the only place the gender field now does any work. */
+  const dir=document.getElementById('dirLine');
+  if(dir){
+    if(b.directions && b.directions.lucky){
+      const L=b.directions.lucky;
+      dir.innerHTML='LUCKY DIRECTIONS &mdash; money <b>'+L.wealth+'</b> &middot; health <b>'
+                   +L.health+'</b> &middot; love <b>'+L.romance+'</b> &middot; work <b>'+L.career+'</b>';
+    } else { dir.innerHTML=''; }
+  }
+
   // True Solar Time transparency note
   const tstNote=document.getElementById('tstNote');
   if(tstNote){
-    tstNote.textContent = b.tst.precise
-      ? `⌖ Hour pillar uses True Solar Time (adjusted for your city's longitude).`
-      : `⌖ City not in longitude list — hour pillar uses clock time (slightly less precise).`;
+    let n = b.tst.precise
+      ? "\u2316 Hour pillar uses True Solar Time (adjusted for your city's longitude)."
+      : "\u2316 City not in longitude list \u2014 hour pillar uses clock time (slightly less precise).";
+    if(b.tst.dayShift !== 0){
+      n += ' Solar time crosses midnight, so the pillars are read from '
+         + b.tst.y+'-'+String(b.tst.mo).padStart(2,'0')+'-'+String(b.tst.d).padStart(2,'0')+'.';
+    }
+    if(!b.hourKnown){
+      n = "\u2316 Birth hour unknown \u2014 uncle reads three pillars. The hour pillar is not shown.";
+    }
+    tstNote.textContent = n;
   }
 
   document.getElementById('opener').textContent=r.opener;
@@ -541,13 +1066,58 @@ function renderReading(b, r){
   const askMoreBtn=document.getElementById('askMoreBtn');
   if(!CONFIG.WORKER_URL){
     askMoreBtn.disabled=true;
-    comingSoon.textContent="(Uncle's deeper wisdom is coming soon — the live chat isn't switched on yet.)";
+    comingSoon.textContent="(Uncle's deeper wisdom is coming soon \u2014 the live chat isn't switched on yet.)";
   } else {
     askMoreBtn.disabled=false; comingSoon.textContent="";
   }
   window.scrollTo(0,0);
   document.getElementById('reading').scrollIntoView({behavior:'smooth'});
 }
+
+/* ---- Shareable link ----
+   Encodes the form into the URL so a reading can be sent to someone. No server
+   and no storage: the link simply replays the same local calculation. */
+function readingUrl(f){
+  const p=new URLSearchParams();
+  p.set('n',f.first); if(f.last) p.set('s',f.last);
+  p.set('d',f.d); p.set('m',f.mo); p.set('y',f.y);
+  p.set('t', f.timeUnknown ? '?' : f.time);
+  p.set('g',f.gender==='female'?'f':'m');
+  p.set('co',f.country); if(f.city) p.set('c',f.city);
+  if(V3_FLAG) p.set('engine','v3');
+  return location.origin+location.pathname+'?'+p.toString();
+}
+
+document.getElementById('shareBtn').addEventListener('click', async ()=>{
+  const f=window._baziForm; if(!f) return;
+  const url=readingUrl(f);
+  const msg=document.getElementById('shareMsg');
+  const text=f.first+', uncle read your chart. Go see what he said.';
+  try{
+    if(navigator.share){ await navigator.share({title:'GOH POK TONG', text:text, url:url});
+      msg.textContent='Sent. Uncle waits.'; return; }
+    await navigator.clipboard.writeText(url);
+    msg.textContent='Link copied. Go paste it in the group chat.';
+  }catch(e){
+    msg.textContent=url;
+  }
+});
+
+/* Replay a shared link on load. */
+(function fromSharedLink(){
+  let p; try{ p=new URLSearchParams(location.search); }catch(e){ return; }
+  if(!(p.has('d')&&p.has('m')&&p.has('y')&&p.has('n'))) return;
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el&&v!=null&&v!=='') el.value=v; };
+  set('firstName',p.get('n')); set('lastName',p.get('s')||'');
+  set('dobMonth',p.get('m')); set('dobYear',p.get('y'));
+  syncDayList(); set('dobDay',p.get('d'));
+  const t=p.get('t');
+  if(t==='?'){ document.getElementById('timeUnknown').checked=true; document.getElementById('dobTime').disabled=true; }
+  else if(t){ set('dobTime',t); }
+  set('gender', p.get('g')==='f'?'female':'male');
+  set('country',p.get('co')||'Indonesia'); set('city',p.get('c')||'');
+  onConsult(true);
+})();
 
 /* ---- Google Sheets storage (optional) ---- */
 async function storeSubmission(data){
