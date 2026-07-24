@@ -3,241 +3,204 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DO NOT ASK THE GOH POK TONG — After Hours Arcade</title>
+<title>GOH POK TONG — After Hours</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
-  :root{
-    --bg-black:#0d0817; --bg-deep:#1a1230;
-    --amber:#ffc857; --amber-deep:#ffb627; --amber-dark:#d4882a;
-    --purple:#7b5ea7; --purple-deep:#2a1a4a;
-    --rage:#ff4d3d; --text:#e8e2f5; --text-muted:#9d8fc7; --panel:#241a3d;
-    --wood:#5fbf6a; --fire:#ff6b5a; --earth:#e0a94f; --metal:#d8d0e8; --water:#5aa9e6;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0;}
-  body{
-    background:var(--bg-black);
-    font-family:'VT323', monospace; color:var(--text);
-    min-height:100vh; display:flex; flex-direction:column; align-items:center;
-    padding:16px 12px 50px;
-  }
-  .pixel{font-family:'Press Start 2P', monospace;}
-  .topbar{
-    width:100%; max-width:560px;
-    display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;
-  }
-  .back-link{
-    font-size:16px; color:var(--amber); text-decoration:none;
-    border:2px solid var(--amber); padding:4px 10px; border-radius:3px;
-  }
-  .back-link:active,.back-link:hover{background:var(--amber); color:var(--bg-black);}
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@500&family=VT323&display=swap');
+:root{
+  --bezel:#0d0c10;--screen:#161419;--paper:#f2ede3;--cream:#f2d4ae;--muted:#8a8790;
+  --comment:#5f7a6a;--dim:#546358;
+  /* Goh Pok Tong identity: violet accent, amber CTA */
+  --accent:#a98fd6;            /* violet replaces red on this page */
+  --violet:#a98fd6;--violet-deep:#7d68b0;--violet-glow:rgba(169,143,214,.5);
+  --cta:#e8a04a;--cta-deep:#b9772e;   /* amber/orange button */
+  --rage:#e8462f;             /* errors only */
+  --wood:#5f9a8a;--fire:#e8462f;--earth:#e8b98a;--metal:#c9c4ba;--water:#6a86c9;
+  --text:#f2ede3;--text-muted:#8a8790;--panel:#241f2b;--bg-black:#0d0c10;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{background:#08070a;font-family:'JetBrains Mono',monospace;color:var(--text);
+  min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:12px;
+  cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"><rect x="3" y="3" width="7" height="7" fill="%23f2ede3"/><rect x="4" y="4" width="5" height="5" fill="%23a98fd6"/></svg>') 6 6, auto;}
+a,button{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"><rect x="3" y="3" width="7" height="7" fill="%23a98fd6"/><rect x="4" y="4" width="5" height="5" fill="%23f2ede3"/></svg>') 6 6, pointer;}
+.pixel{font-family:'Press Start 2P',monospace;}
 
-  .header{ text-align:center; margin-bottom:8px; }
-  .header .name{
-    font-family:'Press Start 2P', monospace;
-    font-size:clamp(15px,4.5vw,24px); color:var(--purple);
-    text-shadow:0 0 4px var(--purple), 0 0 16px rgba(123,94,167,0.5);
-    line-height:1.5;
-  }
-  .header .sub{ font-size:18px; color:var(--text-muted); margin-top:8px; }
+/* cabinet shell — identical to index */
+.cabinet{width:100%;max-width:620px;background:var(--bezel);border-radius:22px;padding:16px;
+  box-shadow:0 24px 80px rgba(0,0,0,.7), inset 0 0 0 2px #1c1a20;}
+.screen{position:relative;background:var(--screen);border-radius:12px;overflow:hidden;
+  box-shadow:inset 0 0 60px rgba(0,0,0,.55);animation:crtFlicker 4.2s infinite;}
+.screen::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:5;
+  background:repeating-linear-gradient(rgba(255,255,255,.04) 0 1px, transparent 1px 3px);}
+.screen::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:6;
+  background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.42) 100%);}
+@keyframes crtFlicker{0%,100%{opacity:1;}3%{opacity:.96;}4%{opacity:1;}
+  38%{opacity:1;}39%{opacity:.9;}40%{opacity:1;}41%{opacity:.97;}42%{opacity:1;}
+  71%{opacity:1;}72%{opacity:.94;}73%{opacity:1;}}
+.view{position:relative;z-index:2;padding:20px 20px 26px;text-align:center;}
 
-  .crystal{ font-size:44px; text-align:center; margin:6px 0 4px; filter:drop-shadow(0 0 12px rgba(123,94,167,0.6)); }
+/* topbar */
+.topbar{display:flex;justify-content:flex-start;margin-bottom:18px;}
+.back-link{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--violet);text-decoration:none;
+  border:2px solid var(--violet);padding:6px 9px;border-radius:3px;letter-spacing:1px;}
+.back-link:active,.back-link:hover{background:var(--violet);color:var(--bezel);}
 
-  .panel{
-    width:100%; max-width:560px;
-    background:var(--bg-deep); border:3px solid var(--panel); border-radius:8px;
-    padding:18px 16px; margin-bottom:16px;
-    box-shadow:0 0 0 2px #000, 0 12px 40px rgba(0,0,0,0.5);
-  }
-  .panel h2{
-    font-family:'Press Start 2P', monospace; font-size:11px; color:var(--amber);
-    margin:0 0 14px; letter-spacing:1px;
-  }
+/* header — mirrors index brand/logotype/tagline exactly */
+.crystal-wrap{display:flex;justify-content:center;margin:2px 0 12px;}
+.uncle-head{image-rendering:pixelated;filter:drop-shadow(0 0 10px var(--violet-glow));}
+/* GOH POK TONG == AFTER HOURS style (brick treatment, violet-tinted glow) */
+.logotype{position:relative;display:inline-block;font-family:'Press Start 2P',monospace;
+  font-size:clamp(12px,3.4vw,16px);line-height:1.5;color:var(--cream);letter-spacing:3px;margin:0 0 18px;
+  text-shadow:0 0 10px rgba(242,212,174,.35);animation:cafeGlow 5s ease-in-out infinite;}
+.logotype::after{content:'GOH POK TONG';position:absolute;inset:0;pointer-events:none;color:transparent;
+  letter-spacing:3px;background:repeating-linear-gradient(to bottom, rgba(150,120,74,.5) 0 2px, transparent 2px 6px);
+  -webkit-background-clip:text;background-clip:text;text-shadow:none;mix-blend-mode:multiply;}
+@keyframes cafeGlow{0%,100%{opacity:.82;text-shadow:0 0 6px rgba(242,212,174,.22), 0 0 12px rgba(242,212,174,.10);}
+  45%{opacity:1;text-shadow:0 0 10px rgba(242,212,174,.45), 0 0 22px rgba(242,212,174,.22), 0 0 34px rgba(169,143,214,.16);}
+  55%{opacity:.98;text-shadow:0 0 12px rgba(242,212,174,.5), 0 0 24px rgba(242,212,174,.24), 0 0 38px rgba(169,143,214,.18);}}
+.logotype.flick{animation:none;opacity:.5;text-shadow:0 0 3px rgba(242,212,174,.12);}
+.tagline{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--comment);margin:0 0 40px;}
 
-  label{ display:block; font-size:17px; color:var(--text-muted); margin:10px 0 4px; }
-  input, select{
-    width:100%; font-family:'VT323', monospace; font-size:19px;
-    background:#0d0817; color:var(--text);
-    border:2px solid var(--panel); border-radius:4px; padding:8px 10px;
-  }
-  input:focus, select:focus{ outline:none; border-color:var(--amber); }
-  .row{ display:flex; gap:8px; }
-  .row > div{ flex:1; }
-  .dob-row{ display:flex; gap:6px; }
-  .dob-row select{ flex:1; }
+/* section label == SELECT GAME, with blinking violet cursor */
+.select-label{display:block;text-align:center;font-family:'Press Start 2P',monospace;font-size:8px;color:var(--muted);letter-spacing:2px;margin:0 0 22px;}
+.select-label .cur{color:#e8462f;margin-left:5px;animation:curBlink 1.06s steps(1) infinite;}
+@keyframes curBlink{0%,50%{opacity:1;}50.01%,100%{opacity:0;}}
 
-  .ask-btn{
-    width:100%; margin-top:18px;
-    font-family:'Press Start 2P', monospace; font-size:13px; color:var(--bg-black);
-    background:var(--amber); border:none; padding:16px; border-radius:5px;
-    cursor:pointer; box-shadow:0 5px 0 var(--amber-dark);
-  }
-  .ask-btn:active{ transform:translateY(4px); box-shadow:0 1px 0 var(--amber-dark); }
-  .ask-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+/* form — left aligned inside centered screen */
+.panel{width:100%;text-align:left;margin-bottom:8px;}
+label{display:block;font-family:'Press Start 2P',monospace;font-size:8px;line-height:1.5;color:var(--muted);
+  margin:14px 0 6px;letter-spacing:1px;}
+input,select{width:100%;font-family:'JetBrains Mono',monospace;font-weight:500;font-size:16px;line-height:1.2;
+  background:#0b0a0f;color:var(--paper);border:2px solid var(--panel);border-radius:5px;
+  padding:0 10px;height:42px;}       /* size matches menu label; 44px tap target kept */
+input:focus,select:focus{outline:none;border-color:var(--violet);}
+input::placeholder{color:#4a4753;}
+.row{display:flex;gap:8px;}.row>div{flex:1;min-width:0;}
+.dob-row{display:flex;gap:6px;}.dob-row select{flex:1;min-width:0;padding:0 6px;}
 
-  .disclaimer{ font-size:14px; color:#6b5f8f; margin-top:12px; line-height:1.4; text-align:center; }
+/* CTA == RAGE WINGS label size, amber, tighter, crystal icon left */
+.ask-btn{width:100%;margin-top:22px;display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:'Press Start 2P',monospace;font-size:9px;line-height:1.3;color:var(--bezel);
+  background:var(--cta);border:none;padding:12px;border-radius:6px;box-shadow:0 4px 0 var(--cta-deep);letter-spacing:1px;}
+.ask-btn .crystal-btn{image-rendering:pixelated;flex-shrink:0;}
+.ask-btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--cta-deep);}
+.ask-btn:disabled{opacity:.5;}
 
-  /* ---- reading output ---- */
-  .reading{ display:none; }
-  .reading.show{ display:block; }
+/* footer == // cmdline style */
+.disclaimer{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);
+  margin-top:16px;line-height:1.5;text-align:center;}
 
-  .chart-grid{
-    display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:6px 0 16px;
-  }
-  .pillar{
-    background:#0d0817; border:2px solid var(--panel); border-radius:6px;
-    padding:10px 4px; text-align:center;
-  }
-  .pillar .plabel{ font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
-  .pillar .pstem{ font-family:'Press Start 2P',monospace; font-size:10px; margin:8px 0 4px; }
-  .pillar .pbranch{ font-size:16px; color:var(--text-muted); }
-  .pillar .panimal{ font-size:14px; color:var(--amber-deep); margin-top:2px; }
+/* reading */
+.reading{display:none;text-align:left;}.reading.show{display:block;}
+.rpanel{width:100%;background:#12111a;border:2px solid var(--panel);border-radius:10px;
+  padding:18px 16px;margin:16px 0;box-shadow:inset 0 0 30px rgba(0,0,0,.4);}
+.rpanel h2{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--violet);margin:0 0 16px;letter-spacing:1px;}
+.chart-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 18px;}
+.pillar{background:#0b0a0f;border:2px solid var(--panel);border-radius:7px;padding:10px 4px;text-align:center;}
+.pillar .plabel{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
+.pillar .pstem{font-family:'Press Start 2P',monospace;font-size:9px;margin:9px 0 5px;color:var(--paper);}
+.pillar .pbranch{font-family:'VT323',monospace;font-size:18px;color:var(--text-muted);}
+.pillar .panimal{font-family:'VT323',monospace;font-size:16px;color:var(--cream);margin-top:2px;}
+.elements{display:flex;gap:0;margin:4px 0 16px;height:24px;border-radius:5px;overflow:hidden;border:2px solid var(--panel);}
+.el-seg{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#0b0a0f;font-weight:700;min-width:2px;}
+.section{margin-bottom:18px;}
+.section .stitle{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--violet);margin-bottom:8px;letter-spacing:1px;}
+.section .stext{font-family:'VT323',monospace;font-size:21px;line-height:1.5;color:var(--text);}
+.gpt-quote{border-left:3px solid var(--violet);padding:4px 0 4px 13px;margin:4px 0;font-family:'VT323',monospace;font-size:21px;line-height:1.45;color:var(--paper);}
+.divider{height:2px;background:var(--panel);margin:18px 0;}
+.ask-more{margin-top:8px;}.ask-more input{margin-bottom:8px;}
+.ask-more-btn{width:100%;font-family:'Press Start 2P',monospace;font-size:10px;color:var(--violet);background:transparent;border:2px solid var(--violet);padding:14px;border-radius:6px;}
+.ask-more-btn:active{background:var(--violet);color:var(--bezel);}
+.ask-more-btn:disabled{opacity:.4;}
+.gpt-answer{margin-top:12px;font-family:'VT323',monospace;font-size:21px;line-height:1.5;color:var(--text);display:none;}
+.gpt-answer.show{display:block;}
+.coming-soon-note{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);text-align:center;margin-top:8px;}
+.loading{text-align:center;font-family:'VT323',monospace;font-size:20px;color:var(--violet);padding:20px;display:none;}
+.loading.show{display:block;}
+.err{color:var(--rage);font-family:'VT323',monospace;font-size:18px;text-align:center;margin-top:8px;}
+.restart{display:block;margin:8px auto 0;font-family:'Press Start 2P',monospace;font-size:10px;color:var(--text-muted);background:transparent;border:2px solid var(--panel);padding:12px 18px;border-radius:6px;}
 
-  .elements{ display:flex; gap:4px; margin:4px 0 16px; height:22px; border-radius:4px; overflow:hidden; border:2px solid var(--panel); }
-  .el-seg{ display:flex; align-items:center; justify-content:center; font-size:12px; color:#0d0817; font-weight:bold; min-width:2px; }
+@media (prefers-reduced-motion: reduce){.screen,.logotype,.select-label .cur{animation:none !important;}}
 
-  .section{ margin-bottom:16px; }
-  .section .stitle{
-    font-family:'Press Start 2P', monospace; font-size:10px; color:var(--purple);
-    margin-bottom:6px; letter-spacing:1px;
-  }
-  .section .stext{ font-size:19px; line-height:1.55; color:var(--text); }
-
-  .gpt-quote{
-    border-left:3px solid var(--amber); padding:4px 0 4px 12px; margin:4px 0;
-    font-size:19px; line-height:1.5; color:#e8e2f5;
-  }
-
-  .divider{ height:2px; background:var(--panel); margin:16px 0; }
-
-  /* ask-one-more */
-  .ask-more{ margin-top:8px; }
-  .ask-more input{ margin-bottom:8px; }
-  .ask-more-btn{
-    width:100%; font-family:'Press Start 2P', monospace; font-size:11px;
-    color:var(--amber); background:transparent; border:2px solid var(--amber);
-    padding:14px; border-radius:5px; cursor:pointer;
-  }
-  .ask-more-btn:active{ background:var(--amber); color:var(--bg-black); }
-  .ask-more-btn:disabled{ opacity:0.4; }
-  .gpt-answer{ margin-top:12px; font-size:19px; line-height:1.55; color:var(--text); display:none; }
-  .gpt-answer.show{ display:block; }
-  .coming-soon-note{ font-size:14px; color:#6b5f8f; text-align:center; margin-top:8px; }
-
-  .loading{ text-align:center; font-size:18px; color:var(--amber); padding:20px; display:none; }
-  .loading.show{ display:block; }
-  .err{ color:var(--rage); font-size:16px; text-align:center; margin-top:8px; }
-
-  .restart{
-    display:block; margin:8px auto 0; font-family:'Press Start 2P',monospace; font-size:11px;
-    color:var(--text-muted); background:transparent; border:2px solid var(--panel);
-    padding:12px 18px; border-radius:5px; cursor:pointer;
-  }
+/* desktop == index rhythm */
+@media (min-width:820px){
+  .cabinet{max-width:820px;padding:22px;}
+  .view{padding:30px 60px 40px;}
+  .uncle-head{width:74px;height:74px;}
+  .logotype{font-size:24px;letter-spacing:6px;margin:0 0 16px;}
+  .logotype::after{font-size:24px;letter-spacing:6px;}
+  .tagline{font-size:16px;margin:0 0 52px;}
+  .select-label{font-size:12px;letter-spacing:3px;margin:0 0 30px;}
+  .select-label .cur{margin-left:7px;}
+  label{font-size:12px;line-height:1.5;}
+  input,select{font-size:13px;height:48px;}
+  .ask-btn{font-size:16px;}
+  .ask-btn .crystal-btn{width:22px;height:22px;}
+  .ask-btn .crystal-btn{width:22px;height:22px;}
+  .disclaimer{font-size:14px;}
+  .section .stext,.gpt-quote,.gpt-answer{font-size:22px;}
+}
 </style>
 </head>
 <body>
+<div class="cabinet">
+  <div class="screen">
+    <div class="view">
   <div class="topbar">
-    <a href="index.html" class="back-link">&#9760; EVACUATE</a>
-    <div style="width:60px;"></div>
+    <a href="index.html" class="back-link">NOT TODAY, UNCLE</a>
   </div>
 
-  <div class="crystal">🔮</div>
-  <div class="header">
-    <div class="name pixel">DO NOT ASK THE<br>GOH POK TONG</div>
-    <div class="sub">(he knows anyway)</div>
-  </div>
+  <div class="crystal-wrap"><svg class="uncle-head" viewBox="0 0 16 16" width="44" height="44" shape-rendering="crispEdges" aria-hidden="true">
+<rect x="2" y="4" width="2" height="3" fill="#8a8790"/><rect x="12" y="4" width="2" height="3" fill="#8a8790"/>
+<rect x="4" y="3" width="8" height="6" fill="#e8b98a"/><rect x="8" y="3" width="3" height="1" fill="#f2d4ae"/>
+<rect x="4" y="6" width="3" height="1" fill="#3a3440"/><rect x="9" y="6" width="3" height="1" fill="#3a3440"/>
+<rect x="4" y="7" width="2" height="2" fill="#f2ede3"/><rect x="5" y="8" width="1" height="1" fill="#141414"/>
+<rect x="10" y="7" width="2" height="2" fill="#f2ede3"/><rect x="10" y="8" width="1" height="1" fill="#141414"/>
+<rect x="3" y="9" width="10" height="1" fill="#5f7a6a"/>
+<rect x="3" y="10" width="10" height="3" fill="#a83320"/>
+<rect x="6" y="10" width="4" height="2" fill="#5f7a6a"/>
+</svg></div>
+  <p class="logotype">GOH POK TONG</p>
+  <p class="tagline">I already know. sit down first</p>
 
-  <!-- ===== FORM ===== -->
+  <p class="select-label">&mdash; TELL THE UNCLE &mdash;<span class="cur">_</span></p>
   <div class="panel" id="formPanel">
-    <h2 class="pixel">STATE YOUR BUSINESS</h2>
     <div class="row">
-      <div>
-        <label>First Name</label>
-        <input type="text" id="firstName" placeholder="Ah">
-      </div>
-      <div>
-        <label>Last Name</label>
-        <input type="text" id="lastName" placeholder="Beng">
-      </div>
+      <div><label>First Name</label><input type="text" id="firstName" placeholder="Ah"></div>
+      <div><label>Last Name</label><input type="text" id="lastName" placeholder="Beng"></div>
     </div>
-
     <label>Date of Birth</label>
     <div class="dob-row">
-      <select id="dobDay"></select>
-      <select id="dobMonth"></select>
-      <select id="dobYear"></select>
+      <select id="dobDay"></select><select id="dobMonth"></select><select id="dobYear"></select>
     </div>
-
     <div class="row">
-      <div>
-        <label>Time of Birth</label>
-        <input type="time" id="dobTime" value="12:00">
-      </div>
-      <div>
-        <label>Gender</label>
-        <select id="gender">
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
-      </div>
+      <div><label>Time of Birth</label><input type="time" id="dobTime" value="12:00"></div>
+      <div><label>Gender</label><select id="gender"><option value="male">Male</option><option value="female">Female</option></select></div>
     </div>
-
     <div class="row">
-      <div>
-        <label>Country</label>
-        <select id="country"></select>
-      </div>
-      <div>
-        <label>City</label>
-        <input type="text" id="city" placeholder="Surabaya">
-      </div>
+      <div><label>Country</label><select id="country"></select></div>
+      <div><label>City</label><input type="text" id="city" placeholder="Surabaya"></div>
     </div>
-
-    <button class="ask-btn pixel" id="askBtn">CONSULT THE UNCLE</button>
-    <div class="disclaimer">
-      For entertainment only. Uncle is not a licensed anything. Your details are used to
-      calculate your chart and may be stored to improve the readings.
-    </div>
+    <button class="ask-btn pixel" id="askBtn"><svg class="crystal-btn" viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges" aria-hidden="true"><rect x="6" y="1" width="4" height="1" fill="#e8dcff"/><rect x="4" y="2" width="1" height="1" fill="#e8dcff"/><rect x="5" y="2" width="6" height="1" fill="#a98fd6"/><rect x="11" y="2" width="1" height="1" fill="#e8dcff"/><rect x="3" y="3" width="1" height="1" fill="#e8dcff"/><rect x="4" y="3" width="8" height="1" fill="#a98fd6"/><rect x="12" y="3" width="1" height="1" fill="#e8dcff"/><rect x="2" y="4" width="1" height="1" fill="#e8dcff"/><rect x="3" y="4" width="3" height="1" fill="#a98fd6"/><rect x="6" y="4" width="1" height="1" fill="#f2ede3"/><rect x="7" y="4" width="6" height="1" fill="#a98fd6"/><rect x="13" y="4" width="1" height="1" fill="#e8dcff"/><rect x="2" y="5" width="1" height="1" fill="#e8dcff"/><rect x="3" y="5" width="2" height="1" fill="#a98fd6"/><rect x="5" y="5" width="2" height="1" fill="#f2ede3"/><rect x="7" y="5" width="6" height="1" fill="#a98fd6"/><rect x="13" y="5" width="1" height="1" fill="#e8dcff"/><rect x="2" y="6" width="3" height="1" fill="#a98fd6"/><rect x="5" y="6" width="1" height="1" fill="#f2ede3"/><rect x="6" y="6" width="6" height="1" fill="#a98fd6"/><rect x="12" y="6" width="1" height="1" fill="#7d68b0"/><rect x="13" y="6" width="1" height="1" fill="#a98fd6"/><rect x="2" y="7" width="9" height="1" fill="#a98fd6"/><rect x="11" y="7" width="2" height="1" fill="#7d68b0"/><rect x="13" y="7" width="1" height="1" fill="#a98fd6"/><rect x="2" y="8" width="8" height="1" fill="#a98fd6"/><rect x="10" y="8" width="3" height="1" fill="#7d68b0"/><rect x="13" y="8" width="1" height="1" fill="#a98fd6"/><rect x="2" y="9" width="1" height="1" fill="#e8dcff"/><rect x="3" y="9" width="6" height="1" fill="#a98fd6"/><rect x="9" y="9" width="4" height="1" fill="#7d68b0"/><rect x="13" y="9" width="1" height="1" fill="#e8dcff"/><rect x="3" y="10" width="1" height="1" fill="#e8dcff"/><rect x="4" y="10" width="3" height="1" fill="#a98fd6"/><rect x="7" y="10" width="5" height="1" fill="#7d68b0"/><rect x="12" y="10" width="1" height="1" fill="#e8dcff"/><rect x="4" y="11" width="1" height="1" fill="#e8dcff"/><rect x="5" y="11" width="1" height="1" fill="#a98fd6"/><rect x="6" y="11" width="5" height="1" fill="#7d68b0"/><rect x="11" y="11" width="1" height="1" fill="#e8dcff"/><rect x="5" y="12" width="6" height="1" fill="#3a3350"/><rect x="4" y="13" width="1" height="1" fill="#3a3350"/><rect x="5" y="13" width="6" height="1" fill="#f2d4ae"/><rect x="11" y="13" width="1" height="1" fill="#3a3350"/><rect x="4" y="14" width="1" height="1" fill="#3a3350"/><rect x="5" y="14" width="6" height="1" fill="#f2d4ae"/><rect x="11" y="14" width="1" height="1" fill="#3a3350"/><rect x="5" y="15" width="6" height="1" fill="#3a3350"/></svg><span>CONSULT THE UNCLE</span></button>
+    <div class="disclaimer">No refunds. No guarantee. The uncle says what he sees.</div>
   </div>
 
-  <!-- ===== READING ===== -->
   <div class="reading" id="reading">
-    <div class="panel">
+    <div class="rpanel">
       <h2 class="pixel">YOUR CHART (八字)</h2>
       <div class="chart-grid" id="chartGrid"></div>
-      <div style="font-size:14px;color:var(--text-muted);margin-bottom:4px;">ELEMENT BALANCE</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);margin-bottom:4px;">ELEMENT BALANCE</div>
       <div class="elements" id="elements"></div>
-      <div id="tstNote" style="font-size:13px;color:#6b5f8f;margin-top:8px;line-height:1.4;"></div>
-
+      <div id="tstNote" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);margin-top:8px;line-height:1.4;"></div>
       <div class="divider"></div>
-
-      <div class="section">
-        <div class="stitle pixel">▸ UNCLE'S OPENING REMARK</div>
-        <div class="gpt-quote" id="opener"></div>
-      </div>
-      <div class="section">
-        <div class="stitle pixel">▸ WHO YOU ARE</div>
-        <div class="stext" id="personality"></div>
-      </div>
-      <div class="section">
-        <div class="stitle pixel">▸ MONEY & CAREER</div>
-        <div class="stext" id="career"></div>
-      </div>
-      <div class="section">
-        <div class="stitle pixel">▸ LOVE & FAMILY</div>
-        <div class="stext" id="love"></div>
-      </div>
-      <div class="section">
-        <div class="stitle pixel">▸ WHAT'S COMING</div>
-        <div class="stext" id="luck"></div>
-      </div>
-      <div class="section">
-        <div class="stitle pixel">▸ UNCLE'S PARTING SHOT</div>
-        <div class="gpt-quote" id="closer"></div>
-      </div>
+      <div class="section"><div class="stitle pixel">&#9656; UNCLE'S OPENING REMARK</div><div class="gpt-quote" id="opener"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; WHO YOU ARE</div><div class="stext" id="personality"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; MONEY &amp; CAREER</div><div class="stext" id="career"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; LOVE &amp; FAMILY</div><div class="stext" id="love"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; WHAT'S COMING</div><div class="stext" id="luck"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; UNCLE'S PARTING SHOT</div><div class="gpt-quote" id="closer"></div></div>
     </div>
-
-    <div class="panel">
+    <div class="rpanel">
       <h2 class="pixel">ASK UNCLE ONE MORE THING</h2>
       <div class="ask-more">
         <input type="text" id="question" placeholder="e.g. will I be rich? should I quit my job?">
@@ -248,10 +211,12 @@
         <div class="coming-soon-note" id="comingSoon"></div>
       </div>
     </div>
-
     <button class="restart pixel" id="restartBtn">ASK ABOUT SOMEONE ELSE</button>
   </div>
 
+    </div>
+  </div>
+</div>
 <!-- Bazi engine (bundled from bazi-calculator-by-alvamind, MIT license, trimmed to 1960+) -->
 <script src="bazi-engine.min.js"></script>
 <script>
@@ -481,6 +446,18 @@ function initForm(){
 initForm();
 
 document.getElementById('askBtn').addEventListener('click', onConsult);
+/* --- Enter-to-submit (desktop keyboard) --- */
+['firstName','lastName','dobDay','dobMonth','dobYear','dobTime','gender','country','city','question']
+ .forEach(function(id){
+   var el=document.getElementById(id); if(!el) return;
+   el.addEventListener('keydown', function(e){
+     if(e.key!=='Enter') return;
+     if(el.tagName==='TEXTAREA' && !(e.ctrlKey||e.metaKey)) return;  /* allow newlines */
+     e.preventDefault();
+     var btn=document.getElementById('askBtn');
+     if(btn && !btn.disabled) btn.click();
+   });
+ });
 document.getElementById('restartBtn').addEventListener('click', ()=>{
   document.getElementById('reading').classList.remove('show');
   document.getElementById('formPanel').style.display='block';

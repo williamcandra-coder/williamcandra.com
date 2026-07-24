@@ -3,545 +3,465 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>William Candra — Retro Arcade</title>
+<meta name="description" content="The pixel arcade & fortune machine of William Candra.">
+<title>WILLIAM CANDRA — AFTER HOURS</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@500&display=swap');
+:root{--bezel:#0d0c10;--screen:#161419;--paper:#f2ede3;--cream:#f2d4ae;--muted:#8a8790;--accent:#e8462f;--comment:#5f7a6a;--dim:#546358;}
+*{box-sizing:border-box;}
+body{margin:0;background:#08070a;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:12px;
+  cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"><rect x="3" y="3" width="7" height="7" fill="%23f2ede3"/><rect x="4" y="4" width="5" height="5" fill="%23e8462f"/></svg>') 6 6, auto;}
+a{cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"><rect x="3" y="3" width="7" height="7" fill="%23e8462f"/><rect x="4" y="4" width="5" height="5" fill="%23f2ede3"/></svg>') 6 6, pointer;}
 
-  :root{
-    --bg-deep:#1a1230;
-    --bg-black:#0d0817;
-    --magenta:#ff2e88;
-    --cyan:#3ef3ff;
-    --amber:#ffb627;
-    --carpet-a:#241a3d;
-    --carpet-b:#2c2049;
-  }
+.cabinet{width:100%;max-width:620px;background:var(--bezel);border-radius:22px;padding:16px;
+  box-shadow:0 24px 80px rgba(0,0,0,.7), inset 0 0 0 2px #1c1a20;}
+.screen{position:relative;background:var(--screen);border-radius:12px;overflow:hidden;
+  box-shadow:inset 0 0 60px rgba(0,0,0,.55);animation:crtFlicker 4.2s infinite;}
+.screen::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:5;
+  background:repeating-linear-gradient(rgba(255,255,255,.04) 0 1px, transparent 1px 3px);}
+.screen::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:6;
+  background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.42) 100%);}
+@keyframes crtFlicker{
+  0%,100%{opacity:1;}
+  3%{opacity:.96;} 4%{opacity:1;}
+  38%{opacity:1;} 39%{opacity:.9;} 40%{opacity:1;} 41%{opacity:.97;} 42%{opacity:1;}
+  71%{opacity:1;} 72%{opacity:.94;} 73%{opacity:1;}
+}
+.rollbar{position:absolute;left:0;right:0;height:70px;z-index:4;pointer-events:none;
+  background:linear-gradient(transparent, rgba(255,255,255,.045), transparent);
+  animation:roll 9s linear infinite;}
+@keyframes roll{0%{top:-80px;}100%{top:110%;}}
+.glitch{position:absolute;left:0;right:0;height:3px;background:rgba(232,70,47,.25);z-index:4;
+  pointer-events:none;opacity:0;animation:glitchLine 11s infinite;}
+@keyframes glitchLine{
+  0%,96%,100%{opacity:0;top:20%;}
+  97%{opacity:1;top:34%;}
+  97.5%{opacity:0;}
+  98%{opacity:1;top:62%;transform:translateX(3px);}
+  98.4%{opacity:0;}
+}
 
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+/* ---------- header ----------
+   arcade voice = Press Start 2P, CAPS   (name, title, labels, hud)
+   terminal voice = JetBrains, lowercase (tagline, cmdline)  */
+.view{position:relative;z-index:2;padding:20px 20px 18px;text-align:center;}
 
-  /* mobile-first base: phone layout */
-  body{
-    background:var(--bg-black);
-    font-family:'VT323', monospace;
-    color:#e8e2f5;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    min-height:100vh;
-    padding:20px 10px 44px;
-    image-rendering:pixelated;
-    overflow-x:hidden;
-  }
+/* brand: boxed Kucil, box height locked to the 2-line name */
+.brand{display:flex;align-items:center;justify-content:center;gap:9px;margin:0 0 24px;}
+.badge{flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  height:44px;width:44px;background:#241f2b;border:2px solid #2a2731;border-radius:6px;padding:4px;}
+.badge img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;display:block;}
+.brandname{font-family:'Press Start 2P',monospace;font-size:clamp(16px,5vw,22px);line-height:1.2;
+  color:var(--paper);text-shadow:0 0 12px rgba(242,237,227,.3);margin:0;text-align:left;}
 
-  .pixel{font-family:'Press Start 2P', monospace;}
+/* AFTER HOURS: old café sign — slow warm pulse, rare flicker (JS) */
+.logotype{position:relative;display:inline-block;font-family:'Press Start 2P',monospace;font-size:clamp(12px,3.4vw,16px);line-height:1.5;
+  color:var(--cream);letter-spacing:3px;margin:0 0 18px;
+  text-shadow:0 0 10px rgba(242,212,174,.35);animation:cafeGlow 5s ease-in-out infinite;}
+.logotype::after{content:'AFTER HOURS';position:absolute;inset:0;pointer-events:none;
+  color:transparent;letter-spacing:3px;
+  background:repeating-linear-gradient(to bottom, rgba(150,120,74,.5) 0 2px, transparent 2px 6px);
+  -webkit-background-clip:text;background-clip:text;text-shadow:none;mix-blend-mode:multiply;}
+/* slow warm swell: layered halo grows and softens, like a tube settling into its glow */
+@keyframes cafeGlow{
+  0%,100%{opacity:.82;
+    text-shadow:0 0 6px rgba(242,212,174,.22), 0 0 12px rgba(242,212,174,.10);}
+  45%{opacity:1;
+    text-shadow:0 0 10px rgba(242,212,174,.45), 0 0 22px rgba(242,212,174,.22), 0 0 34px rgba(232,150,90,.12);}
+  55%{opacity:.98;
+    text-shadow:0 0 12px rgba(242,212,174,.5), 0 0 24px rgba(242,212,174,.24), 0 0 38px rgba(232,150,90,.14);}
+}
+/* rare flicker: a quick double-dip like a tired tube, JS-triggered */
+.logotype.flick{animation:none;opacity:.5;text-shadow:0 0 3px rgba(242,212,174,.12);}
 
-  /* ---------- Amber LCD Title ---------- */
-  .sign-wrap{
-    text-align:center;
-    margin-bottom:18px;
-  }
-  .sign{
-    font-size:clamp(20px, 7vw, 32px);
-    letter-spacing:2px;
-    font-weight:bold;
-    color:#FFC857;
-    line-height:1.15;
-    white-space:nowrap;
-    text-shadow: 0 0 3px rgba(255,200,87,.35), 0 0 8px rgba(255,200,87,.15);
-    animation:warmup 12s infinite;
-    position:relative;
-  }
-  /* faint CRT scanlines, confined to the title */
-  .sign::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:repeating-linear-gradient(180deg, #000 0 1px, transparent 1px 3px);
-    opacity:0.08;
-    pointer-events:none;
-  }
-  @keyframes warmup{
-    0%,45%,49%,100%{opacity:1;}
-    47%{opacity:0.9;}
-  }
-  @media (prefers-reduced-motion: reduce){
-    .sign, .star, .moon,
-    .bldg:nth-child(4)::before{ animation:none; }
-  }
-  .subtitle{
-    font-family:'VT323', monospace;
-    font-size:16px;
-    color:#9d8fc7;
-    margin-top:6px;
-    letter-spacing:1px;
-    padding:0 8px;
-  }
+.tagline{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--comment);margin:0 0 40px;}
 
-  /* ---------- Room ---------- */
-  /* base = phone: room fills width, capped + centered on larger screens */
-  .room{
-    width:100%;
-    max-width:1000px;
-    border:4px solid var(--bg-deep);
-    border-radius:4px;
+.select-label{font-family:'Press Start 2P',monospace;font-size:8px;color:var(--muted);letter-spacing:2px;margin:0 0 16px;}
+.select-label .cur{color:var(--accent);margin-left:5px;animation:curBlink 1.06s steps(1) infinite;}
+@keyframes curBlink{0%,50%{opacity:1;}50.01%,100%{opacity:0;}}
+
+/* menu: smaller ink, protected 44px touch rows */
+.mlist{display:inline-flex;flex-direction:column;gap:0;align-items:flex-start;margin-bottom:4px;}
+.mlist a{display:flex;align-items:center;gap:11px;text-decoration:none;position:relative;
+  min-height:40px;padding:5px 6px;opacity:.85;}
+.mlist a:hover{opacity:1;}
+/* one physical arrow, moved between rows — cannot duplicate */
+.mlist{position:relative;}
+#arrow{position:absolute;left:-16px;font-family:'Press Start 2P',monospace;font-size:10px;
+  color:var(--accent);text-shadow:0 0 8px rgba(232,70,47,.5);
+  pointer-events:none;animation:blink .8s steps(1) infinite;
+  transition:top .12s steps(3);opacity:0;}
+#arrow.ready{opacity:1;}
+@keyframes blink{50%{opacity:0;}}
+.mlist .ic{width:18px;height:18px;flex-shrink:0;}
+.mlist .label{font-family:'Press Start 2P',monospace;font-size:10px;line-height:1.3;color:var(--paper);
+  text-shadow:0 0 8px rgba(242,237,227,.15);}
+.mlist a.special .label{color:var(--cream);}
+.divider{width:150px;height:1px;background:#2a2731;margin:7px 0 7px 6px;}
+
+.cmdline{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);min-height:14px;margin:14px 0 22px;}
+.cmdline .amber{color:var(--accent);}
+
+.hud{font-family:'Press Start 2P',monospace;font-size:6px;color:var(--muted);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+  border-top:1px solid #26232b;padding-top:14px;}
+.hud .coin{color:var(--accent);cursor:pointer;letter-spacing:1px;animation:blink 1.4s steps(1) infinite;}
+.hud .coin.on{color:var(--comment);animation:none;}
+
+/* ============ DESKTOP AMBIENT WALL (additive; mobile never sees it) ============ */
+.bgwall{display:none;}
+@media (min-width:900px){
+  body{align-items:center;}                      /* center the screen in the room */
+  .bgwall{display:block;position:fixed;inset:0;z-index:0;pointer-events:none;
     background:
-      linear-gradient(180deg, #120b22 0%, #1a1230 38%, #1a1230 100%);
-    position:relative;
-    overflow:hidden;
-    box-shadow: 0 0 0 2px #000, 0 20px 60px rgba(0,0,0,0.6);
-  }
+      /* faint dot grid */
+      radial-gradient(rgba(242,237,227,.035) 1px, transparent 1.4px) 0 0 / 26px 26px,
+      /* CRT scanline wall */
+      repeating-linear-gradient(rgba(255,255,255,.012) 0 1px, transparent 1px 3px),
+      /* warm depth: subtle vignette + low glow toward the screen */
+      radial-gradient(120% 90% at 50% 50%, rgba(232,150,90,.05), transparent 60%),
+      linear-gradient(#0a090c, #0d0b0f 60%, #100d11);
+    animation:wallDrift 60s linear infinite;}
+  @keyframes wallDrift{0%{background-position:0 0,0 0,0 0,0 0;}
+    100%{background-position:26px 26px,0 0,0 0,0 0;}}   /* dot grid drifts one cell/min */
+  .bgwall::after{content:'';position:absolute;inset:0;
+    background:radial-gradient(ellipse at center, transparent 40%, rgba(8,7,10,.55) 100%);}
+  /* lift the cabinet above the wall + give it presence against the texture */
+  .cabinet{position:relative;z-index:1;box-shadow:0 30px 90px rgba(0,0,0,.75), 0 0 60px rgba(232,150,90,.04), inset 0 0 0 2px #1c1a20;}
 
-  /* back wall window with skyline — taller on phone so it isn't a thin strip */
-  .wall{
-    height:200px;
-    position:relative;
-    background:linear-gradient(180deg,#241a3d,#1a1230);
-    border-bottom:4px solid var(--bg-black);
-    display:flex;
-    align-items:flex-end;
-    justify-content:center;
-    gap:14px;
-    padding-bottom:0;
-  }
-  .window{
-    width:92%;
-    max-width:900px;
-    height:168px;
-    margin-bottom:10px;
-    background:linear-gradient(180deg,#3d2a66 0%, #241a44 55%, #1c1238 100%);
-    border:3px solid #0d0817;
-    border-radius:2px;
-    position:relative;
-    overflow:hidden;
-  }
-  /* window cross-bars, like a real sill window */
-  .window::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:
-      linear-gradient(90deg, transparent calc(50% - 1px), rgba(13,8,23,0.5) calc(50% - 1px), rgba(13,8,23,0.5) calc(50% + 1px), transparent calc(50% + 1px)),
-      linear-gradient(180deg, transparent calc(72% - 1px), rgba(13,8,23,0.5) calc(72% - 1px), rgba(13,8,23,0.5) calc(72% + 1px), transparent calc(72% + 1px));
-    z-index:5;
-    pointer-events:none;
-  }
-  .star{
-    position:absolute;
-    width:2px;height:2px;
-    background:#fff;
-    opacity:0.8;
-    animation:twinkle 3s ease-in-out infinite;
-  }
-  @keyframes twinkle{
-    0%,100%{opacity:0.8;}
-    50%{opacity:0.2;}
-  }
-  .moon{
-    position:absolute;
-    top:10px; right:24px;
-    width:18px;height:18px;
-    border-radius:50%;
-    background:var(--amber);
-    box-shadow:0 0 10px var(--amber), 0 0 22px rgba(255,182,39,0.5);
-    animation:glow 5s ease-in-out infinite;
-  }
-  @keyframes glow{
-    0%,100%{box-shadow:0 0 10px var(--amber), 0 0 22px rgba(255,182,39,0.5);}
-    50%{box-shadow:0 0 14px var(--amber), 0 0 30px rgba(255,182,39,0.7);}
-  }
+  /* ---- DESKTOP SCALE-UP: the screen grows up, text scales with it ---- */
+  .cabinet{max-width:860px;padding:26px;border-radius:26px;}
+  .view{padding:46px 60px 40px;}
+  .brand{gap:18px;margin-bottom:30px;}
+  .badge{height:85px;width:85px;border-radius:10px;padding:8px;}
+  .brand{align-items:center;gap:18px;}
+  .brandname{font-size:34px;line-height:1.25;}
+  .logotype{font-size:24px;letter-spacing:6px;margin:0 0 16px;}
+  .logotype{padding-left:0;}
+  .logotype::after{content:'AFTER HOURS';font-family:'Press Start 2P',monospace;font-size:24px;
+    letter-spacing:6px;line-height:1.5;white-space:nowrap;
+    background:repeating-linear-gradient(to bottom, rgba(120,96,58,.85) 0 2px, transparent 2px 5px);
+    -webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;}
+  .tagline{font-size:16px;margin:0 0 52px;}
+  .select-label{font-size:12px;letter-spacing:3px;margin:0 0 30px;}
+  .mlist{gap:6px;margin-bottom:8px;}
+  .mlist a{gap:18px;min-height:52px;padding:4px 8px;}
+  .mlist a::before{font-size:15px;left:-26px;}
+  .mlist .ic{width:30px;height:30px;}
+  .mlist .label{font-size:16px;line-height:1.3;}
+  .mlist .cur{}
+  .divider{width:220px;margin:12px 0 12px 8px;}
+  .cmdline{font-size:14px;min-height:20px;margin:34px 0 30px;}
+  .hud{font-size:10px;padding-top:18px;}
+  .select-label .cur{margin-left:7px;}
+}
 
-  /* city skyline — skyscraper silhouettes with lit windows */
-  .skyline{
-    position:absolute;
-    bottom:0;left:0;right:0;
-    height:58%;
-    display:flex;
-    align-items:flex-end;
-    justify-content:center;
-    gap:6px;
-    padding:0 12px;
-  }
-  .bldg{
-    background:var(--bg-black);
-    position:relative;
-    flex:1;
-    max-width:64px;
-    /* lit windows: tiny amber grid */
-    background-image:
-      repeating-linear-gradient(0deg, transparent 0 7px, rgba(255,182,39,0.4) 7px 9px, transparent 9px 14px),
-      repeating-linear-gradient(90deg, transparent 0 6px, rgba(255,182,39,0.22) 6px 8px, transparent 8px 13px);
-    background-color:var(--bg-black);
-    border-top:2px solid #060310;
-  }
-  .bldg:nth-child(1){height:52%;}
-  .bldg:nth-child(2){height:78%;}
-  .bldg:nth-child(3){height:60%;}
-  .bldg:nth-child(4){height:92%;}
-  .bldg:nth-child(5){height:68%;}
-  .bldg:nth-child(6){height:84%;}
-  .bldg:nth-child(7){height:55%;}
-  .bldg:nth-child(8){height:73%;}
-  /* antenna on the tallest towers */
-  .bldg:nth-child(4)::after, .bldg:nth-child(6)::after{
-    content:"";
-    position:absolute;
-    top:-12px; left:50%;
-    transform:translateX(-50%);
-    width:2px; height:12px;
-    background:#060310;
-  }
-  .bldg:nth-child(4)::before{
-    content:"";
-    position:absolute;
-    top:-14px; left:50%;
-    transform:translateX(-50%);
-    width:4px; height:4px;
-    border-radius:50%;
-    background:var(--amber);
-    box-shadow:0 0 6px var(--amber);
-    animation:twinkle 2s ease-in-out infinite;
-  }
-
-  /* lit marquee bar — warm amber to agree with the AFTER HOURS title */
-  .neon-strip{
-    position:absolute;
-    top:0;left:0;right:0;
-    height:4px;
-    background:repeating-linear-gradient(90deg, #FFC857 0 18px, #ffb627 18px 36px);
-    box-shadow:0 0 8px rgba(255,200,87,0.55);
-    opacity:0.95;
-  }
-
-  /* carpet floor — base = phone: single column, roomy taps */
-  .floor{
-    padding:22px 16px 24px;
-    background-image:
-      repeating-conic-gradient(from 45deg, var(--carpet-a) 0% 25%, var(--carpet-b) 0% 50%);
-    background-size:28px 28px;
-    display:grid;
-    grid-template-columns:1fr;
-    gap:18px;
-    position:relative;
-  }
-  .floor::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:radial-gradient(ellipse at center 30%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 100%);
-    pointer-events:none;
-  }
-
-  /* ---------- Cabinets ---------- */
-  .cab{
-    display:block;
-    text-decoration:none;
-    color:inherit;
-    position:relative;
-    z-index:1;
-    background:linear-gradient(180deg,#2a2046,#171026);
-    border:3px solid var(--bg-black);
-    border-radius:6px 6px 4px 4px;
-    padding:14px 14px 18px;
-    text-align:center;
-    cursor:pointer;
-    transition:transform 0.15s ease;
-    box-shadow:0 6px 0 rgba(0,0,0,0.4), 0 8px 16px rgba(0,0,0,0.5);
-  }
-  .cab:hover{
-    transform:translateY(-4px);
-  }
-  .cab:hover .cab-glow{opacity:1;}
-
-  .cab-glow{
-    position:absolute;
-    inset:-6px;
-    border-radius:8px;
-    opacity:0;
-    transition:opacity 0.2s ease;
-    pointer-events:none;
-    z-index:-1;
-    filter:blur(10px);
-  }
-  .cab.ragewings .cab-glow{background:#ff4d3d;}
-  .cab.snake .cab-glow{background:var(--cyan);}
-  .cab.breakout .cab-glow{background:var(--amber);}
-  .cab.minesweeper .cab-glow{background:#ff5a5a;}
-  .cab.fortune .cab-glow{background:#9b6dff;}
-
-  /* base = phone: large, tappable cabinet art */
-  .screen{
-    height:120px;
-    border-radius:4px;
-    margin-bottom:10px;
-    border:3px solid #000;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:52px;
-    position:relative;
-    overflow:hidden;
-  }
-  .screen::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:repeating-linear-gradient(180deg, rgba(0,0,0,0.25) 0 2px, transparent 2px 4px);
-  }
-  .ragewings .screen{background:radial-gradient(circle at 50% 30%, #7b5ea7, #2a1a4a);}
-  .snake .screen{background:radial-gradient(circle at 50% 30%, #5ffcff, #0c6a73);}
-  .breakout .screen{background:radial-gradient(circle at 50% 30%, #ffd166, #8a5a05);}
-  .fortune .screen{background:radial-gradient(circle at 50% 30%, #c9a6ff, #4a1f7a);}
-  .minesweeper .screen{background:radial-gradient(circle at 50% 30%, #ff8a8a, #7a1f1f);}
-
-  .cab-label{
-    font-family:'Press Start 2P', monospace;
-    font-size:12px;
-    line-height:1.5;
-    letter-spacing:1px;
-    color:#f1ecff;
-  }
-  .cab-sub{
-    font-size:15px;
-    color:#9d8fc7;
-    margin-top:6px;
-  }
-  .coin{
-    margin-top:10px;
-    font-size:13px;
-    color:var(--amber);
-  }
-
-  /* staff door — portfolio entrance, visually distinct */
-  .staff{
-    background:linear-gradient(180deg,#1f1a14,#120e0a);
-    border:3px solid #000;
-  }
-  .staff .screen{
-    background:repeating-linear-gradient(45deg,#3a2e10 0 8px,#2a2008 8px 16px);
-  }
-  .staff .cab-label{color:var(--amber);}
-  .staff .cab-glow{background:#ffd166;}
-  .staff::before{
-    content:"DO NOT ENTER";
-    position:absolute;
-    top:-10px;left:50%;
-    transform:translateX(-50%);
-    font-family:'Press Start 2P', monospace;
-    font-size:7px;
-    background:var(--amber);
-    color:#1a1230;
-    padding:3px 6px;
-    border-radius:2px;
-    white-space:nowrap;
-  }
-
-  .fortune::before{
-    content:"DO NOT ASK";
-    position:absolute;
-    top:-10px;left:50%;
-    transform:translateX(-50%);
-    font-family:'Press Start 2P', monospace;
-    font-size:7px;
-    background:#9b6dff;
-    color:#1a1230;
-    padding:3px 6px;
-    border-radius:2px;
-    white-space:nowrap;
-  }
-
-  /* footer / hiscore strip */
-  .version-tag{
-    margin-top:16px;
-    font-size:14px;
-    color:#4a3f6b;
-    letter-spacing:1px;
-    text-align:center;
-  }
-
-  /* footer hi-score marquee — warm amber UI text */
-  .marquee{
-    width:100%;
-    max-width:1000px;
-    margin-top:16px;
-    background:var(--bg-deep);
-    border:3px solid var(--bg-black);
-    border-radius:4px;
-    padding:12px 16px;
-    font-size:15px;
-    color:#FFC857;
-    text-shadow:0 0 4px rgba(255,200,87,0.25);
-    display:flex;
-    justify-content:center;
-    text-align:center;
-    flex-wrap:wrap;
-    gap:6px 18px;
-  }
-
-  .note{
-    max-width:1000px;
-    margin-top:20px;
-    font-size:15px;
-    color:#7a6ea3;
-    line-height:1.5;
-    text-align:center;
-  }
-
-  .waiting-caption{
-    text-align:center;
-    font-size:14px;
-    color:#9d8fc7;
-    background:var(--bg-deep);
-    padding:6px 0;
-    letter-spacing:0.5px;
-  }
-
-  /* ===== TABLET: 600px+ — two-column arcade floor ===== */
-  @media (min-width:600px){
-    body{padding:24px 16px 56px;}
-    .sign{letter-spacing:4px;}
-    .subtitle{font-size:18px;}
-    .wall{height:220px;}
-    .window{height:184px;}
-    .floor{
-      grid-template-columns:repeat(2, 1fr);
-      gap:22px;
-      padding:30px 22px 28px;
-    }
-    .cab{padding:12px 12px 14px;}
-    .screen{height:96px; font-size:40px;}
-    .cab-label{font-size:11px;}
-    .cab-sub{font-size:14px;}
-    .marquee{
-      justify-content:space-between;
-      text-align:left;
-      font-size:16px;
-    }
-  }
-
-  /* ===== SMALL DESKTOP: 1024px+ — roomier two-column spacing ===== */
-  @media (min-width:1024px){
-    .wall{height:230px;}
-    .window{height:190px;}
-    .floor{
-      gap:26px;
-      padding:38px 30px 34px;
-    }
-    .cab{padding:14px 16px 18px;}
-    .screen{height:104px; font-size:44px;}
-    .cab-label{font-size:11px;}
-    .cab-sub{font-size:15px;}
-  }
-
-  /* ===== LARGE DESKTOP: 1200px+ — cap + center room, restrained title ===== */
-  @media (min-width:1200px){
-    .room, .marquee{max-width:1000px;}
-    .sign{font-size:clamp(30px, 3vw, 36px);}
-    .floor{gap:28px; padding:40px 34px 36px;}
-  }
+@media (max-width:420px){
+  .view{padding:24px 14px 18px;}
+  .brand{gap:8px;margin-bottom:20px;}
+  .tagline{margin-bottom:34px;}
+}
+/* tablet 560–899: modest bump */
+@media (min-width:560px) and (max-width:899px){
+  .badge{height:56px;width:56px;}
+  .brand{gap:11px;}
+}
+@media (prefers-reduced-motion: reduce){
+  .screen,.rollbar,.glitch,.hud .coin,#arrow,.select-label .cur,.logotype,.bgwall{animation:none !important;}
+  .rollbar,.glitch{display:none;}
+}
 </style>
 </head>
 <body>
 
-  <div class="sign-wrap">
-    <div class="sign pixel">AFTER HOURS</div>
-    <div class="subtitle">— open 24 hrs, no quarters needed —</div>
-  </div>
+<div class="bgwall" aria-hidden="true"></div>
 
-  <div class="room">
-    <div class="wall">
-      <div class="neon-strip"></div>
-      <div class="window">
-        <div class="moon"></div>
-        <div class="star" style="top:14px;left:30px;"></div>
-        <div class="star" style="top:28px;left:70px;"></div>
-        <div class="star" style="top:18px;left:120px;"></div>
-        <div class="star" style="top:40px;left:200px;"></div>
-        <div class="star" style="top:10px;left:280px;"></div>
-        <div class="star" style="top:22px;left:340px;"></div>
+<div class="cabinet">
+  <div class="screen">
+    <div class="rollbar"></div>
+    <div class="glitch"></div>
 
-        <div class="skyline">
-          <div class="bldg"></div><div class="bldg"></div><div class="bldg"></div><div class="bldg"></div>
-          <div class="bldg"></div><div class="bldg"></div><div class="bldg"></div><div class="bldg"></div>
-        </div>
+    <div class="view">
+
+      <div class="brand">
+        <span class="badge"><img src="data:image/png;base64,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" alt="Kucil" width="56" height="56"></span>
+        <h1 class="brandname">WILLIAM<br>CANDRA</h1>
       </div>
-    </div>
 
-    <div class="floor">
+      <p class="logotype" id="logotype">AFTER HOURS</p>
+      <p class="tagline">pixel arcade &bull; fortune machine</p>
 
-      <a class="cab ragewings" href="rage-wings.html">
-        <div class="cab-glow"></div>
-        <div class="screen">
-          <svg width="52" height="52" viewBox="0 0 32 32" shape-rendering="crispEdges" aria-label="rage wings bird">
-            <rect x="8" y="11" width="15" height="13" fill="#fff4e0"/>
-            <rect x="10" y="9" width="11" height="17" fill="#fff4e0"/>
-            <rect x="10" y="21" width="11" height="5" fill="#ffc857"/>
-            <rect x="10" y="6" width="3" height="4" fill="#ff4d3d"/>
-            <rect x="14" y="4" width="3" height="6" fill="#ff4d3d"/>
-            <rect x="18" y="6" width="3" height="4" fill="#ff4d3d"/>
-            <rect x="7" y="14" width="7" height="6" fill="#ff4d3d"/>
-            <rect x="7" y="17" width="7" height="3" fill="#c0392b"/>
-            <rect x="17" y="10" width="7" height="2" fill="#0d0817"/>
-            <rect x="19" y="12" width="4" height="4" fill="#ffffff"/>
-            <rect x="21" y="13" width="2" height="2" fill="#0d0817"/>
-            <rect x="23" y="16" width="6" height="3" fill="#ff8c2b"/>
-            <rect x="23" y="19" width="4" height="2" fill="#d4882a"/>
+      <p class="select-label">&mdash; SELECT GAME &mdash;<span class="cur">_</span></p>
+
+      <nav class="mlist" aria-label="games">
+        <span id="arrow" aria-hidden="true">&gt;</span>
+        <a href="rage-wings.html" class="selected" data-cmd="$ ./rage-wings — flap or die">
+          <svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="5" y="6" width="6" height="5" fill="#e8462f"/><rect x="5" y="9" width="3" height="2" fill="#a83320"/><rect x="11" y="8" width="2" height="1" fill="#f2d4ae"/><rect x="6" y="7" width="1" height="1" fill="#141414"/></svg>
+          <span class="label">RAGE WINGS</span>
+        </a>
+        <a href="snake.html" data-cmd="$ ./snake — classic crawl">
+          <svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="2" y="10" width="2" height="2" fill="#5f9a8a"/><rect x="4" y="10" width="2" height="2" fill="#5f9a8a"/><rect x="6" y="10" width="2" height="2" fill="#5f9a8a"/><rect x="6" y="8" width="2" height="2" fill="#5f9a8a"/><rect x="6" y="6" width="2" height="2" fill="#5f9a8a"/><rect x="8" y="6" width="2" height="2" fill="#eafffb"/><rect x="12" y="10" width="2" height="2" fill="#e8462f"/></svg>
+          <span class="label">SNAKE</span>
+        </a>
+        <a href="breakout.html" data-cmd="$ ./breakout — survive the swarm">
+          <svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <rect x="7" y="7" width="2" height="2" fill="#f2ede3"/>
+            <rect x="4" y="4" width="2" height="2" fill="#e8462f"/><rect x="10" y="4" width="2" height="2" fill="#e8462f"/>
+            <rect x="4" y="10" width="2" height="2" fill="#a83320"/><rect x="10" y="10" width="2" height="2" fill="#e8462f"/>
+            <rect x="12" y="7" width="1" height="1" fill="#8b7cf6"/>
           </svg>
-        </div>
-        <div class="cab-label">RAGE WINGS</div>
-        <div class="cab-sub">flap or die</div>
-        <div class="coin">PRESS PLAY</div>
-      </a>
+          <span class="label">BREAKOUT</span>
+        </a>
+        <a href="#" data-cmd="$ ./bitshift — merge until overflow">
+          <svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <rect x="3" y="3" width="4" height="4" fill="#4a4560"/>
+            <rect x="9" y="3" width="4" height="4" fill="#2a2530"/>
+            <rect x="3" y="9" width="4" height="4" fill="#2a2530"/>
+            <rect x="9" y="9" width="4" height="4" fill="#e8462f"/>
+            <rect x="10" y="10" width="2" height="2" fill="#f2d4ae"/>
+          </svg>
+          <span class="label">BITSHIFT</span>
+        </a>
+        <a href="#" data-cmd="$ ./night-raid — the sky fights back">
+          <svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <rect x="7" y="10" width="2" height="3" fill="#f2d4ae"/>
+            <rect x="5" y="11" width="6" height="1" fill="#f2d4ae"/>
+            <rect x="7" y="7" width="2" height="1" fill="#e8462f"/>
+            <rect x="7" y="4" width="2" height="1" fill="#e8462f"/>
+            <rect x="9" y="3" width="3" height="2" fill="#4a4560"/>
+          </svg>
+          <span class="label">NIGHT RAID</span>
+        </a>
 
-      <a class="cab snake" href="snake.html">
-        <div class="cab-glow"></div>
-        <div class="screen">🐍</div>
-        <div class="cab-label">SNAKE</div>
-        <div class="cab-sub">classic crawl</div>
-        <div class="coin">PRESS PLAY</div>
-      </a>
+        <span class="divider"></span>
 
-      <a class="cab breakout" href="breakout.html">
-        <div class="cab-glow"></div>
-        <div class="screen">🧱</div>
-        <div class="cab-label">BREAKOUT</div>
-        <div class="cab-sub">brick smasher</div>
-        <div class="coin">PRESS PLAY</div>
-      </a>
+        <a href="goh-pok-tong.html" class="special" data-cmd="$ sudo summon uncle --wisdom=max">
+          <svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <rect x="2" y="4" width="2" height="3" fill="#8a8790"/><rect x="12" y="4" width="2" height="3" fill="#8a8790"/>
+            <rect x="4" y="3" width="8" height="6" fill="#e8b98a"/><rect x="8" y="3" width="3" height="1" fill="#f2d4ae"/>
+            <rect x="4" y="6" width="3" height="1" fill="#3a3440"/><rect x="9" y="6" width="3" height="1" fill="#3a3440"/>
+            <rect x="4" y="7" width="2" height="2" fill="#f2ede3"/><rect x="5" y="8" width="1" height="1" fill="#141414"/>
+            <rect x="10" y="7" width="2" height="2" fill="#f2ede3"/><rect x="10" y="8" width="1" height="1" fill="#141414"/>
+            <rect x="3" y="9" width="10" height="1" fill="#5f7a6a"/>
+            <rect x="3" y="10" width="10" height="3" fill="#a83320"/>
+            <rect x="6" y="10" width="4" height="2" fill="#5f7a6a"/>
+          </svg>
+          <span class="label">GOH POK TONG</span>
+        </a>
 
-      <a class="cab minesweeper" href="minesweeper.html">
-        <div class="cab-glow"></div>
-        <div class="screen">💣</div>
-        <div class="cab-label">MINESWEEPER</div>
-        <div class="cab-sub">watch your step</div>
-        <div class="coin">PRESS PLAY</div>
-      </a>
+        <a href="#" data-cmd="$ ping william --say-hi">
+          <svg class="ic" viewBox="0 0 16 16" shape-rendering="crispEdges">
+            <rect x="3" y="5" width="10" height="7" fill="#f2ede3"/>
+            <rect x="3" y="5" width="10" height="1" fill="#c9c4ba"/><rect x="4" y="6" width="8" height="1" fill="#c9c4ba"/>
+            <rect x="6" y="7" width="4" height="1" fill="#c9c4ba"/>
+            <rect x="6" y="8" width="2" height="1" fill="#e8462f"/><rect x="9" y="8" width="2" height="1" fill="#e8462f"/>
+            <rect x="6" y="9" width="5" height="1" fill="#e8462f"/><rect x="7" y="10" width="3" height="1" fill="#e8462f"/>
+          </svg>
+          <span class="label">CONTACT</span>
+        </a>
+      </nav>
 
-      <a class="cab fortune" href="goh-pok-tong.html">
-        <div class="cab-glow"></div>
-        <div class="screen">🔮</div>
-        <div class="cab-label">DO NOT ASK THE<br>GOH POK TONG</div>
-        <div class="cab-sub">(he knows anyway)</div>
-        <div class="coin">COMING SOON</div>
-      </a>
+      <p class="cmdline" id="cmdline"></p>
 
-      <div class="cab staff">
-        <div class="cab-glow"></div>
-        <div class="screen">🚪</div>
-        <div class="cab-label">DO NOT<br>ENTER</div>
-        <div class="cab-sub">(please enter)</div>
-        <div class="coin">COMING SOON</div>
+      <div class="hud">
+        <span>1UP 000000</span>
+        <span class="coin" id="coin" role="button" tabindex="0">INSERT COIN</span>
+        <span>WILLIAMCANDRA.COM</span>
       </div>
 
     </div>
   </div>
+</div>
 
-  <div class="marquee" style="font-family:'VT323',monospace;">
-    <span>HI-SCORE: WC — 999900</span>
-    <span>INSERT COIN TO CONTINUE</span>
-  </div>
+<script>
+(function(){
+'use strict';
 
-  <div class="version-tag">williamcandra.com · v1.4.3</div>
+/* ---------- machine memory ---------- */
+var S={v:0,last:0,sel:0};
+try{var raw=localStorage.getItem('ah_state');if(raw)S=Object.assign(S,JSON.parse(raw));}catch(e){}
+var days=S.last?Math.floor((Date.now()-S.last)/86400000):0;
+S.v++; S.last=Date.now();
+function save(){try{localStorage.setItem('ah_state',JSON.stringify(S));}catch(e){}}
+save();
 
+var motionOK=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- cmdline typing engine ---------- */
+var line=document.getElementById('cmdline'), typeTok=0;
+function amber(s){return s.replace('$','<span class="amber">$</span>');}
+function typeTo(txt,doneHtml,speed,after){
+  var id=++typeTok,i=0;line.textContent='';
+  (function step(){
+    if(id!==typeTok)return;
+    line.textContent=txt.slice(0,++i);
+    if(i<txt.length){setTimeout(step,speed||26);}
+    else{if(doneHtml)line.innerHTML=doneHtml;if(after)setTimeout(function(){if(id===typeTok)after();},200);}
+  })();
+}
+
+/* ---------- boot message ---------- */
+function bootMsg(){
+  if(S.v<=1)return 'WELCOME, TRAVELER.';
+  var h=new Date().getHours(),pool=[
+    'THE MACHINE WAS WAITING.',
+    'DESTINY HAS GOOD TIMING.',
+    '// pick one. the machine is patient.'
+  ];
+  if(S.v>=4)pool.push('THE MACHINE REMEMBERS.');
+  if(days>=1)pool.push('YOU RETURNED. '+days+(days===1?' DAY.':' DAYS.'));
+  if(h>=23||h<5)pool.push('YOU LOOK TIRED.');
+  if(Math.random()<0.1)pool.push('YOU ARE VISITOR #000004. AS ALWAYS.');
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+var idleMsg=bootMsg();
+typeTo(idleMsg,amber(idleMsg));
+
+/* ---------- single persistent selector (starts where you left off) ---------- */
+var items=[].slice.call(document.querySelectorAll('.mlist a'));
+var idx=Math.min(S.sel||0, items.length-1);
+var arrow=document.getElementById('arrow');
+function paint(){
+  items.forEach(function(a,i){a.classList.toggle('selected',i===idx);});
+  var a=items[idx];
+  arrow.style.top=(a.offsetTop+a.offsetHeight/2-6)+'px';
+  arrow.classList.add('ready');
+}
+paint();
+function select(i){idx=(i+items.length)%items.length;S.sel=idx;save();paint();
+  typeTok++;line.innerHTML=amber(items[idx].getAttribute('data-cmd'));}
+
+items.forEach(function(a,i){
+  a.addEventListener('mouseenter',function(){tick();typeTok++;line.innerHTML=amber(a.getAttribute('data-cmd'));});
+  a.addEventListener('mouseleave',function(){typeTok++;line.innerHTML=amber(items[idx].getAttribute('data-cmd')||idleMsg);});
+  a.addEventListener('click',function(e){
+    e.preventDefault();
+    if(i!==idx)select(i);
+    var href=a.getAttribute('href'),cmd=a.getAttribute('data-cmd');
+    tick();
+    typeTo(cmd,amber(cmd),14,function(){ if(href&&href!=='#')location.href=href; });
+  });
+});
+
+/* ---------- idle whispers ---------- */
+var idleTimer,WHISPERS=['thinking…','fortune engine warming…','consulting ancient database…','ghost detected.'];
+function resetIdle(){clearTimeout(idleTimer);idleTimer=setTimeout(whisper,25000+Math.random()*15000);}
+function whisper(){
+  var m='// '+WHISPERS[Math.floor(Math.random()*WHISPERS.length)];
+  typeTo(m,null,34);
+  setTimeout(function(){typeTok++;line.innerHTML=amber(items[idx].getAttribute('data-cmd')||idleMsg);resetIdle();},6000);
+}
+['pointermove','keydown','touchstart','click'].forEach(function(ev){document.addEventListener(ev,resetIdle,{passive:true});});
+resetIdle();
+window.addEventListener('resize',function(){paint();},{passive:true});
+
+/* ---------- café sign: rare flicker on top of the CSS pulse ---------- */
+var logo=document.getElementById('logotype');
+if(motionOK){
+  (function flickerLoop(){
+    setTimeout(function(){
+      logo.classList.add('flick');
+      setTimeout(function(){logo.classList.remove('flick');
+        // occasional second stutter — a tube fighting to stay lit
+        if(Math.random()<0.5){setTimeout(function(){
+          logo.classList.add('flick');
+          setTimeout(function(){logo.classList.remove('flick');},60+Math.random()*50);
+        },70+Math.random()*60);}
+      },70+Math.random()*80);
+      flickerLoop();
+    },20000+Math.random()*18000);
+  })();
+}
+
+/* ---------- irregular CRT rhythms ---------- */
+if(motionOK){
+  document.querySelector('.screen').style.animationDuration=(3.6+Math.random()*2.8).toFixed(2)+'s';
+  document.querySelector('.rollbar').style.animationDuration=(7.5+Math.random()*4.5).toFixed(1)+'s';
+  document.querySelector('.glitch').style.animationDuration=(9+Math.random()*6).toFixed(1)+'s';
+}
+
+/* ---------- audio: procedural 10PM-office ambience, coin-gated ---------- */
+var AC=window.AudioContext||window.webkitAudioContext, actx=null, ambient=null, audioOn=false;
+function ensureCtx(){ if(!actx&&AC){actx=new AC();} if(actx&&actx.state==='suspended'){actx.resume();} return actx; }
+
+function tick(){
+  if(!audioOn)return; var c=ensureCtx(); if(!c)return;
+  var o=c.createOscillator(),g=c.createGain(),f=c.createBiquadFilter();
+  f.type='highpass';f.frequency.value=1500;
+  o.type='square';o.frequency.value=2200;
+  g.gain.setValueAtTime(0.0001,c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.03,c.currentTime+0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.03);
+  o.connect(f);f.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+0.035);
+}
+
+function startAmbient(){
+  var c=ensureCtx(); if(!c||ambient)return;
+  var master=c.createGain();master.gain.value=0;master.connect(c.destination);
+  // room tone: brown noise, low-passed
+  var len=c.sampleRate*4, buf=c.createBuffer(1,len,c.sampleRate), d=buf.getChannelData(0), last=0;
+  for(var i=0;i<len;i++){var w=Math.random()*2-1;last=(last+0.02*w)/1.02;d[i]=last*3.2;}
+  var noise=c.createBufferSource();noise.buffer=buf;noise.loop=true;
+  var nf=c.createBiquadFilter();nf.type='lowpass';nf.frequency.value=520;
+  var ng=c.createGain();ng.gain.value=0.5;
+  noise.connect(nf);nf.connect(ng);ng.connect(master);noise.start();
+  // CRT/neon hum: 120Hz with a detuned partner + slow wobble
+  var h1=c.createOscillator();h1.type='sine';h1.frequency.value=120;
+  var h2=c.createOscillator();h2.type='sine';h2.frequency.value=120.4;
+  var hg=c.createGain();hg.gain.value=0.05;
+  var lfo=c.createOscillator();lfo.type='sine';lfo.frequency.value=0.12;
+  var lg=c.createGain();lg.gain.value=0.02;
+  lfo.connect(lg);lg.connect(hg.gain);
+  h1.connect(hg);h2.connect(hg);hg.connect(master);h1.start();h2.start();lfo.start();
+  // fade in slowly
+  master.gain.linearRampToValueAtTime(0.9,c.currentTime+2.5);
+  ambient={master:master};
+  // rare distant swell every few minutes
+  (function swell(){
+    setTimeout(function(){
+      if(!audioOn)return;
+      var o=c.createOscillator(),g=c.createGain();
+      o.type='sine';o.frequency.value=70+Math.random()*30;
+      g.gain.setValueAtTime(0.0001,c.currentTime);
+      g.gain.linearRampToValueAtTime(0.04,c.currentTime+2);
+      g.gain.linearRampToValueAtTime(0.0001,c.currentTime+6);
+      o.connect(g);g.connect(master);o.start();o.stop(c.currentTime+6.2);
+      swell();
+    },120000+Math.random()*120000);
+  })();
+}
+function stopAmbient(){
+  if(ambient&&actx){ambient.master.gain.linearRampToValueAtTime(0,actx.currentTime+0.4);
+    setTimeout(function(){try{actx.suspend();}catch(e){}},500);}
+}
+
+var coin=document.getElementById('coin');
+function setCoin(){coin.textContent=audioOn?'CREDIT 1':'INSERT COIN';coin.classList.toggle('on',audioOn);}
+function toggleAudio(){
+  audioOn=!audioOn;
+  if(audioOn){ensureCtx();startAmbient();tick();} else {stopAmbient();}
+  setCoin();
+}
+coin.addEventListener('click',toggleAudio);
+coin.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleAudio();}});
+setCoin();
+
+/* ---------- keyboard nav ---------- */
+document.addEventListener('keydown',function(e){
+  if(e.key==='ArrowDown'){select(idx+1);e.preventDefault();}
+  if(e.key==='ArrowUp'){select(idx-1);e.preventDefault();}
+  if(e.key==='Enter'){items[idx].click();}
+});
+
+/* ---------- sudo ---------- */
+var buf='';
+document.addEventListener('keydown',function(e){
+  if(e.key.length!==1)return;
+  buf=(buf+e.key.toLowerCase()).slice(-4);
+  if(buf==='sudo'){typeTok++;line.innerHTML='<span class="amber">&gt;</span> nice try. you have no power here.';buf='';}
+});
+
+})();
+</script>
 </body>
 </html>
