@@ -14,8 +14,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - `minesweeper.html` — classic Minesweeper at maximum difficulty.
-- "Do Not Ask the Goh Pok Tong" fortune-telling machine — page + concept TBD.
 - "Do Not Enter" door — About page as a retro RPG character screen.
+
+## [1.5.0] — 2026-07-23
+
+### Added
+- `goh-pok-tong.html` — Goh Pok Tong fortune machine, live and linked from the
+  homepage (moved out of Unreleased/Planned).
+- Rage Wings: six playable characters, each with its own world and physics.
+
+### Changed
+- `index.html` — redesigned as the After Hours arcade menu; navigation wired to
+  Rage Wings, Goh Pok Tong, Snake and Breakout.
+- `rage-wings.html` — v6.6. Hand-drawn tile backdrops for all six worlds
+  (Home Valley, Chinatown, Night Forest, Sunken Sea, Ruined Castle, Megacity),
+  high-resolution fish sprites, per-character sprite scaling.
+
+### Fixed
+- Goh Pok Tong: inputs are 16px on mobile, preventing iOS focus zoom.
+- Goh Pok Tong: Enter key now submits the form on desktop.
+- Rage Wings: character-select row no longer wraps on narrow screens.
+- Homepage no longer links to the non-existent `minesweeper.html`.
 
 ## [1.4.4] — 2026-07-06
 
