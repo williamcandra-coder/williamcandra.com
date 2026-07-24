@@ -1,0 +1,5 @@
+# GitHub Pages (Jekyll) build config.
+# Keep the engine-v3 dev/test suite in version control, but exclude it from the
+# published site — nothing at runtime requests internal/, so it should not ship.
+exclude:
+  - internal

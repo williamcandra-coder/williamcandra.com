@@ -1,0 +1,12 @@
+{
+  "engineVersion": "0.3.0-strongest-responsible-candidate",
+  "certification": "UNVALIDATED",
+  "method": "Balancing-first transparent prototype",
+  "validationRequired": [
+    "solar-term boundary fixtures",
+    "timezone and true-solar-time fixtures",
+    "practitioner-reviewed strength cases",
+    "practitioner-reviewed Useful Element cases",
+    "regression tests"
+  ]
+}

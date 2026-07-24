@@ -1,0 +1,12 @@
+{
+  "name": "goh-pok-tong-engine-v3-candidate",
+  "version": "0.3.0-candidate",
+  "type": "module",
+  "scripts": {
+    "test": "node test.mjs",
+    "test:advanced": "node advanced-test.mjs",
+    "test:parity": "node parity-test.mjs",
+    "validate": "node validate.mjs",
+    "test:all": "node test.mjs && node advanced-test.mjs && node parity-test.mjs && node validate.mjs"
+  }
+}
