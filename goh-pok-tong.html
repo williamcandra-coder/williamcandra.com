@@ -998,7 +998,7 @@ async function onConsult(fromLink){
     if(v3lib){
       try{
         v3result = v3lib.BaziV3.analyseAdvanced(toV3Pillars(bazi));
-        reading  = v3lib.GptReadingV2.compose(v3result, { name:f.first, hourKnown:bazi.hourKnown });
+        reading  = v3lib.GptReadingV2.compose(v3result, { name:f.first, hourKnown:bazi.hourKnown, gender:f.gender, birthYear:f.y });
         readingEngine='v3';
       }catch(e){
         console.warn('[reading] v3 compose failed, using classic:', e.message);

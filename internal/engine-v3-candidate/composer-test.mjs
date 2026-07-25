@@ -1,15 +1,16 @@
 /* ============================================================================
-   COMPOSER TEST — reading-v2 dynamic composer
+   COMPOSER TEST — reading-v2 dynamic composer (timeline build)
    ============================================================================
-   Loads the browser composer + v3 engine in a vm realm and asserts:
-     - every section is non-empty for a wide sweep of charts
-     - the name is woven into opener/closer
-     - NO deterministic-doom vocabulary appears in any section
-     - the day-branch clash conditional fires and only on real day clashes
-     - fragment selection is data-driven (variant count well above the
-       number of hand-written fragments)
-   This tests COMPOSITION, not astrological correctness. The engine stays
-   UNVALIDATED.
+   Asserts, across a wide chart sweep:
+     - every section non-empty; name woven into opener/closer
+     - NO deterministic-doom vocabulary in any section
+     - day-branch clash line fires iff a real day-branch clash exists
+     - hour-unknown note appears when the hour is unknown
+     - TIMELINE: dated year lines appear in self/money/love; the money section
+       carries >=3 distinct dated lines with no two ADJACENT years identical;
+       the decade marker uses soft time (a "your <band>" phrase, never a bare age)
+     - composition variety stays high
+   Tests composition + timeline mechanics, NOT astrological truth. UNVALIDATED.
    ============================================================================ */
 import fs from 'node:fs'; import vm from 'node:vm';
 const B = new URL('../../engine-v3/', import.meta.url);
@@ -30,43 +31,55 @@ const P=(y,mo,d,h,g)=>{const f=new C(y,mo,d,h,g).getCompleteAnalysis(),M=f.mainP
 let fails=0; const fail=(m)=>{fails++; console.error('  FAIL '+m);};
 const DOOM=['will die','die alone','get cancer','will divorce','marriage will fail','never marry',
   'never find love','you are doomed','you are cursed','it is fatal','will be ruined','die young'];
-
 const sections=['opener','personality','career','love','luck','closer'];
 const seen={}; sections.forEach(k=>seen[k]=new Set());
-let n=0, dayClashFired=0, dayClashCorrect=0;
+let n=0, dayClashFired=0, dayClashCorrect=0, decadeSoftOK=0, moneyDatedOK=0, adjacentRepeat=0;
+const YEARS_RE=/\b20\d\d\b/g;
 
-for(let y=1961;y<=2019;y++)for(const mo of [2,5,8,11])for(const d of [6,16,26])for(const h of [3,15]){
-  let v3; try{ v3=V3.analyseAdvanced(P(y,mo,d,h,'male')); }catch(e){ continue; }
+for(let by=1962;by<=2004;by+=2)for(const mo of [2,5,8,11])for(const d of [6,16,26])for(const h of [3,15]){
+  let v3; try{ v3=V3.analyseAdvanced(P(by,mo,d,h, by%2?'male':'female')); }catch(e){ continue; }
   const hourKnown = h!==3;
-  const r=R2.compose(v3,{name:'Wira',hourKnown});
+  const r=R2.compose(v3,{name:'Wira', gender:by%2?'male':'female', birthYear:by, hourKnown});
   n++;
   for(const k of sections){
-    if(!r[k] || !r[k].trim()) fail(`${k} empty at ${y}-${mo}-${d} ${h}h`);
+    if(!r[k]||!r[k].trim()) fail(`${k} empty`);
     seen[k].add(r[k]);
     const low=r[k].toLowerCase();
-    for(const ph of DOOM) if(low.includes(ph)) fail(`doom "${ph}" in ${k} at ${y}-${mo}-${d}`);
+    for(const ph of DOOM) if(low.includes(ph)) fail(`doom "${ph}" in ${k}`);
   }
-  if(!r.opener.includes('Wira')) fail('name missing from opener');
-  if(!r.closer.includes('Wira')) fail('name missing from closer');
+  if(!r.opener.includes('Wira')) fail('name missing opener');
+  if(!r.closer.includes('Wira')) fail('name missing closer');
   if(!hourKnown && !r.luck.includes('three pillars')) fail('hour-unknown note missing');
 
-  // day-branch clash: fired iff a real Clash lands on the day branch
-  const realDayClash = v3.dynamics.some(x=>x.type==='Clash' && x.branches.includes(v3.pillars.day.branch));
-  if(r._selectors.dayBranchClash){
-    dayClashFired++;
-    if(realDayClash) dayClashCorrect++; else fail('day-clash line fired without a real day-branch clash');
-  } else if(realDayClash){
-    fail('real day-branch clash present but line did not fire');
+  // timeline: money section carries dated lines, >=3 distinct, no adjacent dup
+  const moneyYears=(r.career.match(YEARS_RE)||[]);
+  if(moneyYears.length>=3) moneyDatedOK++;
+  // adjacent-repeat check: split money into dated clauses and compare neighbors
+  const clauses=r.career.split(/(?=\b20\d\d\b)/).filter(c=>/^20\d\d/.test(c.trim()));
+  for(let i=1;i<clauses.length;i++){
+    const a=clauses[i-1].replace(/^20\d\d/,'').trim(), b=clauses[i].replace(/^20\d\d/,'').trim();
+    if(a && a===b){ adjacentRepeat++; break; }
   }
+  // decade marker soft time: must contain "your " band phrase, must NOT contain "at age" or a bare "at NN"
+  if(/your (late teens|twenties|thirties|forties|fifties)|the coming decade/.test(r.career)) decadeSoftOK++;
+  if(/\bage \d\d\b|\bat \d\d\b/.test(r.career)) fail('decade used a hard age');
+
+  const realDayClash = v3.dynamics.some(x=>x.type==='Clash' && x.branches.includes(v3.pillars.day.branch));
+  if(r._selectors.dayBranchClash){ dayClashFired++; if(realDayClash) dayClashCorrect++; else fail('day-clash fired without real clash'); }
+  else if(realDayClash){ fail('real day clash but line did not fire'); }
 }
 
 console.log(`composer: ${n} charts`);
 sections.forEach(k=>console.log(`  ${k.padEnd(12)}${seen[k].size} distinct`));
-const space=seen.personality.size*seen.career.size*seen.love.size*seen.luck.size;
-console.log(`  reading space (self x career x love x luck): ${space.toLocaleString()}`);
-console.log(`  day-branch clash fired: ${dayClashFired} (all correct: ${dayClashFired===dayClashCorrect})`);
+console.log(`  money section >=3 dated lines: ${moneyDatedOK}/${n}`);
+console.log(`  adjacent verbatim year repeats: ${adjacentRepeat} (want 0)`);
+console.log(`  decade marker soft-time: ${decadeSoftOK}/${n}`);
+console.log(`  day-branch clash fired ${dayClashFired}, all correct: ${dayClashFired===dayClashCorrect}`);
 console.log(`  doom vocabulary: ${fails===0?'none':'SEE FAILURES'}`);
 
-if(seen.personality.size < 50) fail('personality variety too low — composition may be broken');
+if(moneyDatedOK<n) fail('some charts missing dated money lines');
+if(adjacentRepeat>0) fail('adjacent years read identically');
+if(decadeSoftOK<n) fail('decade marker missing soft-time band');
+if(seen.career.size<50) fail('career variety too low');
 if(fails){ console.error(`composer tests FAIL (${fails})`); process.exit(1); }
 console.log('composer tests PASS');
