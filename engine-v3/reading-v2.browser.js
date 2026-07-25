@@ -118,6 +118,50 @@
     return { stem:STEMS[stepIdx%10], branch:BRANCHES[stepIdx%12], band:band, forward:forward };
   }
 
+  /* Branch pairs — same tables the engine uses. A future year whose branch
+     clashes with the DAY branch (the self/marriage seat) is a genuinely
+     pivotal year in the tradition; a combination is a smoother, partnering one.
+     This is what makes "interesting years" real rather than decorative. */
+  var CLASH_PAIRS = [['Zi','Wu'],['Chou','Wei'],['Yin','Shen'],['Mao','You'],['Chen','Xu'],['Si','Hai']];
+  var COMBO_PAIRS = [['Zi','Chou'],['Yin','Hai'],['Mao','Xu'],['Chen','You'],['Si','Shen'],['Wu','Wei']];
+  function pairHas(pairs, a, b){
+    return pairs.some(function(p){ return (p[0]===a&&p[1]===b)||(p[1]===a&&p[0]===b); });
+  }
+  /* Scan forward for years whose branch clashes or combines with ANY of the four
+     pillar seats. Each seat is a different area of life, so a clash on the month
+     pillar (career) means something different from one on the day pillar (self
+     and marriage).
+
+     Note on why this scans all four seats: a branch has exactly ONE clash
+     partner and ONE combination partner in the 12-branch cycle, so scanning a
+     single seat over 12 years can only ever return two hits. Four seats gives a
+     realistic spread of notable years inside a normal forecast window.
+
+     Seat priority when two seats flag the same year: day > month > year > hour.
+     Returns chronologically, nearest first, deduped by year. */
+  var SEAT_RANK = { day:0, month:1, year:2, hour:3 };
+  function notableYears(pillars, fromYear, span, limit, exclude){
+    var skip = {};
+    (exclude||[]).forEach(function(y){ skip[y]=true; });
+    var hits = {};
+    ['day','month','year','hour'].forEach(function(seat){
+      var seatBranch = pillars[seat] && pillars[seat].branch;
+      if(!seatBranch) return;
+      for(var y=fromYear; y<fromYear+span; y++){
+        if(skip[y]) continue;   // already narrated in detail above
+        var b=annualPillar(y).branch, kind=null;
+        if(pairHas(CLASH_PAIRS, b, seatBranch)) kind='clash';
+        else if(pairHas(COMBO_PAIRS, b, seatBranch)) kind='combo';
+        if(!kind) continue;
+        var prev=hits[y];
+        if(!prev || SEAT_RANK[seat] < SEAT_RANK[prev.seat]) hits[y]={year:y, kind:kind, seat:seat};
+      }
+    });
+    return Object.keys(hits).map(function(k){ return hits[k]; })
+      .sort(function(a,b){ return a.year-b.year; })
+      .slice(0, limit);
+  }
+
   /* ==========================================================================
      FRAGMENT LIBRARY — plain, direct, concise. Edit freely.
      ========================================================================== */
@@ -202,11 +246,11 @@
 
     /* CAREER */
     careerCore: {
-      Companion:"Career: you need your own name on the work, or you slowly stop caring. Bad fit under a controlling boss.",
-      Output:"Career: you belong where the work is visible — building, presenting, performing, shipping. Hidden in a back office you go flat.",
-      Wealth:"Career: you're a closer. Theory bores you, finishing energises you. Work where money is handled, not discussed.",
-      Officer:"Career: you want real responsibility and a clear structure. Give you weight and you carry it. Give you chaos and it eats you.",
-      Resource:"Career: you're the deep-knowledge type — the craft that pays after years, not months. Chase mastery, not quick money."
+      Companion:"You need your own name on the work, or you slowly stop caring. Bad fit under a controlling boss.",
+      Output:"You belong where the work is visible — building, presenting, performing, shipping. Hidden in a back office you go flat.",
+      Wealth:"You're a closer. Theory bores you, finishing energises you. Work where money is handled, not discussed.",
+      Officer:"You want real responsibility and a clear structure. Give you weight and you carry it. Give you chaos and it eats you.",
+      Resource:"You're the deep-knowledge type — the craft that pays after years, not months. Chase mastery, not quick money."
     },
     careerMod: {
       weak:" Don't do it alone. Pair with someone steadier — your gift is precision, not endurance.",
@@ -234,9 +278,9 @@
 
     /* YOUR PEOPLE — siblings + friends, merged (Companion god) */
     people: {
-      high:"Siblings and friends: your chart is crowded with peers, {name}. You've never lacked people — brothers, sisters, a circle that shows up. The cost is that you compete with the ones closest to you, sometimes without noticing.",
-      mid:"Siblings and friends: a normal amount of company in your chart. A few real ones, a lot of acquaintances, and you can tell the difference — which is rarer than you think.",
-      low:"Siblings and friends: your chart is light on peers. You've often felt like the one standing slightly apart, even in a full room. That built your independence and also your habit of not calling anyone when it's bad."
+      high:"Your chart is crowded with peers, {name}. You've never lacked people — brothers, sisters, a circle that shows up. The cost is that you compete with the ones closest to you, sometimes without noticing.",
+      mid:"A normal amount of company in your chart. A few real ones, a lot of acquaintances, and you can tell the difference — which is rarer than you think.",
+      low:"Your chart is light on peers. You've often felt like the one standing slightly apart, even in a full room. That built your independence and also your habit of not calling anyone when it's bad."
     },
     peopleMod: {
       weak:" Lean on them more than you do. Asking is not losing.",
@@ -246,9 +290,9 @@
 
     /* PARENTS & ROOTS — Resource god + year/month pillar */
     parents: {
-      high:"Parents and roots: strong support in your chart, {name}. Someone older backed you — a parent, a grandparent, a teacher. You got a foundation. The risk is staying comfortable on it too long.",
-      mid:"Parents and roots: ordinary support — present, imperfect, enough. What you got was a start, not a guarantee, and you've known that since young.",
-      low:"Parents and roots: your chart is thin on inherited support. You built more of yourself than most people had to. It made you capable and it made you wary of depending on anyone."
+      high:"Strong support sits in your chart, {name}. Someone older backed you — a parent, a grandparent, a teacher. You got a foundation. The risk is staying comfortable on it too long.",
+      mid:"Ordinary support — present, imperfect, enough. What you got was a start, not a guarantee, and you've known that since young.",
+      low:"Your chart is thin on inherited support. You built more of yourself than most people had to. It made you capable and it made you wary of depending on anyone."
     },
     parentsSeason: {
       spring:" Early years pushed you forward fast.",
@@ -259,11 +303,11 @@
 
     /* HEALTH — gentle tendencies only, never diagnosis */
     health: {
-      Wood:"Health: your chart runs light on Wood, which traditionally links to the liver, tendons and the stretch of the body. Nothing to worry about — just the areas your type is told to keep loose. Move often, stretch, don't sit for six hours straight.",
-      Fire:"Health: your chart runs light on Fire, traditionally linked to the heart and circulation. Not a warning, just a tendency — your type does better with warmth, decent sleep and not letting stress sit unspoken.",
-      Earth:"Health: your chart runs light on Earth, traditionally linked to digestion and the stomach. Your type tends to eat badly when busy. Regular meals do more for you than any supplement.",
-      Metal:"Health: your chart runs light on Metal, traditionally linked to the lungs and skin. Your type is told to mind air quality and breathing — and to actually rest the voice and chest when run down.",
-      Water:"Health: your chart runs light on Water, traditionally linked to the kidneys and the body's reserves. Your type burns through energy and calls it productivity. Water, sleep, and stopping before empty."
+      Wood:"Your chart runs light on Wood, which traditionally links to the liver, tendons and the stretch of the body. Nothing to worry about — just the areas your type is told to keep loose. Move often, stretch, don't sit for six hours straight.",
+      Fire:"Your chart runs light on Fire, traditionally linked to the heart and circulation. Not a warning, just a tendency — your type does better with warmth, decent sleep and not letting stress sit unspoken.",
+      Earth:"Your chart runs light on Earth, traditionally linked to digestion and the stomach. Your type tends to eat badly when busy. Regular meals do more for you than any supplement.",
+      Metal:"Your chart runs light on Metal, traditionally linked to the lungs and skin. Your type is told to mind air quality and breathing — and to actually rest the voice and chest when run down.",
+      Water:"Your chart runs light on Water, traditionally linked to the kidneys and the body's reserves. Your type burns through energy and calls it productivity. Water, sleep, and stopping before empty."
     },
     healthStrength: {
       weak:" With thin support overall, recovery takes you longer than you'd like. Build rest in before you need it.",
@@ -280,6 +324,32 @@
       Water:"What's thin is Water — patience and flow. You push when waiting would work better."
     },
     luckHourUnknown:" And {name} — you didn't know your birth hour, so uncle read three pillars instead of four. The shape is right. The fine detail about your later years, don't quote uncle on.",
+
+    /* NEXT YEAR — the headline prediction, keyed by the incoming Ten God */
+    nextYear: {
+      Companion:"Next year, {y}, leans on your own element. Support thins out and you carry more yourself. Good year to back your own judgement — bad year to assume everyone agrees with it.",
+      Output:"Next year, {y}, pushes what's inside you outward. Something you've been sitting on wants finishing. Ship it, {name}, even rough — that year rewards the visible.",
+      Wealth:"Next year, {y}, puts something you want inside arm's reach. It is real. It also asks a price, and you'll be tempted to pretend it didn't.",
+      Officer:"Next year, {y}, adds structure and someone to answer to. It will feel like pressure. Carried properly, it's the year people start taking you seriously.",
+      Resource:"Next year, {y}, slows the pace and hands you time to learn instead of push. You'll want to force it. Don't — that year pays students, not soldiers."
+    },
+    /* Notable years. Each pillar seat is a different area of life, so a clash on
+       the month pillar (career, parents) reads differently from one on the day
+       pillar (self, marriage). Movement and timing only — never a verdict. */
+    notable: {
+      clash: {
+        day:" Then mark {y}, {name}. That year runs straight at your day pillar — the seat of self and marriage. Settled things get unsettled: where you live, who you live with, what you thought was decided. Not bad. Just moving. Don't sign anything lazily that year.",
+        month:" {y} strikes your month pillar — the career seat. Expect the ground under your work to shift: a role ends, a boss leaves, a direction stops making sense. People who prepared treat it as an exit. People who didn't call it bad luck.",
+        year:" {y} hits your year pillar — the seat of roots and reputation. Something in how you're seen, or in the older generation around you, changes shape that year. Handle the family conversation you've been postponing before it arrives, not after.",
+        hour:" {y} lands on your hour pillar — the seat of children, home and the later stretch. A quieter disruption than the others: what you want your life to look like stops matching what it currently looks like."
+      },
+      combo: {
+        day:" And {y} sits in harmony with your day pillar — one of the smoother years in the run. Partnership comes easily then. Whatever you need another person's help for, ask in that year, not before it.",
+        month:" {y} harmonises with your month pillar — the work seat. Doors that were stuck move quietly that year. It's the year to ask for the role, not the year to wait and see.",
+        year:" {y} harmonises with your year pillar. Old connections resurface and prove useful — someone from earlier in your life reappears with something you need. Answer the message.",
+        hour:" {y} sits well with your hour pillar. A settling year: home, family, the long-term shape of things. Good year to plant something you intend to keep."
+      }
+    },
 
     closers: [
       "That's the free part, {name}. The rest you already know and keep pretending you don't. Go do the thing you're avoiding.",
@@ -439,12 +509,24 @@
     /* 8. HEALTH — gentle tendencies only */
     var health = FRAG.health[useful] + FRAG.healthStrength[strBucket];
 
-    /* 9. WHAT'S COMING [dated] */
+    /* 9. WHAT'S COMING [dated] — the section people actually came for.
+       Structure: what's thin -> a past anchor they can check -> next year in
+       detail -> the year after -> up to two genuinely notable years found by
+       branch clash/combination against the day branch -> closing posture. */
     var pastGrp = tenGodGroup(dayStem, annualPillar(pastA).stem);
+    var nextGrp = tenGodGroup(dayStem, annualPillar(next1).stem);
     var luck = FRAG.luckCore[useful]
              + ' Look back — ' + fillTokens(PAST_REFLECT[pastGrp] || '{y} asked something of you.', {y:String(pastA),name:name})
-             + yearLine('fortune', next3, dayStem, name)
-             + ' The next stretch pays patience over noise: build quietly, and the loud money lands later and better than you expect.';
+             + ' ' + fillTokens(FRAG.nextYear[nextGrp], {y:String(next1), name:name})
+             + yearLine('fortune', next2, dayStem, name);
+
+    var notable = notableYears(pillars, next1, 12, 4, [next1, next2]);
+    notable.forEach(function(nb){
+      var tmpl = FRAG.notable[nb.kind] && FRAG.notable[nb.kind][nb.seat];
+      if(tmpl) luck += fillTokens(tmpl, { y:String(nb.year), name:name });
+    });
+
+    luck += ' Past that, the shape holds: build quietly, and the loud money lands later and better than you expect.';
     if(!hourKnown){ luck += fillName(FRAG.luckHourUnknown, name); }
 
     /* 10. CLOSER */
@@ -461,6 +543,7 @@
         bands:{ companion:bandOf(acc,'Companion'), resource:bandOf(acc,'Resource') },
         timeline: {
           past:[pastA,pastB], current:now, future:[next1,next2,next3],
+          notable: notableYears(pillars, next1, 12, 4, [next1, next2]),
           decade:{ pillar:lp.stem+'-'+lp.branch, band:lp.band, tenGod:decGrp }
         }
       }
