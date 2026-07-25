@@ -605,40 +605,59 @@ function buildReading(b, name){
 }
 
 /* ============================================================
-   ENGINE V3 — DEVELOPMENT FEATURE FLAG  (?engine=v3)
+   ENGINE V3 — LIVE READING ENGINE
    ============================================================
-   OFF BY DEFAULT. With the flag absent nothing below executes, no extra file
-   is requested, and the reading is identical to production.
+   v3 now drives the reading for EVERY visitor. It consumes the normalized
+   Four Pillars that computeBazi() produced (bazi-engine.min.js remains the
+   ONLY source of birth date -> Four Pillars; v3 never calculates a pillar)
+   and the dynamic composer (reading-v2.browser.js) turns v3's signals —
+   strength, dominant Ten God, season, clashes and which pillar they land on —
+   into composed prose.
 
-   bazi-engine.min.js remains the ONLY source of birth date -> Four Pillars.
-   Engine v3 never calculates a pillar. It consumes the normalized pillars
-   that computeBazi() has already produced.
+   Two support files are fetched, both classic scripts (no ES modules, so they
+   load over file:// as well as https):
+     engine-v3/engine-v3.browser.js   -> window.BaziV3       (chart analysis)
+     engine-v3/reading-v2.browser.js  -> window.GptReadingV2 (prose composer)
+
+   FAIL-SOFT: if either file fails to load or v3 throws, the reading falls back
+   to the built-in string engine (buildReading). A visitor NEVER sees a blank
+   screen or an error in place of a reading.
+
+   ?engine=classic forces the old string reading (for comparison / rollback).
+   ?engine=v3 is accepted but now redundant — v3 is the default.
    ============================================================ */
 
-const V3_FLAG = (function(){
+const FORCE_CLASSIC = (function(){
+  try{ return new URLSearchParams(window.location.search).get('engine')==='classic'; }
+  catch(e){ return false; }
+})();
+const V3_FLAG = (function(){    // retained: still gates the dev evidence panel
   try{ return new URLSearchParams(window.location.search).get('engine')==='v3'; }
   catch(e){ return false; }
 })();
 const V3_SRC = 'engine-v3/engine-v3.browser.js';
+const READING_SRC = 'engine-v3/reading-v2.browser.js';
 let _v3Promise = null;
 
-/* Loaded by injecting a classic <script>, not by import().
-   ES modules require an http(s) origin and fail under file://, which is how
-   this page is opened for local testing. A classic script loads from both,
-   with no bundler and no build step. */
+/* Load both support scripts. Resolves with {BaziV3, GptReadingV2} once both
+   globals are present. Rejects if either fails, so onConsult can fall back. */
 function loadV3(){
-  if(window.BaziV3) return Promise.resolve(window.BaziV3);
+  if(window.BaziV3 && window.GptReadingV2) return Promise.resolve({BaziV3:window.BaziV3, GptReadingV2:window.GptReadingV2});
   if(_v3Promise) return _v3Promise;
-  _v3Promise = new Promise(function(resolve,reject){
-    const s=document.createElement('script');
-    s.src=V3_SRC; s.async=true;
-    s.onload=function(){
-      window.BaziV3 ? resolve(window.BaziV3)
-                    : reject(new Error('loaded '+V3_SRC+' but window.BaziV3 is missing'));
-    };
-    s.onerror=function(){ reject(new Error('could not load '+V3_SRC)); };
-    document.head.appendChild(s);
-  });
+  function inject(src, globalName){
+    return new Promise(function(resolve,reject){
+      if(window[globalName]) return resolve(window[globalName]);
+      const s=document.createElement('script');
+      s.src=src; s.async=true;
+      s.onload=function(){ window[globalName] ? resolve(window[globalName])
+                                              : reject(new Error('loaded '+src+' but '+globalName+' is missing')); };
+      s.onerror=function(){ reject(new Error('could not load '+src)); };
+      document.head.appendChild(s);
+    });
+  }
+  _v3Promise = Promise.all([ inject(V3_SRC,'BaziV3'), inject(READING_SRC,'GptReadingV2') ])
+    .then(function(r){ return {BaziV3:r[0], GptReadingV2:r[1]}; })
+    .catch(function(e){ _v3Promise=null; throw e; });
   return _v3Promise;
 }
 
@@ -822,25 +841,23 @@ function v3panel(bazi, pillars, a, V3){
   return v3shell(html);
 }
 
-function runV3(bazi){
+/* Dev evidence panel. Called with the v3 result already computed by onConsult,
+   so it never recomputes and never loads anything. Only invoked under
+   ?engine=v3. `engine` is 'v3' or 'classic' — which reading the visitor saw. */
+function renderV3Panel(bazi, result, BaziV3, engine){
   const mount=document.getElementById('v3Mount');
   if(!mount) return;
-  mount.innerHTML = v3shell('<div class="v3empty">Running engine v3&hellip;</div>');
-
-  let pillars;
-  try{ pillars = toV3Pillars(bazi); }
-  catch(e){ mount.innerHTML = v3shell('<div class="v3err">Adapter failed: '+v3esc(e.message)+'</div>'); return; }
-
-  loadV3().then(function(V3){
-    let a;
-    try{ a = V3.analyseAdvanced(pillars); }
-    catch(e){ mount.innerHTML = v3shell('<div class="v3err">analyseAdvanced() threw: '+v3esc(e.message)+'</div>'); return; }
-    try{ mount.innerHTML = v3panel(bazi, pillars, a, V3); }
-    catch(e){ mount.innerHTML = v3shell('<div class="v3err">Panel render failed: '+v3esc(e.message)+'</div>'); }
-    window._baziV3 = { pillars: pillars, result: a };
-  }).catch(function(e){
-    mount.innerHTML = v3shell('<div class="v3err">Engine v3 did not load: '+v3esc(e.message)+'</div>');
-  });
+  const pillars = toV3Pillars(bazi);
+  let body;
+  try{ body = v3panel(bazi, pillars, result, BaziV3); }
+  catch(e){ mount.innerHTML = v3shell('<div class="v3err">Panel render failed: '+v3esc(e.message)+'</div>'); return; }
+  mount.innerHTML = body;
+  /* note which reading engine actually drove the visitor's prose */
+  const banner = '<div class="v3note" style="margin:-6px 0 10px">Reading shown to visitor was composed by: <b style="color:var(--cream)">'
+               + v3esc(engine==='v3'?'v3 dynamic composer':'classic string fallback') + '</b></div>';
+  const sub = mount.querySelector('.v3sub');
+  if(sub){ sub.insertAdjacentHTML('afterend', banner); }
+  window._baziV3 = { pillars: pillars, result: result, readingEngine: engine };
 }
 
 /* ============================================================
@@ -902,7 +919,10 @@ initForm();
 /* Warm the engine after first paint so CONSULT feels instant, without blocking
    the initial render for visitors who never press it. */
 (function preloadEngine(){
-  const go=function(){ loadBaziEngine().catch(function(){}); };
+  const go=function(){
+    loadBaziEngine().catch(function(){});
+    if(!FORCE_CLASSIC){ loadV3().catch(function(){}); }  // warm analysis + composer too
+  };
   if('requestIdleCallback' in window) requestIdleCallback(go,{timeout:3000});
   else setTimeout(go,1200);
 })();
@@ -953,21 +973,40 @@ async function onConsult(fromLink){
   const btn=document.getElementById('askBtn'), lbl=btn.querySelector('span');
   const prevLabel=lbl.textContent;
   btn.disabled=true; lbl.textContent='WARMING UP\u2026';
+
+  /* Load the pillar engine (required) and, unless classic is forced, the v3
+     analysis + composer (preferred). v3 load failure is caught and downgraded
+     to the classic reading — it must never block the consult. */
+  let v3lib=null;
   try{ await loadBaziEngine(); }
   catch(e){
     btn.disabled=false; lbl.textContent=prevLabel;
     alert("Uncle's machine is still waking up. Check your connection and try again.");
     return;
   }
+  if(!FORCE_CLASSIC){
+    try{ v3lib = await loadV3(); }
+    catch(e){ v3lib=null; console.warn('[reading] v3 unavailable, using classic reading:', e.message); }
+  }
   btn.disabled=false; lbl.textContent=prevLabel;
 
-  let bazi, reading;
+  let bazi, reading, readingEngine='classic', v3result=null;
   try{
     bazi=computeBazi(f.y,f.mo,f.d,hh,mm||0,f.city,f.country,f.gender,!f.timeUnknown);
-    /* Engine v3 hook. Not awaited, and wrapped so that no v3 failure can ever
-       reach the visitor's reading. Runs only under ?engine=v3. */
-    if(V3_FLAG){ try{ runV3(bazi); }catch(e){ console.error('[engine v3]', e); } }
-    reading=buildReading(bazi, f.first);
+
+    /* PREFERRED PATH: v3 analysis -> dynamic composed reading. */
+    if(v3lib){
+      try{
+        v3result = v3lib.BaziV3.analyseAdvanced(toV3Pillars(bazi));
+        reading  = v3lib.GptReadingV2.compose(v3result, { name:f.first, hourKnown:bazi.hourKnown });
+        readingEngine='v3';
+      }catch(e){
+        console.warn('[reading] v3 compose failed, using classic:', e.message);
+        reading=null;
+      }
+    }
+    /* FAIL-SOFT: classic string reading if v3 was unavailable or threw. */
+    if(!reading){ reading=buildReading(bazi, f.first); readingEngine='classic'; }
   }catch(err){
     if(String(err.message).includes('YEAR_RANGE')){
       alert("Aiyoh, that's too far back for uncle's machine \u2014 it only reads birthdays from 1960 onward. Sorry ah.");
@@ -976,6 +1015,10 @@ async function onConsult(fromLink){
     }
     return;
   }
+
+  /* dev evidence panel, only under ?engine=v3 and only if v3 actually ran */
+  if(V3_FLAG && v3result){ try{ renderV3Panel(bazi, v3result, v3lib.BaziV3, readingEngine); }catch(e){ console.error('[v3 panel]', e); } }
+
   renderReading(bazi, reading, f);
 
   /* store submission (timestamp + form fields only) — if configured.
