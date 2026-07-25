@@ -121,16 +121,7 @@ input::placeholder{color:#4a4753;}
 .section .stext{font-family:'VT323',monospace;font-size:21px;line-height:1.5;color:var(--text);}
 .gpt-quote{border-left:3px solid var(--violet);padding:4px 0 4px 13px;margin:4px 0;font-family:'VT323',monospace;font-size:21px;line-height:1.45;color:var(--paper);}
 .divider{height:2px;background:var(--panel);margin:18px 0;}
-.ask-more{margin-top:8px;}.ask-more input{margin-bottom:8px;}
-.ask-more-btn{width:100%;font-family:'Press Start 2P',monospace;font-size:10px;color:var(--violet);background:transparent;border:2px solid var(--violet);padding:14px;border-radius:6px;}
-.ask-more-btn:active{background:var(--violet);color:var(--bezel);}
-.ask-more-btn:disabled{opacity:.4;}
-.gpt-answer{margin-top:12px;font-family:'VT323',monospace;font-size:21px;line-height:1.5;color:var(--text);display:none;}
-.gpt-answer.show{display:block;}
-.coming-soon-note{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);text-align:center;margin-top:8px;}
-.loading{text-align:center;font-family:'VT323',monospace;font-size:20px;color:var(--violet);padding:20px;display:none;}
-.loading.show{display:block;}
-.err{color:var(--rage);font-family:'VT323',monospace;font-size:18px;text-align:center;margin-top:8px;}
+/* ask-more styles removed in v1.4.0 with the feature */
 .restart{display:block;margin:8px auto 0;font-family:'Press Start 2P',monospace;font-size:10px;color:var(--text-muted);background:transparent;border:2px solid var(--panel);padding:12px 18px;border-radius:6px;}
 
 /* ---- unknown birth time ---- */
@@ -206,7 +197,7 @@ input:disabled{opacity:.4;}
   .ask-btn .crystal-btn{width:22px;height:22px;}
   .ask-btn .crystal-btn{width:22px;height:22px;}
   .disclaimer{font-size:14px;}
-  .section .stext,.gpt-quote,.gpt-answer{font-size:22px;}
+  .section .stext,.gpt-quote{font-size:22px;}
 }
 </style>
 </head>
@@ -268,21 +259,14 @@ input:disabled{opacity:.4;}
       <div class="divider"></div>
       <div class="section"><div class="stitle pixel">&#9656; UNCLE'S OPENING REMARK</div><div class="gpt-quote" id="opener"></div></div>
       <div class="section"><div class="stitle pixel">&#9656; WHO YOU ARE</div><div class="stext" id="personality"></div></div>
-      <div class="section"><div class="stitle pixel">&#9656; MONEY &amp; CAREER</div><div class="stext" id="career"></div></div>
-      <div class="section"><div class="stitle pixel">&#9656; LOVE &amp; FAMILY</div><div class="stext" id="love"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; YOUR FORTUNE</div><div class="stext" id="fortune"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; CAREER</div><div class="stext" id="career"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; LOVE &amp; SPOUSE</div><div class="stext" id="love"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; YOUR PEOPLE</div><div class="stext" id="people"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; PARENTS &amp; ROOTS</div><div class="stext" id="parents"></div></div>
+      <div class="section"><div class="stitle pixel">&#9656; HEALTH</div><div class="stext" id="health"></div></div>
       <div class="section"><div class="stitle pixel">&#9656; WHAT'S COMING</div><div class="stext" id="luck"></div></div>
       <div class="section"><div class="stitle pixel">&#9656; UNCLE'S PARTING SHOT</div><div class="gpt-quote" id="closer"></div></div>
-    </div>
-    <div class="rpanel">
-      <h2 class="pixel">ASK UNCLE ONE MORE THING</h2>
-      <div class="ask-more">
-        <input type="text" id="question" placeholder="e.g. will I be rich? should I quit my job?">
-        <button class="ask-more-btn pixel" id="askMoreBtn">ASK (1 QUESTION)</button>
-        <div class="loading" id="loading">Uncle is thinking… and judging…</div>
-        <div class="gpt-answer" id="gptAnswer"></div>
-        <div class="err" id="askErr"></div>
-        <div class="coming-soon-note" id="comingSoon"></div>
-      </div>
     </div>
     <div class="sharewrap">
       <button class="share-btn pixel" id="shareBtn">SEND TO SOMEONE</button>
@@ -304,8 +288,9 @@ input:disabled{opacity:.4;}
    CONFIG — fill these after you set up the Worker + Google Sheet
    ============================================================ */
 const CONFIG = {
-  // Cloudflare Worker URL for the paid "ask one more question" button.
-  // Leave "" to show a "coming soon" note instead of calling Claude.
+  // Reserved. The "ask uncle one more thing" feature was removed in v1.4.0;
+  // nothing reads this key at runtime. Left in place so the config shape is
+  // unchanged for any future Worker-backed feature.
   WORKER_URL: "",
 
   // Google Apps Script web-app URL for storing submissions (timestamp + form fields).
@@ -929,7 +914,7 @@ initForm();
 
 document.getElementById('askBtn').addEventListener('click', onConsult);
 /* --- Enter-to-submit (desktop keyboard) --- */
-['firstName','lastName','dobDay','dobMonth','dobYear','dobTime','gender','country','city','question']
+['firstName','lastName','dobDay','dobMonth','dobYear','dobTime','gender','country','city']
  .forEach(function(id){
    var el=document.getElementById(id); if(!el) return;
    el.addEventListener('keydown', function(e){
@@ -1096,23 +1081,19 @@ function renderReading(b, r, f){
     tstNote.textContent = n;
   }
 
-  document.getElementById('opener').textContent=r.opener;
-  document.getElementById('personality').textContent=r.personality;
-  document.getElementById('career').textContent=r.career;
-  document.getElementById('love').textContent=r.love;
-  document.getElementById('luck').textContent=r.luck;
-  document.getElementById('closer').textContent=r.closer;
+  /* Write every section. The v3 composer returns ten; the classic fallback
+     returns six, so missing keys blank their section rather than throwing. */
+  ['opener','personality','fortune','career','love','people','parents','health','luck','closer']
+    .forEach(function(id){
+      const el=document.getElementById(id);
+      if(!el) return;
+      const val=r[id];
+      el.textContent = val || '';
+      const sec = el.closest ? el.closest('.section') : null;
+      if(sec) sec.style.display = val ? '' : 'none';
+    });
 
   document.getElementById('reading').classList.add('show');
-  // configure ask-more availability
-  const comingSoon=document.getElementById('comingSoon');
-  const askMoreBtn=document.getElementById('askMoreBtn');
-  if(!CONFIG.WORKER_URL){
-    askMoreBtn.disabled=true;
-    comingSoon.textContent="(Uncle's deeper wisdom is coming soon \u2014 the live chat isn't switched on yet.)";
-  } else {
-    askMoreBtn.disabled=false; comingSoon.textContent="";
-  }
   window.scrollTo(0,0);
   document.getElementById('reading').scrollIntoView({behavior:'smooth'});
 }
@@ -1176,31 +1157,6 @@ async function storeSubmission(data){
   }catch(e){ /* silent — storage must never block the reading */ }
 }
 
-/* ---- Ask one more (LLM via Worker) ---- */
-document.getElementById('askMoreBtn').addEventListener('click', async ()=>{
-  const q=document.getElementById('question').value.trim();
-  if(!q){ document.getElementById('askErr').textContent="Ask something first, ah."; return; }
-  if(!CONFIG.WORKER_URL) return;
-  const btn=document.getElementById('askMoreBtn'), loading=document.getElementById('loading'),
-        ans=document.getElementById('gptAnswer'), err=document.getElementById('askErr');
-  err.textContent=''; ans.classList.remove('show'); loading.classList.add('show'); btn.disabled=true;
-  try{
-    const ctx=window._baziContext;
-    const chartStr=`Day Master ${STEMS[ctx.chart.dayMaster]} (${STEM_EL[ctx.chart.dayMaster]}), elements ${JSON.stringify(ctx.chart.tally)}`;
-    const res=await fetch(CONFIG.WORKER_URL,{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ question:q, name:ctx.first, gender:ctx.gender, chart:chartStr })
-    });
-    if(!res.ok) throw new Error('Uncle is busy (error '+res.status+')');
-    const data=await res.json();
-    ans.textContent=data.answer || "Uncle went quiet. Try again.";
-    ans.classList.add('show');
-  }catch(e){
-    err.textContent=e.message||"Something broke. Uncle blames you.";
-  }finally{
-    loading.classList.remove('show'); btn.disabled=false;
-  }
-});
 </script>
 </body>
 </html>
