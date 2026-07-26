@@ -206,7 +206,7 @@ input:disabled{opacity:.4;}
   <div class="screen">
     <div class="view">
   <div class="topbar">
-    <a href="index.html" class="back-link">NOT TODAY, UNCLE</a>
+    <a href="index.html" class="back-link" id="backLink">NOT TODAY, UNCLE</a>
   </div>
 
   <div class="crystal-wrap"><svg class="uncle-head" viewBox="0 0 16 16" width="44" height="44" shape-rendering="crispEdges" aria-hidden="true">
@@ -906,6 +906,36 @@ function renderV3Panel(bazi, result, BaziV3, engine){
   window._baziV3 = { pillars: pillars, result: result, readingEngine: engine };
 }
 
+/* ---- Back-link label ----
+   Before a reading, the link is a way to decline: "NOT TODAY, UNCLE". Once
+   uncle has actually said his piece, declining makes no sense — so the label
+   becomes a way to take your leave. Seed-picked from the chart so a person
+   doesn't get the same send-off every time they consult. */
+const BACK_BEFORE = 'NOT TODAY, UNCLE';
+/* Kept to 19 characters or fewer. The link is 7px Press Start 2P with 1px
+   letter-spacing, so a long label would push past the cabinet edge on a narrow
+   phone. Baseline "NOT TODAY, UNCLE" is 16. */
+const BACK_AFTER = [
+  'THANK YOU, UNCLE',
+  'ENOUGH, UNCLE',
+  'OKAY OKAY, UNCLE',
+  'I HEARD YOU, UNCLE',
+  'BYE, UNCLE',
+  'NOTED, UNCLE',
+  'RUDE. ACCURATE.',
+  "YOU'RE THE WORST",
+  'SEE YOU NEXT YEAR',
+  'FINE. FINE. FINE.',
+  'UNCLE, PLEASE STOP'
+];
+function setBackLink(mode, seed){
+  const el = document.getElementById('backLink');
+  if(!el) return;
+  el.textContent = (mode === 'after')
+    ? BACK_AFTER[Math.abs(seed || 0) % BACK_AFTER.length]
+    : BACK_BEFORE;
+}
+
 /* ============================================================
    UI WIRING
    ============================================================ */
@@ -990,6 +1020,7 @@ document.getElementById('restartBtn').addEventListener('click', ()=>{
   document.getElementById('reading').classList.remove('show');
   document.getElementById('formPanel').style.display='block';
   document.getElementById('shareMsg').textContent='';
+  setBackLink('before');
   const mount=document.getElementById('v3Mount'); if(mount) mount.innerHTML='';
   try{ history.replaceState(null,'',location.pathname+(V3_FLAG?'?engine=v3':'')); }catch(e){}
   window.scrollTo(0,0);
@@ -1170,6 +1201,7 @@ function renderReading(b, r, f){
     });
 
   document.getElementById('reading').classList.add('show');
+  setBackLink('after', b.dp.s * 12 + b.dp.b + b.yp.b);
   window.scrollTo(0,0);
   document.getElementById('reading').scrollIntoView({behavior:'smooth'});
 }
