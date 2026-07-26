@@ -81,10 +81,28 @@
     var acc=groupScores(tg);
     return Object.entries(acc).sort(function(a,b){return b[1]-a[1];})[0][0];
   }
-  function strengthBucket(cls){
+  /* v3's own classification puts 51% of all charts in "weak" — its thresholds
+     (<46) sit well above the real median of 45. That is the same class of skew
+     as the spouse star: the model's weighting showing through, not the charts
+     speaking. Copy selection therefore bands on the measured tertiles of the
+     diagnostic score (33rd = 39, 66th = 52) so the three voices are used
+     roughly equally. v3's own label is left untouched for the dev panel. */
+  function strengthBucket(cls, score){
+    if(typeof score === 'number'){
+      return score < 39 ? 'weak' : (score > 52 ? 'strong' : 'balanced');
+    }
     if(cls==='Very Weak'||cls==='Weak') return 'weak';
     if(cls==='Very Strong'||cls==='Strong') return 'strong';
     return 'balanced';
+  }
+
+  /* Pick one phrasing from a cell that may be a string or an array of
+     alternatives. The index comes from a chart feature chosen to vary
+     INDEPENDENTLY of whatever selected the cell, so two people who share a
+     bucket rarely share the sentence. */
+  function variant(cell, idx){
+    if(!cell) return '';
+    return Array.isArray(cell) ? cell[Math.abs(idx) % cell.length] : cell;
   }
   /* is a god group notably present, thin, or middling in this chart? */
   function bandOf(acc, key){
@@ -251,11 +269,21 @@
     },
     /* physique: TYPE tendency, never a claim about the reader's body */
     physique: {
-      Wood:" Wood types tend to run tall and lean, with long limbs and a straight back — the kind of build that looks taller than it measures.",
-      Fire:" Fire types tend toward sharp features and quick movement — expressive face, restless hands, warm colouring.",
-      Earth:" Earth types tend toward a solid, grounded build — broad through the middle, steady on their feet, a face people find easy to trust.",
-      Metal:" Metal types tend toward clean, defined features — good bone structure, upright posture, a certain neatness even when dressed badly.",
-      Water:" Water types tend toward softer, rounder features and smooth movement — the kind of face that looks younger than the birth year says."
+      Wood:[" Wood types tend to run tall and lean, with long limbs and a straight back — the kind of build that looks taller than it measures.",
+            " Wood types usually carry height in the frame rather than the weight: long bones, upright carriage, hands that talk while you do.",
+            " The Wood build is lengthways — narrow through the shoulders, long in the leg, and slow to thicken with age."],
+      Fire:[" Fire types tend toward sharp features and quick movement — expressive face, restless hands, warm colouring.",
+            " Fire shows in the face first: mobile expression, bright eyes, colour that rises when you're animated or annoyed.",
+            " The Fire build runs light and quick — you move before you decide to, and people read your mood off you at ten paces."],
+      Earth:[" Earth types tend toward a solid, grounded build — broad through the middle, steady on their feet, a face people find easy to trust.",
+             " Earth shows as substance: squarer frame, settled posture, the sort of face strangers ask directions from.",
+             " The Earth build is built to stay put — sturdy through the torso, unhurried in movement, ages slowly and evenly."],
+      Metal:[" Metal types tend toward clean, defined features — good bone structure, upright posture, a certain neatness even when dressed badly.",
+             " Metal shows in the edges: defined jaw, straight back, a tidiness about you that survives a bad week.",
+             " The Metal build is architectural — clear lines, contained movement, and a face that photographs better than it feels."],
+      Water:[" Water types tend toward softer, rounder features and smooth movement — the kind of face that looks younger than the birth year says.",
+             " Water shows as fluidity: rounder features, unhurried movement, and an age that people consistently guess wrong.",
+             " The Water build is soft-edged and adaptable — nothing sharp, nothing fixed, and it keeps its youth longer than it should."]
     },
     /* trait cluster keyed by day-master, plain-spoken */
     traits: {
@@ -271,9 +299,15 @@
       Gui:" Traits: intuitive, gentle, deeply feeling, conflict-avoidant, overthinks small things for years."
     },
     strength: {
-      weak:" Right now your support is thin. You bend more than you admit, and it annoys you that you do.",
-      balanced:" You are evenly built — enough backbone to hold, enough give to bend. Your real problem is waiting for certainty before you move.",
-      strong:" You are heavily supported — maybe too much. You call it having principles. The people around you gave up arguing about it."
+      weak:[" Right now your support is thin. You bend more than you admit, and it annoys you that you do.",
+            " Your chart gives you less backing than you'd like. You've compensated with effort, and called the tiredness normal.",
+            " Support runs light in your chart. You've learned to carry things alone, and mistaken the habit for a preference."],
+      balanced:[" You are evenly built — enough backbone to hold, enough give to bend. Your real problem is waiting for certainty before you move.",
+                " Your chart is level. Neither brittle nor soft. Which means nothing external is stopping you, and you know it.",
+                " You're built in proportion — you can push or yield as needed. The trouble is you keep choosing neither."],
+      strong:[" You are heavily supported — maybe too much. You call it having principles. The people around you gave up arguing about it.",
+              " Your chart gives you more backing than most. It makes you durable, and it makes you certain, and only one of those is always useful.",
+              " You're strongly built, which is why you rarely doubt yourself. Doubt occasionally has good information in it."]
     },
     season: {
       spring:" You were born in the growing season, so sitting still makes you restless. Not every season is for pushing.",
@@ -291,32 +325,62 @@
 
     /* FORTUNE — overall luck shape */
     fortuneCore: {
-      weak:"Your fortune builds slowly, {name}. Nothing lands in your lap. What you get, you get by outlasting people — and that turns out to be your actual advantage.",
-      balanced:"Your fortune is steady rather than spectacular. Doors open at a normal speed, and the ones you push on open faster.",
-      strong:"Your fortune runs strong, {name} — opportunities find you. The risk is you'll assume they always will, and stop preparing."
+      weak:["Your fortune builds slowly, {name}. Nothing lands in your lap. What you get, you get by outlasting people — and that turns out to be your actual advantage.",
+            "Luck arrives late for you and it arrives earned. Nothing has ever simply been handed over. You've stopped expecting it, which is its own kind of strength.",
+            "Your fortune is a slow build, {name} — no windfalls, no shortcuts. The people who started faster than you are not the ones still standing."],
+      balanced:["Your fortune is steady rather than spectacular. Doors open at a normal speed, and the ones you push on open faster.",
+                "Your luck is unremarkable in the best sense — it responds to effort and ignores wishing. What you put in, you roughly get back.",
+                "Fortune neither favours nor obstructs you. That sounds dull. It means the outcome is genuinely yours, which is heavier than it sounds."],
+      strong:["Your fortune runs strong, {name} — opportunities find you. The risk is you'll assume they always will, and stop preparing.",
+              "Luck leans your way more than most. Useful, and quietly dangerous: people carried by luck rarely build the muscle for when it pauses.",
+              "Your chart draws opportunity, {name}. The question was never whether chances would come. It's whether you were ready when they did."]
     },
     fortuneUseful: {
-      Wood:" Growth and new starts help you. Say yes to the thing that hasn't proven itself yet.",
-      Fire:" Visibility helps you. The more people who know what you do, the better your luck runs.",
-      Earth:" Stability helps you. Property, routine, long commitments — boring things pay you well.",
-      Metal:" Clear decisions help you. Every time you cut something dead loose, your luck improves.",
-      Water:" Movement helps you. Travel, new networks, changing scenery — stagnation is what actually hurts you."
+      Wood:[" Growth and new starts help you. Say yes to the thing that hasn't proven itself yet.",
+            " Beginnings feed your luck. The unproven project, the early-stage thing — that's where your fortune turns.",
+            " What lifts you is starting things. Momentum, not perfection. Plant before you're certain."],
+      Fire:[" Visibility helps you. The more people who know what you do, the better your luck runs.",
+            " Being seen improves your fortune. Hidden competence pays you badly; announced competence pays you well.",
+            " Your luck follows attention. Not fame — just being known by the right handful of people for the right thing."],
+      Earth:[" Stability helps you. Property, routine, long commitments — boring things pay you well.",
+             " Fortune comes to you through what stays put: land, long contracts, habits you don't renegotiate.",
+             " Your luck rewards the unglamorous — the standing arrangement, the thing you keep for years."],
+      Metal:[" Clear decisions help you. Every time you cut something dead loose, your luck improves.",
+             " Fortune follows your cuts. Ending the thing that stopped working is what actually moves you forward.",
+             " Your luck sharpens when you choose. Ambiguity costs you more than a wrong decision would."],
+      Water:[" Movement helps you. Travel, new networks, changing scenery — stagnation is what actually hurts you.",
+             " Your fortune moves when you do. New rooms, new people, a change of ground.",
+             " Luck reaches you through circulation — go where you aren't known and something loosens."]
     },
-
     /* CAREER */
     careerCore: {
-      Companion:"You need your own name on the work, or you slowly stop caring. Bad fit under a controlling boss.",
-      Output:"You belong where the work is visible — building, presenting, performing, shipping. Hidden in a back office you go flat.",
-      Wealth:"You're a closer. Theory bores you, finishing energises you. Work where money is handled, not discussed.",
-      Officer:"You want real responsibility and a clear structure. Give you weight and you carry it. Give you chaos and it eats you.",
-      Resource:"You're the deep-knowledge type — the craft that pays after years, not months. Chase mastery, not quick money."
+      Companion:["You need your own name on the work, or you slowly stop caring. Bad fit under a controlling boss.",
+                 "You work best when the result is visibly yours. Anonymous contribution drains you faster than long hours do.",
+                 "Ownership is the thing for you — a stake, a title, a signature. Without it you go quietly flat."],
+      Output:["You belong where the work is visible — building, presenting, performing, shipping. Hidden in a back office you go flat.",
+              "You're made to produce and be seen producing. Work that never gets shown will make you restless and strange.",
+              "Your work needs an audience — clients, users, a room. Craft in a vacuum doesn't hold you."],
+      Wealth:["You're a closer. Theory bores you, finishing energises you. Work where money is handled, not discussed.",
+              "You're built for the transaction — the deal, the delivery, the number that lands. Strategy meetings are your enemy.",
+              "You want results you can count. Put yourself where outcomes are measured, not where intentions are described."],
+      Officer:["You want real responsibility and a clear structure. Give you weight and you carry it. Give you chaos and it eats you.",
+               "You do well with rank, rules and consequence. Loose creative environments will quietly wear you down.",
+               "You need a chain of accountability — something to answer to and something answerable to you."],
+      Resource:["You're the deep-knowledge type — the craft that pays after years, not months. Chase mastery, not quick money.",
+                "You compound. Your value is in accumulated understanding, which means early years look unimpressive and later ones don't.",
+                "You're built for depth over speed. Pick something worth ten years and stop shopping around."]
     },
     careerMod: {
-      weak:" Don't do it alone. Pair with someone steadier — your gift is precision, not endurance.",
-      balanced:" You can lead or support, which is why you keep half-doing both. Choose one for two years.",
-      strong:" You can carry it alone, and you will refuse help you actually need, and call the exhaustion commitment."
+      weak:[" Don't do it alone. Pair with someone steadier — your gift is precision, not endurance.",
+            " Solo is your weak configuration. Find the partner with stamina and let them hold the floor.",
+            " You need a structure around you. Freelancing into open space will exhaust you before it pays."],
+      balanced:[" You can lead or support, which is why you keep half-doing both. Choose one for two years.",
+                " You're capable either way, and that flexibility has become a way of avoiding commitment. Pick a lane.",
+                " Being able to do both is why you've done neither properly. Two years, one direction."],
+      strong:[" You can carry it alone, and you will refuse the help you need, and call the exhaustion loyalty.",
+              " You have the capacity to do it all yourself. You will. And you'll resent the people who let you.",
+              " Strength is your trap here — you'll take on what three people should, then wonder why nothing feels light."]
     },
-
     /* LOVE & SPOUSE */
     /* HOW LOVE ARRIVES — keyed by the spouse star: Wealth for men, Officer for
        women, which is the traditional reading. Six variants, and it leads the
@@ -356,13 +420,17 @@
     },
     /* HOW YOU APPROACH — demoted from the opener; still true, just no longer
        the first thing every second reader sees. */
+    /* This was the flattest table in the reading — a straight yin/yang coin
+       flip, so half of everyone read the identical sentence. Three phrasings
+       each, indexed off the month branch so it varies independently. */
     loveApproach: {
-      Yang:" You lead — you pursue, you decide, you set the pace. You need someone who won't collapse under that and won't fight you for the wheel.",
-      Yin:" You tend to wait to be chosen, then feel hurt you weren't chosen harder. You feel a great deal and show a little. Say the want out loud once, {name}."
+      Yang:[" You lead — you pursue, you decide, you set the pace. You need someone who won't collapse under that and won't fight you for the wheel.",
+            " You're the one who moves first. That works until you meet someone who also moves first, and then it's a negotiation you've never practised.",
+            " You set the temperature in a relationship. Worth asking, occasionally, whether the other person was consulted."],
+      Yin:[" You tend to wait to be chosen, then feel hurt you weren't chosen harder. Say the want out loud once, {name}.",
+           " You let the other person move first, then read their hesitation as a verdict on you. It usually isn't. Speak.",
+           " You'd rather be discovered than have to declare yourself. It's cost you at least one person who needed a signal, {name}."]
     },
-    /* Three phrasings per drive. Companion is the top drive in ~48% of charts,
-       so a single line there would repeat across half of all readings. Picked
-       by spouse-seat index, which varies independently of the drive itself. */
     loveDrive: {
       Companion:[" You're so self-sufficient you forget to leave a door open. Let someone actually matter.",
                  " You handle everything yourself, then wonder why nobody offers. They did. You said you were fine.",
@@ -381,28 +449,50 @@
                 " You carry the people you love. Let one of them carry you occasionally — it's not weakness."]
     },
     spouseSeat: {
-      clash:" One more thing uncle wasn't going to mention: the sharpest tension in your chart sits right where marriage lives. Your partner inherits a friction that started before them. Not doom. Just pick someone who doesn't flinch.",
-      harmony:" The marriage part of your chart sits in harmony with the rest of it. Partnership tends to steady you rather than stir you up.",
-      plain:" The marriage part of your chart is quiet. Your relationships take whatever shape you give them, which is more responsibility than it sounds."
+      clash:[" One more thing uncle wasn't going to mention: the sharpest tension in your chart sits right where marriage lives. Your partner inherits a friction that started before them. Not doom. Just pick someone who doesn't flinch.",
+             " And the marriage part of your chart carries the hardest tension in it. Whoever you pair with walks into an argument that predates them. Choose someone steady, and don't hand them the whole war.",
+             " Uncle will say the awkward part: partnership is where your chart grinds. Not a curse — a pattern. It goes better with someone who doesn't take the friction personally."],
+      harmony:[" The marriage part of your chart sits in harmony with the rest of it. Partnership tends to steady you rather than stir you up.",
+               " Marriage sits easily in your chart. Being with someone tends to settle you — which is why long stretches alone don't suit you as well as you claim.",
+               " Your chart takes well to partnership. It calms rather than complicates you, and you're better company when someone's around."],
+      plain:[" The marriage part of your chart is quiet. Your relationships take whatever shape you give them, which is more responsibility than it sounds.",
+             " Nothing dramatic sits in your marriage house. No fated ease, no fated trouble — which means the outcome is mostly your own doing.",
+             " Your chart is neutral about partnership. That's not nothing: it means nobody gets to blame the stars for how it goes."]
     },
-
     /* YOUR PEOPLE — siblings + friends, merged (Companion god) */
     people: {
-      high:"Your chart is crowded with peers, {name}. You've never lacked people — brothers, sisters, a circle that shows up. The cost is that you compete with the ones closest to you, sometimes without noticing.",
-      mid:"A normal amount of company in your chart. A few real ones, a lot of acquaintances, and you can tell the difference — which is rarer than you think.",
-      low:"Your chart is light on peers. You've often felt like the one standing slightly apart, even in a full room. That built your independence and also your habit of not calling anyone when it's bad."
+      high:["Your chart is crowded with peers, {name}. You've never lacked people — brothers, sisters, a circle that shows up. The cost is that you compete with the ones closest to you, sometimes without noticing.",
+            "There have always been people around you, {name} — siblings, friends, a crowd. What you've had to learn is that closeness and rivalry can live in the same person.",
+            "Company is not something you've had to hunt for. Your chart is full of peers. The quiet difficulty is measuring yourself against them without meaning to."],
+      mid:["A normal amount of company in your chart. A few real ones, a lot of acquaintances, and you can tell the difference — which is rarer than you think.",
+           "Your circle is ordinary in size and unusually well-sorted. You've never confused a good time with a good friend.",
+           "You have the usual number of people and an unusually clear sense of which ones count. That sorting instinct is worth more than a bigger circle."],
+      low:["Your chart is light on peers. You've often felt like the one standing slightly apart, even in a full room. That built your independence and also your habit of not calling anyone when it's bad.",
+           "Peers are thin in your chart, {name}. Fewer siblings, fewer real friends, more time alone than most. It made you self-sufficient and slightly hard to reach.",
+           "You've spent more of your life on the edge of the group than in it. That's given you perspective, and a reflex of handling bad news privately."]
     },
     peopleMod: {
-      weak:" Lean on them more than you do. Asking is not losing.",
-      balanced:" You give and take about evenly here. Keep it that way.",
-      strong:" You're usually the one others lean on. Check whether anyone is holding you up."
+      weak:[" Lean on them more than you do. Asking is not losing.",
+            " You under-use the people you have. Ask for something small and see what happens.",
+            " The help is there. You just don't request it, and then feel unsupported."],
+      balanced:[" You give and take about evenly here. Keep it that way.",
+                " Your exchanges are roughly fair, which is harder than it sounds and worth protecting.",
+                " You neither drain people nor avoid them. That balance is quietly one of your best features."],
+      strong:[" You're usually the one others lean on. Check whether anyone is holding you up.",
+              " You're the load-bearing one in most of your friendships. Ask yourself who you'd call at 3am.",
+              " People come to you. That's a compliment and a workload — make sure the traffic runs both ways."]
     },
-
     /* PARENTS & ROOTS — Resource god + year/month pillar */
     parents: {
-      high:"Strong support sits in your chart, {name}. Someone older backed you — a parent, a grandparent, a teacher. You got a foundation. The risk is staying comfortable on it too long.",
-      mid:"Ordinary support — present, imperfect, enough. What you got was a start, not a guarantee, and you've known that since young.",
-      low:"Your chart is thin on inherited support. You built more of yourself than most people had to. It made you capable and it made you wary of depending on anyone."
+      high:["Strong support sits in your chart, {name}. Someone older backed you — a parent, a grandparent, a teacher. You got a foundation. The risk is staying comfortable on it too long.",
+            "You were given a floor to stand on, {name} — someone older invested in you. That's a real advantage, and it can also become a reason not to jump.",
+            "Your chart shows backing from the generation above. Whatever else was hard, you weren't starting from nothing."],
+      mid:["Ordinary support — present, imperfect, enough. What you got was a start, not a guarantee, and you've known that since young.",
+           "The support you had was real and limited. Enough to begin with, not enough to coast on. You worked that out early.",
+           "Your roots gave you something, though not everything. You've never expected rescue, which has served you better than rescue would have."],
+      low:["Your chart is thin on inherited support. You built more of yourself than most people had to. It made you capable and it made you wary of depending on anyone.",
+           "There wasn't much backing behind you, {name}. You assembled yourself. That's why you're competent, and why you find it hard to be carried.",
+           "Little came down to you from above — you made your own footing. It shows in how much you can handle and in how badly you take being helped."]
     },
     parentsSeason: {
       spring:" Early years pushed you forward fast.",
@@ -412,26 +502,59 @@
     },
 
     /* HEALTH — gentle tendencies only, never diagnosis */
+    /* Keyed on the chart's DOMINANT element, not the thinnest. What's Coming
+       already speaks about what's thin; running health off the same selector
+       made one signal narrate two sections and the reading repeated itself.
+       Excess is as legitimate a health story in the tradition as deficiency.
+
+       Written as tendencies with practical habits. Never a diagnosis, never a
+       named disease, never a prediction of illness. */
     health: {
-      Wood:"Your chart runs light on Wood, which traditionally links to the liver, tendons and the stretch of the body. Nothing to worry about — just the areas your type is told to keep loose. Move often, stretch, don't sit for six hours straight.",
-      Fire:"Your chart runs light on Fire, traditionally linked to the heart and circulation. Not a warning, just a tendency — your type does better with warmth, decent sleep and not letting stress sit unspoken.",
-      Earth:"Your chart runs light on Earth, traditionally linked to digestion and the stomach. Your type tends to eat badly when busy. Regular meals do more for you than any supplement.",
-      Metal:"Your chart runs light on Metal, traditionally linked to the lungs and skin. Your type is told to mind air quality and breathing — and to actually rest the voice and chest when run down.",
-      Water:"Your chart runs light on Water, traditionally linked to the kidneys and the body's reserves. Your type burns through energy and calls it productivity. Water, sleep, and stopping before empty."
+      Wood:["Your chart runs heavy on Wood, traditionally linked to the liver and the tendons — the body's stretch and its temper. Nothing to worry about, just where your type holds tension. Move often, and don't let irritation sit.",
+            "Wood dominates your chart. The tradition ties that to the liver and the sinews, and to a temperament that tightens under frustration. Stretch, walk, say the annoying thing out loud.",
+            "There's a lot of Wood in you — liver and tendons, in the old language. Your type stiffens when stuck, physically and otherwise. Keep moving and keep deciding."],
+      Fire:["Your chart runs heavy on Fire, traditionally linked to the heart and circulation. Not a warning — a tendency. Your type burns hot and sleeps badly. Guard the sleep and let the pressure out somewhere.",
+            "Fire dominates your chart. The old association is the heart and the blood, and a system that runs hot and fast. Cooling matters for you more than most: rest, water, quiet evenings.",
+            "You're Fire-heavy. That maps to circulation and to a mind that won't switch off. Your type does well with a hard stop at the end of the day."],
+      Earth:["Your chart runs heavy on Earth, traditionally linked to digestion and the stomach. Your type holds things — food, worry, other people's problems. Regular meals and fewer carried burdens.",
+             "Earth dominates your chart. The tradition ties it to the spleen and stomach, and to a habit of absorbing what isn't yours. Eat on a schedule and put some things down.",
+             "You're Earth-heavy — digestion, in the old language, and a tendency to sit with things too long. Move more than feels necessary and don't skip meals when busy."],
+      Metal:["Your chart runs heavy on Metal, traditionally linked to the lungs and the skin — the body's boundary. Your type holds grief quietly and breathes shallowly under stress. Air, breath, and saying it.",
+             "Metal dominates your chart. The association is the lungs and skin, and a temperament that keeps things sealed. Mind the air you spend your days in, and exhale properly.",
+             "You're Metal-heavy. Lungs and boundary, in the tradition. Your type gets rigid before it gets tired — loosen the schedule before the body insists."],
+      Water:["Your chart runs heavy on Water, traditionally linked to the kidneys and the body's reserves. Your type runs deep and drains slowly without noticing. Sleep is not optional for you.",
+             "Water dominates your chart. The old association is the kidneys — the deep reserve. Your type overdraws quietly and calls it being busy. Rest before empty, not after.",
+             "You're Water-heavy: reserves, in the tradition, and a habit of running on them. Warmth and sleep do more for you than effort does."]
     },
     healthStrength: {
-      weak:" With thin support overall, recovery takes you longer than you'd like. Build rest in before you need it.",
-      balanced:" Your overall balance is reasonable — most of your health comes down to habit, not fate.",
-      strong:" You have strong reserves, which is why you overspend them. Strong people ignore small signals longest."
+      weak:[" With thinner support overall, recovery takes you longer than you'd like. Build rest in before you need it.",
+            " Your reserves are on the light side, so you bounce back slowly. Plan the recovery, don't improvise it.",
+            " You don't have deep reserves to raid. That means rest is maintenance for you, not reward."],
+      balanced:[" Your overall balance is reasonable — most of your health comes down to habit, not fate.",
+                " Nothing in your chart is working against you here. Which puts the whole thing in the hands of your routine.",
+                " You're evenly built. No structural disadvantage, no free pass — just whatever you actually do each week."],
+      strong:[" You have strong reserves, which is why you overspend them. Strong people ignore small signals longest.",
+              " Your reserves are deep, and that's precisely the risk: you can push through warnings other people would stop for.",
+              " You recover well, so you take liberties. The bill for that arrives later and all at once."]
     },
 
     /* WHAT'S COMING */
     luckCore: {
-      Wood:"What's thin in you is Wood — the nerve to start something before you can see how it ends.",
-      Fire:"What's thin is Fire — letting yourself be seen wanting something.",
-      Earth:"What's thin is Earth — the dull structure that holds a life together. You scatter.",
-      Metal:"What's thin is Metal — the clean decision. You let things drag because choosing feels like losing the other option.",
-      Water:"What's thin is Water — patience and flow. You push when waiting would work better."
+      Wood:["What's thin in you is Wood — the nerve to start something before you can see how it ends.",
+            "Your chart is short on Wood: beginnings, and the willingness to plant without a guarantee.",
+            "Wood runs low in you — the appetite for the unproven thing. That's the muscle life keeps asking for."],
+      Fire:["What's thin is Fire — letting yourself be seen wanting something.",
+            "Your chart is short on Fire: visibility, and the nerve to be caught caring.",
+            "Fire runs low in you — you keep the light banked and then wonder why nobody noticed."],
+      Earth:["What's thin is Earth — the dull structure that holds a life together. You scatter.",
+             "Your chart is short on Earth: routine, ballast, the boring scaffolding. Things slip through.",
+             "Earth runs low in you — the unglamorous structure. Without it your good ideas leak away."],
+      Metal:["What's thin is Metal — the clean decision. You let things drag because choosing feels like losing the other option.",
+             "Your chart is short on Metal: the cut, the no, the end of something. You let it run on instead.",
+             "Metal runs low in you — decisiveness. You keep options open past the point where they're worth anything."],
+      Water:["What's thin is Water — patience and flow. You push when waiting would work better.",
+             "Your chart is short on Water: patience, and the sense of when to stop forcing.",
+             "Water runs low in you — the ability to wait. You force outcomes that were arriving anyway."]
     },
     luckHourUnknown:" And {name} — you didn't know your birth hour, so uncle read three pillars instead of four. The shape is right. The fine detail about your later years, don't quote uncle on.",
 
@@ -562,11 +685,20 @@
 
     var dmIndex = STEMS.indexOf(dayStem);
     var yy = STEM_YY[dmIndex];
-    var strBucket = strengthBucket(v3.strength.classification);
+    var strBucket = strengthBucket(v3.strength.classification, v3.strength.diagnosticScore);
     var season = SEASON[pillars.month.branch];
     var acc = groupScores(v3.tenGodScores);
     var drive = topGodGroup(v3.tenGodScores);
     var seed = dmIndex*13 + BRANCHES.indexOf(pillars.day.branch) + BRANCHES.indexOf(pillars.year.branch);
+
+    /* Independent indices. Each table picks its phrasing from a DIFFERENT
+       chart feature than the one that selected the bucket, so two people who
+       share a bucket rarely share the sentence. */
+    var iDay   = BRANCHES.indexOf(pillars.day.branch);
+    var iMonth = BRANCHES.indexOf(pillars.month.branch);
+    var iYear  = BRANCHES.indexOf(pillars.year.branch);
+    var iHour  = BRANCHES.indexOf(pillars.hour.branch);
+    var iStem  = dmIndex;
 
     var dayClash = v3.dynamics.some(function(d){
       return d.type==='Clash' && d.branches.indexOf(pillars.day.branch)!==-1;
@@ -578,30 +710,29 @@
     var now = new Date().getFullYear();
     var pastA = now-5, pastB = now-2, next1 = now+1, next2 = now+2, next3 = now+3;
 
+    var thin   = weakestElement(v3.elementScores);   /* what's lacking */
+    var strong = strongestElement(v3.elementScores); /* what dominates */
+
     /* 1. OPENER */
     var opener = fillName(pick(FRAG.openers, seed), name);
 
-    /* 2. WHO YOU ARE — four paragraphs, four kinds of statement */
+    /* 2. WHO YOU ARE */
     var pCore = fillName(FRAG.dmCore[dayStem], name)
-              + FRAG.strength[strBucket]
+              + variant(FRAG.strength[strBucket], iDay)
               + FRAG.season[season];
-    var pPhysical = FRAG.physique[dmEl].replace(/^ /,'');
+    var pPhysical = variant(FRAG.physique[dmEl], iMonth).replace(/^ /,'');
     var pTraits = FRAG.traits[dayStem].replace(/^ /,'').replace(/^Traits: /,'Traits — ')
                 + FRAG.drive[drive];
-    /* Two PAST years here, not forward ones. This section is about formation,
-       and it keeps What's Coming as the only place that forecasts — previously
-       both used next2 with the same flavour and printed the identical sentence
-       twice in one reading. */
     var pSelfYears = (yearLine('fortune', pastA, dayStem, name)
                     + yearLine('fortune', pastB, dayStem, name)).replace(/^ /,'');
 
     /* 3. FORTUNE */
-    var useful = weakestElement(v3.elementScores);
-    var fShape = fillName(FRAG.fortuneCore[strBucket], name) + FRAG.fortuneUseful[useful];
+    var fShape = fillName(variant(FRAG.fortuneCore[strBucket], iYear), name)
+               + variant(FRAG.fortuneUseful[thin], iHour);
     var fYears = (yearLine('fortune', now, dayStem, name)).replace(/^ /,'');
 
     /* 4. CAREER */
-    var cWork = FRAG.careerCore[drive] + FRAG.careerMod[strBucket];
+    var cWork = variant(FRAG.careerCore[drive], iMonth) + variant(FRAG.careerMod[strBucket], iHour);
     var cYears = (yearLine('career', pastB, dayStem, name)
                 + yearLine('career', next1, dayStem, name)
                 + yearLine('career', next3, dayStem, name)).replace(/^ /,'');
@@ -611,27 +742,31 @@
 
     /* 5. LOVE & SPOUSE */
     var spouseGod = (gender==='female') ? 'Officer' : 'Wealth';
-    var lArrives = fillName(FRAG.spouseStar[gender][spouseBand(acc, spouseGod)][BRANCHES.indexOf(pillars.day.branch) % 2], name);
+    var lArrives = fillName(FRAG.spouseStar[gender][spouseBand(acc, spouseGod)][iDay % 2], name);
     var lSuits   = FRAG.spouseType[pillars.day.branch].replace(/^ /,'');
-    var lHow     = (fillName(FRAG.loveApproach[yy], name)
-                  + FRAG.loveDrive[drive][BRANCHES.indexOf(pillars.day.branch) % 3]).replace(/^ /,'');
-    var lSeat    = ((dayClash ? FRAG.spouseSeat.clash : (dayHarmony ? FRAG.spouseSeat.harmony : FRAG.spouseSeat.plain))
+    var lHow     = (fillName(variant(FRAG.loveApproach[yy], iMonth), name)
+                  + FRAG.loveDrive[drive][iDay % 3]).replace(/^ /,'');
+    var seatKey  = dayClash ? 'clash' : (dayHarmony ? 'harmony' : 'plain');
+    var lSeat    = (variant(FRAG.spouseSeat[seatKey], iHour)
                   + yearLine('love', next2, dayStem, name)).replace(/^ /,'');
 
     /* 6. YOUR PEOPLE */
-    var people = fillName(FRAG.people[bandOf(acc,'Companion')], name) + FRAG.peopleMod[strBucket];
+    var people = fillName(variant(FRAG.people[bandOf(acc,'Companion')], iHour), name)
+               + variant(FRAG.peopleMod[strBucket], iYear);
 
     /* 7. PARENTS & ROOTS */
-    var parents = fillName(FRAG.parents[bandOf(acc,'Resource')], name) + FRAG.parentsSeason[season];
+    var parents = fillName(variant(FRAG.parents[bandOf(acc,'Resource')], iYear), name)
+                + FRAG.parentsSeason[season];
 
-    /* 8. HEALTH */
-    var hBody = FRAG.health[useful];
-    var hReserve = FRAG.healthStrength[strBucket].replace(/^ /,'');
+    /* 8. HEALTH — keyed on the DOMINANT element, so it doesn't restate
+       What's Coming, which speaks about the thin one. */
+    var hBody = variant(FRAG.health[strong], iMonth);
+    var hReserve = variant(FRAG.healthStrength[strBucket], iStem).replace(/^ /,'');
 
     /* 9. WHAT'S COMING */
     var pastGrp = tenGodGroup(dayStem, annualPillar(pastA).stem);
     var nextGrp = tenGodGroup(dayStem, annualPillar(next1).stem);
-    var kThin = FRAG.luckCore[useful];
+    var kThin = variant(FRAG.luckCore[thin], iDay);
     var kPast = 'Look back — ' + fillTokens(PAST_REFLECT[pastGrp] || '{y} asked something of you.', {y:String(pastA),name:name});
     var kNext = (fillTokens(FRAG.nextYear[nextGrp], {y:String(next1), name:name})
                + yearLine('fortune', next2, dayStem, name)).replace(/^ /,'');
@@ -672,7 +807,7 @@
       closer:  closer,
       _selectors: {
         dayMaster:dayStem, element:dmEl, yinYang:yy, strength:strBucket, season:season,
-        drive:drive, usefulElement:useful, strongestElement:strongestElement(v3.elementScores),
+        drive:drive, usefulElement:thin, dominantElement:strong,
         dayBranchClash:dayClash, dayBranchHarmony:dayHarmony,
         spouseStar:{ god:(gender==='female'?'Officer':'Wealth'), band:spouseBand(acc, gender==='female'?'Officer':'Wealth') },
         spouseSeat:pillars.day.branch,
