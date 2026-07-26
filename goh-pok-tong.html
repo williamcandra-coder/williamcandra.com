@@ -118,7 +118,17 @@ input::placeholder{color:#4a4753;}
 .el-seg{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:#0b0a0f;font-weight:700;min-width:2px;}
 .section{margin-bottom:18px;}
 .section .stitle{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--violet);margin-bottom:8px;letter-spacing:1px;}
-.section .stext{font-family:'VT323',monospace;font-size:21px;line-height:1.5;color:var(--text);}
+.section .stext{font-family:'VT323',monospace;font-size:21px;line-height:1.55;color:var(--text);}
+/* Paragraphs inside a section. Left-aligned on purpose — justified text is a
+   poor fit here: browsers don't hyphenate, so justification stretches
+   word-spacing into visible "rivers", and that is worst in a narrow phone
+   column where there are few words per line to absorb the slack. It also
+   reads badly in a monospace face and is measurably harder for dyslexic
+   readers. Readability comes from the paragraph breaks and line-height
+   instead. */
+.section .stext .para{margin:0 0 11px;text-align:left;}
+.section .stext .para:last-child{margin-bottom:0;}
+@media (min-width:820px){ .section .stext .para{margin-bottom:13px;} }
 .gpt-quote{border-left:3px solid var(--violet);padding:4px 0 4px 13px;margin:4px 0;font-family:'VT323',monospace;font-size:21px;line-height:1.45;color:var(--paper);}
 .divider{height:2px;background:var(--panel);margin:18px 0;}
 /* ask-more styles removed in v1.4.0 with the feature */
@@ -1188,16 +1198,36 @@ function renderReading(b, r, f){
     tstNote.textContent = n;
   }
 
-  /* Write every section. The v3 composer returns ten; the classic fallback
-     returns six, so missing keys blank their section rather than throwing. */
+  /* Write every section.
+     The v3 composer returns ARRAYS of paragraphs for the prose sections, each
+     paragraph being one kind of statement (what you are / what you look like /
+     how you behave / what the years say). Opener and closer stay single
+     strings. The classic fallback returns plain strings throughout, so both
+     shapes are accepted.
+
+     Paragraphs are built with createElement + textContent rather than
+     innerHTML: the visitor's name is woven into this copy, and it must never be
+     parsed as markup. */
   ['opener','personality','fortune','career','love','people','parents','health','luck','closer']
     .forEach(function(id){
       const el=document.getElementById(id);
       if(!el) return;
       const val=r[id];
-      el.textContent = val || '';
+      const paras = Array.isArray(val) ? val.filter(function(p){ return p && p.trim(); })
+                                       : (val && val.trim() ? [val] : []);
+      el.textContent = '';
+      if(paras.length===1){
+        el.textContent = paras[0];
+      } else {
+        paras.forEach(function(p){
+          const node=document.createElement('p');
+          node.className='para';
+          node.textContent=p;
+          el.appendChild(node);
+        });
+      }
       const sec = el.closest ? el.closest('.section') : null;
-      if(sec) sec.style.display = val ? '' : 'none';
+      if(sec) sec.style.display = paras.length ? '' : 'none';
     });
 
   document.getElementById('reading').classList.add('show');
