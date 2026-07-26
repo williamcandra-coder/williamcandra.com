@@ -324,20 +324,40 @@ const ANIMAL = ['Rat','Ox','Tiger','Rabbit','Dragon','Snake','Horse','Goat','Mon
    It is now fetched on idle after first paint, and awaited on CONSULT if it
    has not arrived yet. */
 const ENGINE_SRC = 'bazi-engine.min.js';
+const SOLAR_SRC  = 'engine-v3/solar-terms.browser.js';
 let _enginePromise = null;
-function loadBaziEngine(){
-  if(window.BaziCalculator) return Promise.resolve(window.BaziCalculator);
-  if(_enginePromise) return _enginePromise;
-  _enginePromise = new Promise(function(resolve,reject){
+
+function _injectScript(src, globalName, required){
+  return new Promise(function(resolve,reject){
+    if(window[globalName]) return resolve(window[globalName]);
     const sc=document.createElement('script');
-    sc.src=ENGINE_SRC; sc.async=true;
+    sc.src=src; sc.async=true;
     sc.onload=function(){
-      window.BaziCalculator ? resolve(window.BaziCalculator)
-                            : reject(new Error('loaded '+ENGINE_SRC+' but BaziCalculator is missing'));
+      if(window[globalName]) resolve(window[globalName]);
+      else if(required) reject(new Error('loaded '+src+' but '+globalName+' is missing'));
+      else resolve(null);
     };
-    sc.onerror=function(){ _enginePromise=null; reject(new Error('could not load '+ENGINE_SRC)); };
+    sc.onerror=function(){
+      if(required) reject(new Error('could not load '+src));
+      else resolve(null);          // optional: chart still computes without it
+    };
     document.head.appendChild(sc);
   });
+}
+
+/* Loads the pillar engine (required) and the solar-term calculator (optional).
+   Solar terms load here rather than with the v3 reading files because they
+   correct the CHART, so the classic fallback reading benefits too. If they
+   fail to load the chart still computes — just with the engine's day-granular
+   term boundaries. */
+function loadBaziEngine(){
+  if(window.BaziCalculator && window.SolarTerms) return Promise.resolve(window.BaziCalculator);
+  if(_enginePromise) return _enginePromise;
+  _enginePromise = Promise.all([
+    _injectScript(ENGINE_SRC, 'BaziCalculator', true),
+    _injectScript(SOLAR_SRC,  'SolarTerms',     false)
+  ]).then(function(r){ return r[0]; })
+    .catch(function(e){ _enginePromise=null; throw e; });
   return _enginePromise;
 }
 
@@ -475,13 +495,54 @@ function computeBazi(y,mo,d,clockHour,clockMin,city,country,gender,hourKnown){
   const calc = new BaziCalculator(tst.y, tst.mo, tst.d, tst.hour, gender==='female'?'female':'male');
   const full = calc.getCompleteAnalysis();
   const P = full.mainPillars;
-  const yp=pillarFromChinese(P.year.chinese);
-  const mp=pillarFromChinese(P.month.chinese);
+  let yp=pillarFromChinese(P.year.chinese);
+  let mp=pillarFromChinese(P.month.chinese);
   const dp=pillarFromChinese(P.day.chinese);
   const hp=pillarFromChinese(P.time.chinese);
+
+  /* ---- SOLAR TERM CORRECTION ----
+     bazi-engine.min.js stores solar terms at DAY granularity, so a birth on a
+     boundary day gets a coin-flip month pillar — and the month pillar drives
+     season, strength and the whole structure read. window.SolarTerms computes
+     the sun's apparent longitude to about 0.01 degrees (~10 minutes), which
+     resolves the boundary properly.
+
+     Scope is deliberately narrow: only the YEAR and MONTH pillars are
+     corrected, because only those depend on solar terms. The DAY pillar is a
+     continuous 60-day count with no term dependency and the engine gets it
+     right, so it is left alone — as is the HOUR pillar, which derives from the
+     day stem and the true-solar hour.
+
+     Solar terms are global instants, so the comparison runs in UTC using the
+     offset actually applied for this city — separate from True Solar Time,
+     which is a local-sun quantity used only for the hour branch.
+
+     If the module hasn't loaded, the engine's pillars stand unchanged. */
+  let solarFix = null;
+  if(window.SolarTerms){
+    try{
+      const s = window.SolarTerms.pillars(y, mo, d, clockHour, clockMin||0, tst.tzUsed);
+      const sy = { s: STEMS.indexOf(s.year.stem),  b: BRANCHES.indexOf(s.year.branch)  };
+      const sm = { s: STEMS.indexOf(s.month.stem), b: BRANCHES.indexOf(s.month.branch) };
+      if(sy.s>=0 && sy.b>=0 && sm.s>=0 && sm.b>=0){
+        const changedYear  = (sy.s!==yp.s || sy.b!==yp.b);
+        const changedMonth = (sm.s!==mp.s || sm.b!==mp.b);
+        solarFix = {
+          applied: changedYear || changedMonth,
+          changedYear, changedMonth,
+          hoursFromBoundary: s.detail.hoursFromMonthBoundary,
+          sunLongitude: s.detail.sunLongitude,
+          engineYear: STEMS[yp.s]+BRANCHES[yp.b],
+          engineMonth: STEMS[mp.s]+BRANCHES[mp.b]
+        };
+        yp = sy; mp = sm;
+      }
+    }catch(e){ solarFix = { applied:false, error:String(e.message) }; }
+  }
+
   const ff = full.basicAnalysis.fiveFactors;
   const tally={Wood:ff.WOOD||0, Fire:ff.FIRE||0, Earth:ff.EARTH||0, Metal:ff.METAL||0, Water:ff.WATER||0};
-  return {yp,mp,dp,hp,tally, dayMaster:dp.s, tst,
+  return {yp,mp,dp,hp,tally, dayMaster:dp.s, tst, solarFix,
           hourKnown: hourKnown!==false,
           directions: full.basicAnalysis.eightMansions,
           lifeGua: full.basicAnalysis.lifeGua,
@@ -905,7 +966,7 @@ initForm();
    the initial render for visitors who never press it. */
 (function preloadEngine(){
   const go=function(){
-    loadBaziEngine().catch(function(){});
+    loadBaziEngine().catch(function(){});   // engine + solar terms
     if(!FORCE_CLASSIC){ loadV3().catch(function(){}); }  // warm analysis + composer too
   };
   if('requestIdleCallback' in window) requestIdleCallback(go,{timeout:3000});
@@ -1048,11 +1109,26 @@ function renderReading(b, r, f){
     </div>`;
   }).join('');
 
-  const total=Object.values(b.tally).reduce((a,c)=>a+c,0);
-  document.getElementById('elements').innerHTML=Object.entries(b.tally).map(([el,v])=>{
+  /* ELEMENT BALANCE bar.
+     Prefer the TRUE element count. The engine's fiveFactors — what this bar
+     used to show — is not an element count: it weights each element by its
+     relationship to the Day Master, so a chart with almost no Water could show
+     a large Water bar simply because Water was its Resource element. The bar
+     said "ELEMENT BALANCE" and showed something else. Falls back to the old
+     figures only if the composer hasn't loaded. */
+  let barData = b.tally, barIsTrue = false;
+  if(window.GptReadingV2 && window.GptReadingV2.trueElements){
+    try{
+      barData = window.GptReadingV2.trueElements(toV3Pillars(b)).percent;
+      barIsTrue = true;
+    }catch(e){ barData = b.tally; }
+  }
+  const total=Object.values(barData).reduce((a,c)=>a+c,0);
+  document.getElementById('elements').innerHTML=Object.entries(barData).map(([el,v])=>{
     const pct=(v/total*100);
-    return pct>0?`<div class="el-seg" style="background:${EL_COLOR[el]};flex:${v}" title="${el}">${pct>10?el[0]:''}</div>`:'';
+    return pct>0?`<div class="el-seg" style="background:${EL_COLOR[el]};flex:${v}" title="${el} ${Math.round(pct)}%">${pct>10?el[0]:''}</div>`:'';
   }).join('');
+  window._barIsTrueCount = barIsTrue;
 
   /* Eight Mansions directions — engine output that used to be discarded, and
      the only place the gender field now does any work. */

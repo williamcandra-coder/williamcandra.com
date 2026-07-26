@@ -94,6 +94,65 @@
     return t>=0.66 ? 'high' : (t<=0.33 ? 'low' : 'mid');
   }
 
+  /* ---- TRUE ELEMENT COUNT ----------------------------------------------
+     What the page's "ELEMENT BALANCE" bar should have been showing all along.
+
+     The engine's fiveFactors is NOT an element count: it weights each element
+     by its relationship to the Day Master (Resource 3.0, Companion 2.5, Output
+     2.0, Wealth 1.2, Control 1.2). A chart with almost no Water can therefore
+     show a large Water bar, simply because Water happens to be that chart's
+     Resource element. The bar was labelled "ELEMENT BALANCE" and was showing
+     something else entirely.
+
+     This counts what is actually present: four visible stems at full weight,
+     plus every hidden stem at its own depth. No Day Master relationship enters
+     it, because "how much Fire is in this chart" is not a question about the
+     Day Master. */
+  var HIDDEN = {
+    Zi:  [['Gui',1]],
+    Chou:[['Ji',0.6],['Gui',0.3],['Xin',0.1]],
+    Yin: [['Jia',0.6],['Bing',0.3],['Wu',0.1]],
+    Mao: [['Yi',1]],
+    Chen:[['Wu',0.6],['Yi',0.3],['Gui',0.1]],
+    Si:  [['Bing',0.6],['Wu',0.3],['Geng',0.1]],
+    Wu:  [['Ding',0.7],['Ji',0.3]],
+    Wei: [['Ji',0.6],['Ding',0.3],['Yi',0.1]],
+    Shen:[['Geng',0.6],['Ren',0.3],['Wu',0.1]],
+    You: [['Xin',1]],
+    Xu:  [['Wu',0.6],['Xin',0.3],['Ding',0.1]],
+    Hai: [['Ren',0.7],['Jia',0.3]]
+  };
+  function trueElements(pillars){
+    var out = {Wood:0, Fire:0, Earth:0, Metal:0, Water:0};
+    ['year','month','day','hour'].forEach(function(k){
+      var p = pillars[k];
+      if(!p) return;
+      if(STEM_EL[p.stem]) out[STEM_EL[p.stem]] += 1;
+      (HIDDEN[p.branch]||[]).forEach(function(h){
+        if(STEM_EL[h[0]]) out[STEM_EL[h[0]]] += h[1];
+      });
+    });
+    var tot=0; Object.keys(out).forEach(function(k){ tot+=out[k]; });
+    var pct={};
+    Object.keys(out).forEach(function(k){
+      pct[k] = tot ? Math.round(out[k]/tot*1000)/10 : 0;
+    });
+    return { raw: out, percent: pct, total: Math.round(tot*100)/100 };
+  }
+
+  /* Band the spouse star on its SHARE of the chart, not on distance from the
+     chart's own minimum. The engine weights Wealth and Officer at 1.2 against
+     Resource 3.0 and Companion 2.5, so a relative banding puts ~51% of people
+     in the bottom bucket — that isn't chart truth, it's the weighting showing
+     through, and it would tell half of all readers their love life is thin.
+     Thresholds are the measured 33rd/66th percentiles over a 540-chart sweep. */
+  function spouseBand(acc, key){
+    var tot=0; Object.keys(acc).forEach(function(k){ tot += acc[k]; });
+    if(!tot) return 'mid';
+    var share = acc[key]/tot;
+    return share < 0.10 ? 'low' : (share > 0.213 ? 'high' : 'mid');
+  }
+
   function annualPillar(year){
     var idx=(((year-1984)%60)+60)%60;
     return { stem:STEMS[idx%10], branch:BRANCHES[idx%12] };
@@ -259,21 +318,72 @@
     },
 
     /* LOVE & SPOUSE */
-    loveBase: {
-      Yang:"In love you lead — you pursue, you decide, you set the pace. You need someone who won't collapse under that and won't fight you for control.",
-      Yin:"In love you wait to be chosen, then feel hurt you weren't chosen harder. You feel a great deal and show a little. Say what you want out loud once, {name}."
+    /* HOW LOVE ARRIVES — keyed by the spouse star: Wealth for men, Officer for
+       women, which is the traditional reading. Six variants, and it leads the
+       section because it varies far more than a yin/yang coin-flip does. */
+    spouseStar: {
+      male: {
+        high:["Love has never been scarce for you, {name} — the chart is full of it. Options came early and often. Your difficulty was never finding someone; it was deciding, and then staying decided.",
+              "There's no shortage of romance in your chart, {name}. People have always been available to you. What you lacked was not choice — it was the will to stop choosing."],
+        mid:["Love comes to you at a normal rate — not thrown at you, not withheld. What you get has depended almost entirely on whether you showed up and said something.",
+             "Your chart gives an ordinary supply of romance. Nothing lands in your lap, nothing is denied you. It has always come down to whether you spoke first."],
+        low:["Love runs narrow in your chart, {name} — not absent, narrow. It arrives late, or slowly, or once and properly. You've spent time wondering what's wrong with you. Nothing is. A narrow supply is not an empty one.",
+             "Romance is not the loudest thing in your chart, {name}. Fewer people, arriving later, staying longer. You read that as a shortage. It's closer to a filter."]
+      },
+      female: {
+        high:["Attention has never been in short supply for you, {name}. The chart is crowded with it. The work was never attracting someone — it was telling the serious ones from the loud ones.",
+              "Your chart draws people easily, {name}. There has always been interest. Sorting the genuine from the merely persistent is where your energy actually went."],
+        mid:["Love comes to you at an ordinary pace. Nobody hands it over and nobody withholds it. It has always depended on whether you let the right person close enough.",
+             "Your chart gives a normal share of partnership. It arrives when you allow it to, which is less often than you tell people."],
+        low:["The chart runs narrow on partnership, {name} — not empty, narrow. Love arrives late, or quietly, or just once and properly. You've read that as a verdict on you. It isn't.",
+             "Partnership is not the loudest thing in your chart, {name}. Fewer people, later, and they stay. You've called that bad luck. Uncle would call it a narrow gate, not a closed one."]
+      }
     },
+    /* WHO SUITS YOU — the spouse seat, twelve variants */
+    spouseType: {
+      Zi:" The partner who fits you is quick, adaptable, a little restless — someone who thinks fast and changes plans without panicking. Slow, heavy people wear you out.",
+      Chou:" The partner who fits you is steady and patient — the sort who says little and follows through. Flashy attracts you briefly, then exhausts you.",
+      Yin:" The partner who fits you has their own fire — ambitious, a bit bold, occasionally difficult. Someone too easy to please will bore you within a year.",
+      Mao:" The partner who fits you is gentle, sociable, easy in company. You do badly with harshness, even the well-meant kind.",
+      Chen:" The partner who fits you is capable and a little proud — someone with their own weather. You don't want managing, and you don't want to manage.",
+      Si:" The partner who fits you is clever and self-contained, with a private side. You want someone with depth you have to earn access to.",
+      Wu:" The partner who fits you is warm, direct, generous — no guessing games. Anyone who plays cold with you loses you faster than they expect.",
+      Wei:" The partner who fits you is kind and home-minded, the sort who builds a nest. You need softness more than you admit in public.",
+      Shen:" The partner who fits you is sharp, funny, quick on their feet. You need someone who can keep up in an argument and not hold it against you.",
+      You:" The partner who fits you is precise, presentable, particular. You want standards. You also want someone who won't apply them all to you.",
+      Xu:" The partner who fits you is loyal and protective — the kind who stays when it's dull. You test people for this, usually without telling them.",
+      Hai:" The partner who fits you is generous and easygoing, slow to take offence. You need room to be difficult sometimes, and someone who won't score it."
+    },
+    /* HOW YOU APPROACH — demoted from the opener; still true, just no longer
+       the first thing every second reader sees. */
+    loveApproach: {
+      Yang:" You lead — you pursue, you decide, you set the pace. You need someone who won't collapse under that and won't fight you for the wheel.",
+      Yin:" You tend to wait to be chosen, then feel hurt you weren't chosen harder. You feel a great deal and show a little. Say the want out loud once, {name}."
+    },
+    /* Three phrasings per drive. Companion is the top drive in ~48% of charts,
+       so a single line there would repeat across half of all readings. Picked
+       by spouse-seat index, which varies independently of the drive itself. */
     loveDrive: {
-      Companion:" You're so self-sufficient you forget to leave a door open. Let someone actually matter.",
-      Output:" You love expressively. The quiet ones are watching closely — show more, perform less.",
-      Wealth:" You show love by doing and fixing. They want your attention, not your service.",
-      Officer:" You love seriously and hold on tight. Devotion and control look the same from outside. Loosen it.",
-      Resource:" You look after your person completely. But someone who only ever gives forgets how to receive."
+      Companion:[" You're so self-sufficient you forget to leave a door open. Let someone actually matter.",
+                 " You handle everything yourself, then wonder why nobody offers. They did. You said you were fine.",
+                 " You love people without ever quite needing them, and the ones who wanted to be needed felt it."],
+      Output:[" You love expressively. The quiet ones are watching closely — show more, perform less.",
+              " You give affection loudly and generously. Just check the person in front of you actually wants an audience.",
+              " You court people with what you make and what you say. Charming. Occasionally exhausting."],
+      Wealth:[" You show love by doing and fixing. They want your attention, not your service.",
+              " You treat love like something to be earned and maintained. It also has to be enjoyed sometimes.",
+              " You provide, you solve, you handle it. Sit still with them once without fixing anything."],
+      Officer:[" You love seriously and hold on tight. Devotion and control look the same from outside. Loosen it.",
+               " You take commitment gravely, which is rare and good, and you turn it into rules, which is not.",
+               " You want love to be orderly. People aren't. That gap is where most of your arguments live."],
+      Resource:[" You look after your person completely. But someone who only ever gives forgets how to receive.",
+                " You nurture hard. Watch that caring for them doesn't quietly become deciding for them.",
+                " You carry the people you love. Let one of them carry you occasionally — it's not weakness."]
     },
     spouseSeat: {
-      clash:" One more thing uncle wasn't going to mention: the sharpest tension in your chart sits in your day branch — the marriage seat. Your partner inherits a friction that started before them. Not doom. Just pick someone who doesn't flinch.",
-      harmony:" Your day branch — the marriage seat — sits in harmony with the rest of your chart. Partnership tends to steady you rather than stir you.",
-      plain:" Your marriage seat is quiet. Your relationships take the shape you give them, which is more responsibility than it sounds."
+      clash:" One more thing uncle wasn't going to mention: the sharpest tension in your chart sits right where marriage lives. Your partner inherits a friction that started before them. Not doom. Just pick someone who doesn't flinch.",
+      harmony:" The marriage part of your chart sits in harmony with the rest of it. Partnership tends to steady you rather than stir you up.",
+      plain:" The marriage part of your chart is quiet. Your relationships take whatever shape you give them, which is more responsibility than it sounds."
     },
 
     /* YOUR PEOPLE — siblings + friends, merged (Companion god) */
@@ -333,21 +443,21 @@
       Officer:"Next year, {y}, adds structure and someone to answer to. It will feel like pressure. Carried properly, it's the year people start taking you seriously.",
       Resource:"Next year, {y}, slows the pace and hands you time to learn instead of push. You'll want to force it. Don't — that year pays students, not soldiers."
     },
-    /* Notable years. Each pillar seat is a different area of life, so a clash on
-       the month pillar (career, parents) reads differently from one on the day
-       pillar (self, marriage). Movement and timing only — never a verdict. */
+    /* Notable years. Named by what they touch in a life, not by which pillar
+       they land on — "your month pillar" is engine vocabulary and means nothing
+       to a reader. Movement and timing only, never a verdict. */
     notable: {
       clash: {
-        day:" Then mark {y}, {name}. That year runs straight at your day pillar — the seat of self and marriage. Settled things get unsettled: where you live, who you live with, what you thought was decided. Not bad. Just moving. Don't sign anything lazily that year.",
-        month:" {y} strikes your month pillar — the career seat. Expect the ground under your work to shift: a role ends, a boss leaves, a direction stops making sense. People who prepared treat it as an exit. People who didn't call it bad luck.",
-        year:" {y} hits your year pillar — the seat of roots and reputation. Something in how you're seen, or in the older generation around you, changes shape that year. Handle the family conversation you've been postponing before it arrives, not after.",
-        hour:" {y} lands on your hour pillar — the seat of children, home and the later stretch. A quieter disruption than the others: what you want your life to look like stops matching what it currently looks like."
+        day:" Then mark {y}, {name}. A pivot year, and a personal one — home, partner, the things you thought were settled. Not bad. Just moving. Don't sign anything lazily that year.",
+        month:" {y} shakes your work loose. A role ends, a boss leaves, or a direction stops making sense. Prepared people call that an exit. Everyone else calls it bad luck.",
+        year:" {y} stirs family and reputation — how you're seen, or something among the older generation. Have the conversation you keep postponing before that year, not after it.",
+        hour:" {y} unsettles the long view — home, the shape you want your life to take. Quieter than the others, and harder to ignore once it starts."
       },
       combo: {
-        day:" And {y} sits in harmony with your day pillar — one of the smoother years in the run. Partnership comes easily then. Whatever you need another person's help for, ask in that year, not before it.",
-        month:" {y} harmonises with your month pillar — the work seat. Doors that were stuck move quietly that year. It's the year to ask for the role, not the year to wait and see.",
-        year:" {y} harmonises with your year pillar. Old connections resurface and prove useful — someone from earlier in your life reappears with something you need. Answer the message.",
-        hour:" {y} sits well with your hour pillar. A settling year: home, family, the long-term shape of things. Good year to plant something you intend to keep."
+        day:" And {y} is one of the smoother years in the run. Partnership comes easily then. Whatever you need someone's help for, ask in that year, not before it.",
+        month:" {y} opens doors at work that were stuck. Ask for the role that year, {name}. Don't wait and see.",
+        year:" {y} brings old connections back — someone from earlier in your life turns up with something you need. Answer the message.",
+        hour:" {y} settles things at home. A good year to plant something you intend to keep."
       }
     },
 
@@ -495,8 +605,15 @@
     var decGrp = tenGodGroup(dayStem, lp.stem);
     career += ' ' + fillTokens(DECADE[decGrp], { band:lp.band, name:name });
 
-    /* 5. LOVE & SPOUSE [dated] */
-    var love = fillName(FRAG.loveBase[yy], name) + FRAG.loveDrive[drive]
+    /* 5. LOVE & SPOUSE [dated]
+       Leads with the spouse star (gender-aware, 6 variants) and the spouse seat
+       (12 variants) rather than a yin/yang coin-flip, so two readers rarely open
+       on the same sentence. */
+    var spouseGod = (gender==='female') ? 'Officer' : 'Wealth';
+    var love = fillName(FRAG.spouseStar[gender][spouseBand(acc, spouseGod)][BRANCHES.indexOf(pillars.day.branch) % 2], name)
+             + FRAG.spouseType[pillars.day.branch]
+             + fillName(FRAG.loveApproach[yy], name)
+             + FRAG.loveDrive[drive][BRANCHES.indexOf(pillars.day.branch) % 3]
              + (dayClash ? FRAG.spouseSeat.clash : (dayHarmony ? FRAG.spouseSeat.harmony : FRAG.spouseSeat.plain))
              + yearLine('love', next2, dayStem, name);
 
@@ -540,6 +657,8 @@
         dayMaster:dayStem, element:dmEl, yinYang:yy, strength:strBucket, season:season,
         drive:drive, usefulElement:useful, strongestElement:strongestElement(v3.elementScores),
         dayBranchClash:dayClash, dayBranchHarmony:dayHarmony,
+        spouseStar:{ god:(gender==='female'?'Officer':'Wealth'), band:spouseBand(acc, gender==='female'?'Officer':'Wealth') },
+        spouseSeat:pillars.day.branch,
         bands:{ companion:bandOf(acc,'Companion'), resource:bandOf(acc,'Resource') },
         timeline: {
           past:[pastA,pastB], current:now, future:[next1,next2,next3],
@@ -554,6 +673,7 @@
     compose: compose,
     FRAG: FRAG, YEAR: YEAR, PAST_REFLECT: PAST_REFLECT, DECADE: DECADE,
     annualPillar: annualPillar,
+    trueElements: trueElements,
     tenGodGroup: tenGodGroup,
     SECTIONS: ['opener','personality','fortune','career','love','people','parents','health','luck','closer'],
     VERSION: 'reading-v3-ten-section'
