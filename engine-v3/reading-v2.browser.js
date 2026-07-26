@@ -581,78 +581,95 @@
     /* 1. OPENER */
     var opener = fillName(pick(FRAG.openers, seed), name);
 
-    /* 2. WHO YOU ARE — core + physique + traits + strength + season + drive */
-    var personality = fillName(FRAG.dmCore[dayStem], name)
-                    + FRAG.physique[dmEl]
-                    + FRAG.traits[dayStem]
-                    + FRAG.strength[strBucket]
-                    + FRAG.season[season]
-                    + FRAG.drive[drive];
+    /* 2. WHO YOU ARE — four paragraphs, four kinds of statement */
+    var pCore = fillName(FRAG.dmCore[dayStem], name)
+              + FRAG.strength[strBucket]
+              + FRAG.season[season];
+    var pPhysical = FRAG.physique[dmEl].replace(/^ /,'');
+    var pTraits = FRAG.traits[dayStem].replace(/^ /,'').replace(/^Traits: /,'Traits — ')
+                + FRAG.drive[drive];
+    /* Two PAST years here, not forward ones. This section is about formation,
+       and it keeps What's Coming as the only place that forecasts — previously
+       both used next2 with the same flavour and printed the identical sentence
+       twice in one reading. */
+    var pSelfYears = (yearLine('fortune', pastA, dayStem, name)
+                    + yearLine('fortune', pastB, dayStem, name)).replace(/^ /,'');
 
-    /* 3. FORTUNE [dated] */
+    /* 3. FORTUNE */
     var useful = weakestElement(v3.elementScores);
-    var fortune = fillName(FRAG.fortuneCore[strBucket], name)
-                + FRAG.fortuneUseful[useful]
-                + yearLine('fortune', now, dayStem, name)
-                + yearLine('fortune', next2, dayStem, name);
+    var fShape = fillName(FRAG.fortuneCore[strBucket], name) + FRAG.fortuneUseful[useful];
+    var fYears = (yearLine('fortune', now, dayStem, name)).replace(/^ /,'');
 
-    /* 4. CAREER [dated] + decade marker */
-    var career = FRAG.careerCore[drive] + FRAG.careerMod[strBucket]
-               + yearLine('career', pastB, dayStem, name)
-               + yearLine('career', next1, dayStem, name)
-               + yearLine('career', next3, dayStem, name);
+    /* 4. CAREER */
+    var cWork = FRAG.careerCore[drive] + FRAG.careerMod[strBucket];
+    var cYears = (yearLine('career', pastB, dayStem, name)
+                + yearLine('career', next1, dayStem, name)
+                + yearLine('career', next3, dayStem, name)).replace(/^ /,'');
     var lp = activeLuckPillar(pillars, gender, birthYear);
     var decGrp = tenGodGroup(dayStem, lp.stem);
-    career += ' ' + fillTokens(DECADE[decGrp], { band:lp.band, name:name });
+    var cDecade = fillTokens(DECADE[decGrp], { band:lp.band, name:name });
 
-    /* 5. LOVE & SPOUSE [dated]
-       Leads with the spouse star (gender-aware, 6 variants) and the spouse seat
-       (12 variants) rather than a yin/yang coin-flip, so two readers rarely open
-       on the same sentence. */
+    /* 5. LOVE & SPOUSE */
     var spouseGod = (gender==='female') ? 'Officer' : 'Wealth';
-    var love = fillName(FRAG.spouseStar[gender][spouseBand(acc, spouseGod)][BRANCHES.indexOf(pillars.day.branch) % 2], name)
-             + FRAG.spouseType[pillars.day.branch]
-             + fillName(FRAG.loveApproach[yy], name)
-             + FRAG.loveDrive[drive][BRANCHES.indexOf(pillars.day.branch) % 3]
-             + (dayClash ? FRAG.spouseSeat.clash : (dayHarmony ? FRAG.spouseSeat.harmony : FRAG.spouseSeat.plain))
-             + yearLine('love', next2, dayStem, name);
+    var lArrives = fillName(FRAG.spouseStar[gender][spouseBand(acc, spouseGod)][BRANCHES.indexOf(pillars.day.branch) % 2], name);
+    var lSuits   = FRAG.spouseType[pillars.day.branch].replace(/^ /,'');
+    var lHow     = (fillName(FRAG.loveApproach[yy], name)
+                  + FRAG.loveDrive[drive][BRANCHES.indexOf(pillars.day.branch) % 3]).replace(/^ /,'');
+    var lSeat    = ((dayClash ? FRAG.spouseSeat.clash : (dayHarmony ? FRAG.spouseSeat.harmony : FRAG.spouseSeat.plain))
+                  + yearLine('love', next2, dayStem, name)).replace(/^ /,'');
 
-    /* 6. YOUR PEOPLE (siblings + friends) */
+    /* 6. YOUR PEOPLE */
     var people = fillName(FRAG.people[bandOf(acc,'Companion')], name) + FRAG.peopleMod[strBucket];
 
     /* 7. PARENTS & ROOTS */
     var parents = fillName(FRAG.parents[bandOf(acc,'Resource')], name) + FRAG.parentsSeason[season];
 
-    /* 8. HEALTH — gentle tendencies only */
-    var health = FRAG.health[useful] + FRAG.healthStrength[strBucket];
+    /* 8. HEALTH */
+    var hBody = FRAG.health[useful];
+    var hReserve = FRAG.healthStrength[strBucket].replace(/^ /,'');
 
-    /* 9. WHAT'S COMING [dated] — the section people actually came for.
-       Structure: what's thin -> a past anchor they can check -> next year in
-       detail -> the year after -> up to two genuinely notable years found by
-       branch clash/combination against the day branch -> closing posture. */
+    /* 9. WHAT'S COMING */
     var pastGrp = tenGodGroup(dayStem, annualPillar(pastA).stem);
     var nextGrp = tenGodGroup(dayStem, annualPillar(next1).stem);
-    var luck = FRAG.luckCore[useful]
-             + ' Look back — ' + fillTokens(PAST_REFLECT[pastGrp] || '{y} asked something of you.', {y:String(pastA),name:name})
-             + ' ' + fillTokens(FRAG.nextYear[nextGrp], {y:String(next1), name:name})
-             + yearLine('fortune', next2, dayStem, name);
-
+    var kThin = FRAG.luckCore[useful];
+    var kPast = 'Look back — ' + fillTokens(PAST_REFLECT[pastGrp] || '{y} asked something of you.', {y:String(pastA),name:name});
+    var kNext = (fillTokens(FRAG.nextYear[nextGrp], {y:String(next1), name:name})
+               + yearLine('fortune', next2, dayStem, name)).replace(/^ /,'');
     var notable = notableYears(pillars, next1, 12, 4, [next1, next2]);
-    notable.forEach(function(nb){
+    var kNotable = notable.map(function(nb){
       var tmpl = FRAG.notable[nb.kind] && FRAG.notable[nb.kind][nb.seat];
-      if(tmpl) luck += fillTokens(tmpl, { y:String(nb.year), name:name });
-    });
-
-    luck += ' Past that, the shape holds: build quietly, and the loud money lands later and better than you expect.';
-    if(!hourKnown){ luck += fillName(FRAG.luckHourUnknown, name); }
+      return tmpl ? fillTokens(tmpl, { y:String(nb.year), name:name }).replace(/^ /,'') : '';
+    }).filter(Boolean);
+    var kClose = 'Past that, the shape holds: build quietly, and the loud money lands later and better than you expect.';
+    if(!hourKnown){ kClose += fillName(FRAG.luckHourUnknown, name); }
 
     /* 10. CLOSER */
     var closer = fillName(pick(FRAG.closers, seed+5), name);
 
     return {
-      opener:opener, personality:personality, fortune:fortune, career:career,
-      love:love, people:people, parents:parents, health:health,
-      luck:luck, closer:closer,
+      /* Sections that read as prose are returned as ARRAYS of paragraphs,
+         grouped by the nature of the analysis: what you are, what you look
+         like, how you behave, what the years say. The page renders each
+         element as its own <p>. Opener and closer stay single strings — they
+         are one spoken beat each.
+
+         The classic fallback returns plain strings for every section, so the
+         renderer accepts both. */
+      opener: opener,
+      personality: [
+        pCore,          /* core nature: element, build of character, strength, season */
+        pPhysical,      /* physical tendency of the type */
+        pTraits,        /* personality traits + dominant drive */
+        pSelfYears      /* what the years say about you */
+      ],
+      fortune: [ fShape, fYears ],
+      career:  [ cWork, cYears, cDecade ],
+      love:    [ lArrives, lSuits, lHow, lSeat ],
+      people:  [ people ],
+      parents: [ parents ],
+      health:  [ hBody, hReserve ],
+      luck:    [ kThin, kPast, kNext ].concat(kNotable).concat([ kClose ]).filter(Boolean),
+      closer:  closer,
       _selectors: {
         dayMaster:dayStem, element:dmEl, yinYang:yy, strength:strBucket, season:season,
         drive:drive, usefulElement:useful, strongestElement:strongestElement(v3.elementScores),
