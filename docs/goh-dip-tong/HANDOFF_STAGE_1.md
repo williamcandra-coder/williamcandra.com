@@ -254,12 +254,15 @@ nobody has seen is untested code that merely looks finished.
 
 ## 6. Rights and access limitations
 
-**1. Every live host is network-blocked in this environment.** Verified
-2026-07-30: `www.idx.co.id`, `idx.co.id`, `www.bi.go.id`, `www.bps.go.id`,
-`ojk.go.id` and `query1.finance.yahoo.com` all return HTTP `000`; the agent
-proxy reports `connect_rejected — gateway answered 403 to CONNECT (policy
-denial)`. Only PyPI, npm and GitHub are reachable. Live collection could not be
-exercised or validated, which is why fixtures back every source.
+**1. Access is measured, and mostly refused.** Two different environments, two
+different failures. In the *build sandbox* every host returned HTTP `000` — the
+agent proxy reported `connect_rejected — gateway answered 403 to CONNECT (policy
+denial)`, so no connection was ever established. From *GitHub Actions* (run
+30537966831) the hosts are reachable, and five of seven then refuse the runner
+directly with HTTP 403. `sources.yml` now records `connectivity_status`,
+`http_status`, `connectivity_verified_at` and `connectivity_run_id` per provider.
+Either way, live collection has never been exercised, which is why fixtures back
+every source. Full detail in §6b.
 
 **2. No source has documented usage rights.** No operator's terms have been read
 or recorded, so no storage, display or redistribution right is claimed for any

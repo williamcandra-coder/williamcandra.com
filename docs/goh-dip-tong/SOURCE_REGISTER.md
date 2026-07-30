@@ -27,6 +27,29 @@ locks: `enabled: false` in `sources.yml`, and a `rights_status` of
 `MANUAL_REVIEW_REQUIRED` that the rights gate refuses to run regardless of the
 enabled flag.
 
+### Verified connectivity — GitHub Actions run [30537966831](https://github.com/williamcandra-coder/williamcandra.com/actions/runs/30537966831), 2026-07-30
+
+| Provider | HTTP | `connectivity_status` |
+|---|---:|---|
+| `bank_indonesia` | 302 | `REACHABLE_UNVALIDATED` |
+| `ojk` | 302 | `REACHABLE_UNVALIDATED` |
+| `bps` | 403 | `ACCESS_CONTROLLED` |
+| `idx_index_constituents` | 403 | `ACCESS_CONTROLLED` |
+| `idx_market_prices` | 403 | `ACCESS_CONTROLLED` |
+| `idx_disclosures` | 403 | `ACCESS_CONTROLLED` |
+| `idx_financials` | 403 | `ACCESS_CONTROLLED` |
+
+**This changes the access column only. It changes no right.** A hosted runner
+reaches all seven hosts — the earlier "network-blocked" reading came from the
+build sandbox, which was refused at its own egress proxy. Five of the seven then
+refuse the runner directly with HTTP 403, which is the operator declining
+automated access, not an obstacle to route around. Two responded with a redirect
+to a human-facing landing page, which is not evidence of a usable data endpoint.
+
+`REACHABLE_UNVALIDATED` and a null `blocked_reason` are **not** clearance. Every
+permission cell below still reads *no — not reviewed*, and every provider is
+still disabled.
+
 ---
 
 ## 1. `fixture_idx30_registry`
@@ -201,18 +224,20 @@ rather than an overwrite.
 | Last validation | 2026-07-30 (connectivity only) |
 
 **Blocked because.** Two independent reasons.
-1. **Access** — the build environment's egress policy answers HTTP 403 to
-   `CONNECT www.idx.co.id:443`. Verified 2026-07-30.
+1. **Access** — `ACCESS_CONTROLLED`. A GitHub Actions runner reaches the host and
+   IDX answers **HTTP 403** (run 30537966831, 2026-07-30). Egress is not the
+   obstacle; IDX is declining automated access from that address range.
 2. **Rights** — IDX's terms of use have not been read or recorded. No storage,
    display or redistribution right may be assumed.
 
-**To enable.** (a) obtain network egress; (b) read and record IDX's terms
-covering storage and public display of constituent metadata; (c) fill in the
-three permission rows above with a date; (d) set `enabled: true` and a resolved
-`rights_status` in `sources.yml`; (e) implement `parse()` against a real
-response. **Do not** bypass any access control, rate limit, anti-bot measure or
-licensing restriction — a provider that needs circumvention to work is a
-provider that must stay disabled.
+**To enable.** (a) resolve the 403 at the operator level — an official data
+agreement, a licensed vendor, or a documented permitted-use path; (b) read and
+record IDX's terms covering storage and public display of constituent metadata;
+(c) fill in the three permission rows above with a date; (d) set `enabled: true`
+and a resolved `rights_status` in `sources.yml`; (e) implement `parse()` against
+a real captured response. **Do not** bypass the 403, any rate limit, anti-bot
+measure or licensing restriction — a provider that needs circumvention to work
+is a provider that must stay disabled.
 
 ---
 
@@ -237,8 +262,8 @@ provider that must stay disabled.
 | Enabled | **no** |
 | Last validation | 2026-07-30 (connectivity only) |
 
-**Blocked because.** Access denied by egress policy (403 CONNECT, verified
-2026-07-30) **and** rights unreviewed.
+**Blocked because.** `ACCESS_CONTROLLED` — the host answered **HTTP 403** to a
+GitHub Actions runner (run 30537966831, 2026-07-30) — **and** rights unreviewed.
 
 **Additional constraint.** Market-price redistribution is the highest-risk right
 in this project. Even once reachable and reviewed, this provider must first run
@@ -270,8 +295,8 @@ schema refuses an `adjustedClose` without an `adjustmentMethodology`.
 | Enabled | **no** |
 | Last validation | 2026-07-30 (connectivity only) |
 
-**Blocked because.** Access denied by egress policy (403 CONNECT) and rights
-unreviewed.
+**Blocked because.** `ACCESS_CONTROLLED` — the host answered **HTTP 403** to a
+GitHub Actions runner (run 30537966831, 2026-07-30) — and rights unreviewed.
 
 **Additional constraint.** Metadata-only by design. Announcement PDFs must never
 be committed; they become a manifest row (official URL, hash, retrieval
@@ -301,8 +326,9 @@ republished.
 | Enabled | **no** |
 | Last validation | 2026-07-30 (connectivity only) |
 
-**Blocked because.** Access denied by egress policy (403 CONNECT) and rights
-unreviewed.
+**Blocked because.** `ACCESS_CONTROLLED` — the host answered **HTTP 403** to a
+GitHub Actions runner (run 30537966831, 2026-07-30) — and rights unreviewed. No
+response has been captured, so there is nothing to write a parser against.
 
 **Additional constraint.** XBRL instance documents are the intended input. PDF
 and Excel filings need separate adapters with stronger validation and must never
@@ -330,8 +356,11 @@ be committed — they become manifest rows.
 | Enabled | **no** | **no** | **no** |
 | Last validation | 2026-07-30 | 2026-07-30 | 2026-07-30 |
 
-**Blocked because.** All three hosts are denied by the egress policy (403
-CONNECT, verified 2026-07-30) and none of their terms have been reviewed.
+**Blocked because.** Rights: none of their terms have been reviewed. Access, per
+run 30537966831 (2026-07-30): `bank_indonesia` and `ojk` are
+`REACHABLE_UNVALIDATED` (HTTP 302 to a landing page); `bps` is
+`ACCESS_CONTROLLED` (HTTP 403). Reachability does not lift the rights lock, and
+all three remain disabled.
 
 **Known limitations.** Official statistics are frequently revised. Any adapter
 must preserve the release vintage alongside the observation period, or the
@@ -343,7 +372,10 @@ dataset silently becomes unusable for anything point-in-time.
 
 To move a source from disabled to enabled:
 
-1. Confirm network access exists and is permitted.
+1. Confirm network access exists and is permitted. `connectivity_status` in
+   `sources.yml` records what the last probe found; run
+   `gdt-source-connectivity-smoke` to refresh it. An `ACCESS_CONTROLLED` result
+   is an operator decision and cannot be resolved by retrying.
 2. Read the operator's terms of use. Record what they say about automated
    access, storage, display and redistribution — with the date and the URL of
    the terms you read.

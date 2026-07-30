@@ -338,3 +338,66 @@ def test_guard_ignores_the_private_tree(sandbox):
     guard = RepoGuard(sandbox)
     assert all("huge.pdf" not in str(f) for f in guard.guarded_files())
     assert guard.run().ok
+
+
+# --- recorded connectivity status --------------------------------------------
+
+
+CONNECTIVITY_RUN_ID = "30537966831"
+CONNECTIVITY_VERIFIED_AT = "2026-07-30"
+
+
+def _live_providers(real_settings):
+    return {p: c for p, c in real_settings.sources()["providers"].items()
+            if c.get("kind") == "http"}
+
+
+def test_every_live_provider_records_the_connectivity_run(real_settings):
+    """Provenance for the status: which run measured it, and when."""
+    live = _live_providers(real_settings)
+    assert len(live) == 7
+    for provider_id, config in live.items():
+        assert config.get("connectivity_run_id") == CONNECTIVITY_RUN_ID, provider_id
+        assert config.get("connectivity_verified_at") == CONNECTIVITY_VERIFIED_AT, provider_id
+
+
+def test_connectivity_status_uses_the_declared_vocabulary(real_settings):
+    from pipeline.goh_dip_tong.validation.connectivity import OUTCOMES
+
+    for provider_id, config in _live_providers(real_settings).items():
+        assert config.get("connectivity_status") in OUTCOMES, provider_id
+
+
+def test_access_controlled_providers_state_a_reason_and_reachable_ones_do_not(real_settings):
+    """blocked_reason describes the network. It must agree with the status, or
+    the file is telling two different stories about the same probe."""
+    for provider_id, config in _live_providers(real_settings).items():
+        status = config["connectivity_status"]
+        reason = config.get("blocked_reason")
+        if status == "ACCESS_CONTROLLED":
+            assert reason, f"{provider_id}: refused but no blocked_reason"
+            assert str(config.get("http_status")) == "403", provider_id
+        elif status == "REACHABLE_UNVALIDATED":
+            assert reason is None, f"{provider_id}: reachable but claims {reason!r}"
+
+
+def test_connectivity_does_not_unlock_any_provider(real_settings):
+    """The whole point: a reachable source is still disabled and still
+    MANUAL_REVIEW_REQUIRED. Reachability is not permission."""
+    for provider_id, config in _live_providers(real_settings).items():
+        assert config["enabled"] is False, provider_id
+        assert config["rights_status"] == "MANUAL_REVIEW_REQUIRED", provider_id
+
+    reachable = [p for p, c in _live_providers(real_settings).items()
+                 if c["connectivity_status"] == "REACHABLE_UNVALIDATED"]
+    assert reachable, "expected some reachable providers to guard against"
+    for provider_id in reachable:
+        assert not RightsGate(real_settings.sources()).is_enabled(provider_id)
+
+
+def test_source_register_records_the_same_connectivity_outcome(real_settings):
+    """sources.yml and the register must not disagree about what happened."""
+    register = (real_settings.docs_dir / "SOURCE_REGISTER.md").read_text(encoding="utf-8")
+    assert CONNECTIVITY_RUN_ID in register
+    for provider_id, config in _live_providers(real_settings).items():
+        assert config["connectivity_status"] in register, provider_id

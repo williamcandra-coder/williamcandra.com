@@ -201,8 +201,8 @@
     {
       "expected": 20971520,
       "id": "guard.total_size",
-      "message": "guarded paths hold 232240 bytes (limit 20971520)",
-      "observed": 232240,
+      "message": "guarded paths hold 236225 bytes (limit 20971520)",
+      "observed": 236225,
       "outcome": "PASS",
       "severity": "INFO",
       "subject": null
@@ -291,10 +291,10 @@
     "tickersSucceeded": 0
   },
   "failedTickers": [],
-  "generatedAt": "2026-07-30T11:22:27Z",
+  "generatedAt": "2026-07-30T11:27:27Z",
   "notPromotedReason": null,
   "promoted": false,
-  "runId": "gdt-data-quality-20260730T112227Z",
+  "runId": "gdt-data-quality-20260730T112727Z",
   "schemaVersion": "1.0.0",
   "sources": [
     {

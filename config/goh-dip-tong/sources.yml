@@ -150,11 +150,21 @@ providers:
   # ---------------------------------------------------------------------------
   # LIVE PROVIDERS — registered, structurally complete, HARD DISABLED.
   #
-  # Every one of these is unreachable from the build environment (the egress
-  # policy answers 403 to CONNECT) AND has undocumented usage rights. Both must
-  # be resolved before `enabled: true`. The rights gate additionally refuses to
-  # run any provider whose rights_status is MANUAL_REVIEW_REQUIRED even if
-  # someone flips `enabled`, so this is two independent locks.
+  # CONNECTIVITY, as verified from GitHub Actions run 30537966831 (2026-07-30):
+  #   ACCESS_CONTROLLED (5)  idx_index_constituents, idx_market_prices,
+  #                          idx_disclosures, idx_financials, bps
+  #                          — reached, then refused by the operator with HTTP 403
+  #   REACHABLE_UNVALIDATED (2)  bank_indonesia, ojk
+  #                          — HTTP 302 to a human-facing landing page
+  #
+  # `connectivity_status` and `blocked_reason` describe the NETWORK only. They
+  # say nothing about permission, and a null blocked_reason is not clearance.
+  # EVERY provider here is still disabled because its usage rights are
+  # unreviewed — a separate lock that no connectivity result can release.
+  #
+  # The rights gate additionally refuses to run any provider whose rights_status
+  # is MANUAL_REVIEW_REQUIRED even if someone flips `enabled`, so enabling one
+  # genuinely requires releasing two independent locks.
   # ---------------------------------------------------------------------------
 
   idx_index_constituents:
@@ -175,12 +185,23 @@ providers:
     attribution: "Source: PT Bursa Efek Indonesia (IDX)"
     update_cadence: "semi-annual index review (Jan/Feb and Jul/Aug), plus ad-hoc"
     fallback: fixture_idx30_registry
-    blocked_reason: "egress policy denies CONNECT (HTTP 403) — verified 2026-07-30"
+    # Connectivity verified from GitHub Actions run 30537966831 (2026-07-30).
+    # The runner reached the host and the OPERATOR refused. This is a decision
+    # by the source, not an environment limitation, and it must not be worked
+    # around — see docs/goh-dip-tong/DATA_RIGHTS.md.
+    connectivity_status: ACCESS_CONTROLLED
+    http_status: 403
+    blocked_reason: "Source returned HTTP 403 to GitHub Actions runner"
+    connectivity_verified_at: "2026-07-30"
+    connectivity_run_id: "30537966831"
     notes: >
-      Enabling requires: (1) network egress to idx.co.id, (2) a reviewed record
-      of IDX terms of use covering storage and public display of constituent
-      metadata, (3) a dated SOURCE_REGISTER row. Do not scrape around any
-      access control, rate limit or anti-bot measure.
+      Network egress is no longer the obstacle — a GitHub Actions runner reaches
+      idx.co.id and receives HTTP 403. IDX is declining automated access from
+      that address range. Enabling therefore requires an operator-level
+      resolution (an official data agreement, a licensed vendor, or a documented
+      permitted-use path), plus a reviewed record of IDX terms and a dated
+      SOURCE_REGISTER row. Do not scrape around the 403, any rate limit or any
+      anti-bot measure.
 
   idx_market_prices:
     kind: http
@@ -200,11 +221,20 @@ providers:
     attribution: "Source: PT Bursa Efek Indonesia (IDX)"
     update_cadence: "each trading day after close (16:00 WIB)"
     fallback: fixture_market_prices
-    blocked_reason: "egress policy denies CONNECT (HTTP 403) — verified 2026-07-30"
+    # Connectivity verified from GitHub Actions run 30537966831 (2026-07-30).
+    # The runner reached the host and the OPERATOR refused. This is a decision
+    # by the source, not an environment limitation, and it must not be worked
+    # around — see docs/goh-dip-tong/DATA_RIGHTS.md.
+    connectivity_status: ACCESS_CONTROLLED
+    http_status: 403
+    blocked_reason: "Source returned HTTP 403 to GitHub Actions runner"
+    connectivity_verified_at: "2026-07-30"
+    connectivity_run_id: "30537966831"
     notes: >
       Market-price redistribution is the highest-risk right in this project and
-      is explicitly out of scope until documented. Even once reachable, this
-      provider must first be run at PRIVATE_RESEARCH_ONLY.
+      is explicitly out of scope until documented. The endpoint now answers 403
+      to automated requests, so access and rights are both unresolved. Even once
+      both are settled, this provider must first run at PRIVATE_RESEARCH_ONLY.
 
   idx_disclosures:
     kind: http
@@ -224,10 +254,19 @@ providers:
     attribution: "Source: PT Bursa Efek Indonesia (IDX)"
     update_cadence: intraday
     fallback: fixture_disclosures
-    blocked_reason: "egress policy denies CONNECT (HTTP 403) — verified 2026-07-30"
+    # Connectivity verified from GitHub Actions run 30537966831 (2026-07-30).
+    # The runner reached the host and the OPERATOR refused. This is a decision
+    # by the source, not an environment limitation, and it must not be worked
+    # around — see docs/goh-dip-tong/DATA_RIGHTS.md.
+    connectivity_status: ACCESS_CONTROLLED
+    http_status: 403
+    blocked_reason: "Source returned HTTP 403 to GitHub Actions runner"
+    connectivity_verified_at: "2026-07-30"
+    connectivity_run_id: "30537966831"
     notes: >
       Metadata-only by design. Announcement PDFs must never be committed; they
-      become a manifest row (official URL + hash + retrieval outcome).
+      become a manifest row (official URL + hash + retrieval outcome). The
+      endpoint currently answers 403 to automated requests.
 
   idx_financials:
     kind: http
@@ -247,11 +286,20 @@ providers:
     attribution: "Source: PT Bursa Efek Indonesia (IDX); issuer filings"
     update_cadence: "quarterly filing windows, plus ad-hoc restatements"
     fallback: fixture_financials
-    blocked_reason: "egress policy denies CONNECT (HTTP 403) — verified 2026-07-30"
+    # Connectivity verified from GitHub Actions run 30537966831 (2026-07-30).
+    # The runner reached the host and the OPERATOR refused. This is a decision
+    # by the source, not an environment limitation, and it must not be worked
+    # around — see docs/goh-dip-tong/DATA_RIGHTS.md.
+    connectivity_status: ACCESS_CONTROLLED
+    http_status: 403
+    blocked_reason: "Source returned HTTP 403 to GitHub Actions runner"
+    connectivity_verified_at: "2026-07-30"
+    connectivity_run_id: "30537966831"
     notes: >
       XBRL instance documents are the intended input. PDF and Excel filings need
       separate adapters with stronger validation and must never be committed;
-      they become manifest rows.
+      they become manifest rows. The endpoint currently answers 403 to automated
+      requests, so no response has yet been captured to write a parser against.
 
   bank_indonesia:
     kind: http
@@ -267,7 +315,15 @@ providers:
     attribution: "Source: Bank Indonesia"
     update_cadence: monthly
     fallback: fixture_macro
-    blocked_reason: "egress policy denies CONNECT (HTTP 403) — verified 2026-07-30"
+    # Connectivity verified from GitHub Actions run 30537966831 (2026-07-30).
+    # Reachable is NOT permission. This provider stays disabled because its
+    # usage rights are unreviewed — not because the network refused us, and a
+    # null blocked_reason must never be read as clearance to enable it.
+    connectivity_status: REACHABLE_UNVALIDATED
+    http_status: 302
+    blocked_reason: null
+    connectivity_verified_at: "2026-07-30"
+    connectivity_run_id: "30537966831"
 
   bps:
     kind: http
@@ -283,7 +339,15 @@ providers:
     attribution: "Source: Badan Pusat Statistik"
     update_cadence: monthly
     fallback: fixture_macro
-    blocked_reason: "egress policy denies CONNECT (HTTP 403) — verified 2026-07-30"
+    # Connectivity verified from GitHub Actions run 30537966831 (2026-07-30).
+    # The runner reached the host and the OPERATOR refused. This is a decision
+    # by the source, not an environment limitation, and it must not be worked
+    # around — see docs/goh-dip-tong/DATA_RIGHTS.md.
+    connectivity_status: ACCESS_CONTROLLED
+    http_status: 403
+    blocked_reason: "Source returned HTTP 403 to GitHub Actions runner"
+    connectivity_verified_at: "2026-07-30"
+    connectivity_run_id: "30537966831"
 
   ojk:
     kind: http
@@ -299,4 +363,12 @@ providers:
     attribution: "Source: Otoritas Jasa Keuangan"
     update_cadence: monthly
     fallback: fixture_macro
-    blocked_reason: "egress policy denies CONNECT (HTTP 403) — verified 2026-07-30"
+    # Connectivity verified from GitHub Actions run 30537966831 (2026-07-30).
+    # Reachable is NOT permission. This provider stays disabled because its
+    # usage rights are unreviewed — not because the network refused us, and a
+    # null blocked_reason must never be read as clearance to enable it.
+    connectivity_status: REACHABLE_UNVALIDATED
+    http_status: 302
+    blocked_reason: null
+    connectivity_verified_at: "2026-07-30"
+    connectivity_run_id: "30537966831"
