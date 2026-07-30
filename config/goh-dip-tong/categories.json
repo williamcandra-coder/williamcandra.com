@@ -1,0 +1,430 @@
+{
+  "contentHash": "9a772654d584f9122f0bf0937b8bd339d335b8ab00e42888d92be3ba6b7d6f2b",
+  "generatedAt": "2026-07-30T09:22:52Z",
+  "industries": [
+    {
+      "constituentCount": 2,
+      "industryCode": "ANIMAL_FEED_AND_PROTEIN",
+      "industryName": "Animal Feed and Protein",
+      "modelFamily": "PROTEIN",
+      "modelSupported": true,
+      "sectorCode": "CONSUMER_NON_CYCLICALS",
+      "tickers": [
+        "CPIN",
+        "JPFA"
+      ]
+    },
+    {
+      "constituentCount": 5,
+      "industryCode": "BANKS",
+      "industryName": "Banks",
+      "modelFamily": "BANK",
+      "modelSupported": true,
+      "sectorCode": "FINANCIALS",
+      "tickers": [
+        "BBCA",
+        "BBNI",
+        "BBRI",
+        "BMRI",
+        "BRIS"
+      ]
+    },
+    {
+      "constituentCount": 2,
+      "industryCode": "CHEMICALS",
+      "industryName": "Chemicals",
+      "modelFamily": "CHEMICALS",
+      "modelSupported": true,
+      "sectorCode": "BASIC_MATERIALS",
+      "tickers": [
+        "BRPT",
+        "ESSA"
+      ]
+    },
+    {
+      "constituentCount": 3,
+      "industryCode": "COAL",
+      "industryName": "Coal",
+      "modelFamily": "ENERGY_COAL",
+      "modelSupported": true,
+      "sectorCode": "ENERGY",
+      "tickers": [
+        "ADRO",
+        "ITMG",
+        "PTBA"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCode": "CONSTRUCTION_MATERIALS",
+      "industryName": "Construction Materials",
+      "modelFamily": "CEMENT",
+      "modelSupported": true,
+      "sectorCode": "BASIC_MATERIALS",
+      "tickers": [
+        "SMGR"
+      ]
+    },
+    {
+      "constituentCount": 2,
+      "industryCode": "FOOD_AND_BEVERAGE",
+      "industryName": "Food and Beverage",
+      "modelFamily": "CONSUMER_STAPLES",
+      "modelSupported": true,
+      "sectorCode": "CONSUMER_NON_CYCLICALS",
+      "tickers": [
+        "ICBP",
+        "INDF"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCode": "GAS_UTILITIES",
+      "industryName": "Gas Utilities",
+      "modelFamily": "UTILITY_GAS",
+      "modelSupported": true,
+      "sectorCode": "ENERGY",
+      "tickers": [
+        "PGAS"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCode": "INDUSTRIAL_CONGLOMERATES",
+      "industryName": "Industrial Conglomerates",
+      "modelFamily": "CONGLOMERATE",
+      "modelSupported": true,
+      "sectorCode": "INDUSTRIALS",
+      "tickers": [
+        "ASII"
+      ]
+    },
+    {
+      "constituentCount": 4,
+      "industryCode": "METALS_AND_MINERALS",
+      "industryName": "Metals and Minerals",
+      "modelFamily": "MINER",
+      "modelSupported": true,
+      "sectorCode": "BASIC_MATERIALS",
+      "tickers": [
+        "AMMN",
+        "ANTM",
+        "INCO",
+        "MDKA"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCode": "OIL_GAS_AND_COAL",
+      "industryName": "Oil, Gas and Coal",
+      "modelFamily": "ENERGY_OIL_GAS",
+      "modelSupported": true,
+      "sectorCode": "ENERGY",
+      "tickers": [
+        "MEDC"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCode": "PAPER_AND_FOREST",
+      "industryName": "Paper and Forest Products",
+      "modelFamily": "PULP_PAPER",
+      "modelSupported": true,
+      "sectorCode": "BASIC_MATERIALS",
+      "tickers": [
+        "INKP"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCode": "PHARMACEUTICALS",
+      "industryName": "Pharmaceuticals",
+      "modelFamily": "HEALTHCARE",
+      "modelSupported": true,
+      "sectorCode": "HEALTHCARE",
+      "tickers": [
+        "KLBF"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCode": "REAL_ESTATE_DEVELOPMENT",
+      "industryName": "Real Estate Development",
+      "modelFamily": "PROPERTY",
+      "modelSupported": true,
+      "sectorCode": "PROPERTIES_AND_REAL_ESTATE",
+      "tickers": [
+        "CTRA"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCode": "RETAIL_DISCRETIONARY",
+      "industryName": "Retail - Discretionary",
+      "modelFamily": "CONSUMER_DISCRETIONARY",
+      "modelSupported": true,
+      "sectorCode": "CONSUMER_CYCLICALS",
+      "tickers": [
+        "MAPI"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCode": "RETAIL_STAPLES",
+      "industryName": "Retail - Staples",
+      "modelFamily": "CONSUMER_STAPLES",
+      "modelSupported": true,
+      "sectorCode": "CONSUMER_NON_CYCLICALS",
+      "tickers": [
+        "AMRT"
+      ]
+    },
+    {
+      "constituentCount": 3,
+      "industryCode": "TELECOMMUNICATION",
+      "industryName": "Telecommunication",
+      "modelFamily": "TELCO",
+      "modelSupported": true,
+      "sectorCode": "INFRASTRUCTURES",
+      "tickers": [
+        "EXCL",
+        "ISAT",
+        "TLKM"
+      ]
+    }
+  ],
+  "modelFamilies": [
+    {
+      "basis": "Residual income / dividend discount; equity-side. Never enterprise-value based.",
+      "label": "Bank",
+      "modelFamily": "BANK",
+      "supported": true
+    },
+    {
+      "basis": "Capacity-utilisation driven enterprise DCF.",
+      "label": "Cement",
+      "modelFamily": "CEMENT",
+      "supported": true
+    },
+    {
+      "basis": "Mid-cycle spread enterprise DCF.",
+      "label": "Chemicals and petrochemicals",
+      "modelFamily": "CHEMICALS",
+      "supported": true
+    },
+    {
+      "basis": "Sum-of-the-parts with an explicit, disclosed holding-company discount.",
+      "label": "Diversified holding company",
+      "modelFamily": "CONGLOMERATE",
+      "supported": true
+    },
+    {
+      "basis": "Enterprise DCF; store-count and SSSG drivers.",
+      "label": "Consumer discretionary",
+      "modelFamily": "CONSUMER_DISCRETIONARY",
+      "supported": true
+    },
+    {
+      "basis": "Enterprise DCF with volume/price decomposition.",
+      "label": "Consumer staples",
+      "modelFamily": "CONSUMER_STAPLES",
+      "supported": true
+    },
+    {
+      "basis": "Enterprise DCF over reserve life; benchmark coal price deck required.",
+      "label": "Coal",
+      "modelFamily": "ENERGY_COAL",
+      "supported": true
+    },
+    {
+      "basis": "Enterprise DCF; production profile and lifting cost required.",
+      "label": "Oil and gas",
+      "modelFamily": "ENERGY_OIL_GAS",
+      "supported": true
+    },
+    {
+      "basis": "Enterprise DCF.",
+      "label": "Healthcare and pharmaceuticals",
+      "modelFamily": "HEALTHCARE",
+      "supported": true
+    },
+    {
+      "basis": "Embedded value / residual income.",
+      "label": "Insurance",
+      "modelFamily": "INSURANCE",
+      "supported": false
+    },
+    {
+      "basis": "Enterprise DCF over reserve life; commodity-price deck required.",
+      "label": "Metals and mining",
+      "modelFamily": "MINER",
+      "supported": true
+    },
+    {
+      "basis": "RNAV plus recurring-income DCF.",
+      "label": "Property and real estate",
+      "modelFamily": "PROPERTY",
+      "supported": true
+    },
+    {
+      "basis": "Mid-cycle margin enterprise DCF; feed-cost spread is the swing driver.",
+      "label": "Integrated protein and animal feed",
+      "modelFamily": "PROTEIN",
+      "supported": true
+    },
+    {
+      "basis": "Mid-cycle enterprise DCF.",
+      "label": "Pulp and paper",
+      "modelFamily": "PULP_PAPER",
+      "supported": true
+    },
+    {
+      "basis": "Enterprise DCF with cohort economics.",
+      "label": "Technology",
+      "modelFamily": "TECH",
+      "supported": false
+    },
+    {
+      "basis": "Enterprise DCF with explicit spectrum and capex intensity.",
+      "label": "Telecommunications",
+      "modelFamily": "TELCO",
+      "supported": true
+    },
+    {
+      "basis": "Regulated-asset-base aware enterprise DCF.",
+      "label": "Gas distribution and transmission",
+      "modelFamily": "UTILITY_GAS",
+      "supported": true
+    }
+  ],
+  "schemaVersion": "1.0.0",
+  "sectors": [
+    {
+      "constituentCount": 8,
+      "industryCodes": [
+        "CHEMICALS",
+        "CONSTRUCTION_MATERIALS",
+        "METALS_AND_MINERALS",
+        "PAPER_AND_FOREST"
+      ],
+      "sectorCode": "BASIC_MATERIALS",
+      "sectorName": "Basic Materials",
+      "tickers": [
+        "AMMN",
+        "ANTM",
+        "BRPT",
+        "ESSA",
+        "INCO",
+        "INKP",
+        "MDKA",
+        "SMGR"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCodes": [
+        "RETAIL_DISCRETIONARY"
+      ],
+      "sectorCode": "CONSUMER_CYCLICALS",
+      "sectorName": "Consumer Cyclicals",
+      "tickers": [
+        "MAPI"
+      ]
+    },
+    {
+      "constituentCount": 5,
+      "industryCodes": [
+        "ANIMAL_FEED_AND_PROTEIN",
+        "FOOD_AND_BEVERAGE",
+        "RETAIL_STAPLES"
+      ],
+      "sectorCode": "CONSUMER_NON_CYCLICALS",
+      "sectorName": "Consumer Non-Cyclicals",
+      "tickers": [
+        "AMRT",
+        "CPIN",
+        "ICBP",
+        "INDF",
+        "JPFA"
+      ]
+    },
+    {
+      "constituentCount": 5,
+      "industryCodes": [
+        "COAL",
+        "GAS_UTILITIES",
+        "OIL_GAS_AND_COAL"
+      ],
+      "sectorCode": "ENERGY",
+      "sectorName": "Energy",
+      "tickers": [
+        "ADRO",
+        "ITMG",
+        "MEDC",
+        "PGAS",
+        "PTBA"
+      ]
+    },
+    {
+      "constituentCount": 5,
+      "industryCodes": [
+        "BANKS"
+      ],
+      "sectorCode": "FINANCIALS",
+      "sectorName": "Financials",
+      "tickers": [
+        "BBCA",
+        "BBNI",
+        "BBRI",
+        "BMRI",
+        "BRIS"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCodes": [
+        "PHARMACEUTICALS"
+      ],
+      "sectorCode": "HEALTHCARE",
+      "sectorName": "Healthcare",
+      "tickers": [
+        "KLBF"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCodes": [
+        "INDUSTRIAL_CONGLOMERATES"
+      ],
+      "sectorCode": "INDUSTRIALS",
+      "sectorName": "Industrials",
+      "tickers": [
+        "ASII"
+      ]
+    },
+    {
+      "constituentCount": 3,
+      "industryCodes": [
+        "TELECOMMUNICATION"
+      ],
+      "sectorCode": "INFRASTRUCTURES",
+      "sectorName": "Infrastructures",
+      "tickers": [
+        "EXCL",
+        "ISAT",
+        "TLKM"
+      ]
+    },
+    {
+      "constituentCount": 1,
+      "industryCodes": [
+        "REAL_ESTATE_DEVELOPMENT"
+      ],
+      "sectorCode": "PROPERTIES_AND_REAL_ESTATE",
+      "sectorName": "Properties and Real Estate",
+      "tickers": [
+        "CTRA"
+      ]
+    }
+  ]
+}

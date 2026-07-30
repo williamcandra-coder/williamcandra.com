@@ -1,0 +1,135 @@
+# Goh Dip Tong — sector/industry → valuation model family mapping
+#
+# Stage 1 does NOT implement any valuation model. This file only declares which
+# model families the future engine is expected to support and which IDX-IC
+# classification maps to which family.
+#
+# THE ONBOARDING RULE (spec section 1.4)
+# If a constituent's sector/industry has no entry here, the generator sets
+#   modelFamily   = null
+#   coverageStatus = ONBOARDING
+# It must NOT fall back to a generic valuation model. A bank valued with a
+# generic FCFF model is worse than an explicit "not covered yet".
+
+schemaVersion: "1.0.0"
+
+# Model families the Stage 2 engine is expected to implement. A family listed
+# here with `supported: false` is declared but not yet buildable — mapping to it
+# still yields coverageStatus ONBOARDING.
+model_families:
+  BANK:
+    label: "Bank"
+    supported: true
+    basis: "Residual income / dividend discount; equity-side. Never enterprise-value based."
+    notes: "Debt is raw material, not financing. EV/EBITDA and FCFF are invalid here."
+  INSURANCE:
+    label: "Insurance"
+    supported: false
+    basis: "Embedded value / residual income."
+    notes: "Declared for completeness; no IDX30 fixture constituent maps here."
+  TELCO:
+    label: "Telecommunications"
+    supported: true
+    basis: "Enterprise DCF with explicit spectrum and capex intensity."
+  UTILITY_GAS:
+    label: "Gas distribution and transmission"
+    supported: true
+    basis: "Regulated-asset-base aware enterprise DCF."
+  MINER:
+    label: "Metals and mining"
+    supported: true
+    basis: "Enterprise DCF over reserve life; commodity-price deck required."
+    notes: "Reserve-life truncation matters more than terminal growth."
+  ENERGY_COAL:
+    label: "Coal"
+    supported: true
+    basis: "Enterprise DCF over reserve life; benchmark coal price deck required."
+  ENERGY_OIL_GAS:
+    label: "Oil and gas"
+    supported: true
+    basis: "Enterprise DCF; production profile and lifting cost required."
+  CHEMICALS:
+    label: "Chemicals and petrochemicals"
+    supported: true
+    basis: "Mid-cycle spread enterprise DCF."
+  CEMENT:
+    label: "Cement"
+    supported: true
+    basis: "Capacity-utilisation driven enterprise DCF."
+  PULP_PAPER:
+    label: "Pulp and paper"
+    supported: true
+    basis: "Mid-cycle enterprise DCF."
+  CONSUMER_STAPLES:
+    label: "Consumer staples"
+    supported: true
+    basis: "Enterprise DCF with volume/price decomposition."
+  CONSUMER_DISCRETIONARY:
+    label: "Consumer discretionary"
+    supported: true
+    basis: "Enterprise DCF; store-count and SSSG drivers."
+  PROTEIN:
+    label: "Integrated protein and animal feed"
+    supported: true
+    basis: "Mid-cycle margin enterprise DCF; feed-cost spread is the swing driver."
+  HEALTHCARE:
+    label: "Healthcare and pharmaceuticals"
+    supported: true
+    basis: "Enterprise DCF."
+  PROPERTY:
+    label: "Property and real estate"
+    supported: true
+    basis: "RNAV plus recurring-income DCF."
+  CONGLOMERATE:
+    label: "Diversified holding company"
+    supported: true
+    basis: "Sum-of-the-parts with an explicit, disclosed holding-company discount."
+  TECH:
+    label: "Technology"
+    supported: false
+    basis: "Enterprise DCF with cohort economics."
+    notes: "Declared but not supported — anything mapping here is ONBOARDING."
+
+# IDX-IC industry code → model family. Industry is checked first; sector is the
+# fallback. An unmapped classification is not an error, it is ONBOARDING.
+industry_map:
+  BANKS: BANK
+  INSURANCE: INSURANCE
+  TELECOMMUNICATION: TELCO
+  GAS_UTILITIES: UTILITY_GAS
+  METALS_AND_MINERALS: MINER
+  COAL: ENERGY_COAL
+  OIL_GAS_AND_COAL: ENERGY_OIL_GAS
+  CHEMICALS: CHEMICALS
+  CONSTRUCTION_MATERIALS: CEMENT
+  PAPER_AND_FOREST: PULP_PAPER
+  FOOD_AND_BEVERAGE: CONSUMER_STAPLES
+  RETAIL_STAPLES: CONSUMER_STAPLES
+  RETAIL_DISCRETIONARY: CONSUMER_DISCRETIONARY
+  ANIMAL_FEED_AND_PROTEIN: PROTEIN
+  PHARMACEUTICALS: HEALTHCARE
+  REAL_ESTATE_DEVELOPMENT: PROPERTY
+  INDUSTRIAL_CONGLOMERATES: CONGLOMERATE
+  SOFTWARE_AND_IT_SERVICES: TECH
+
+sector_map:
+  FINANCIALS: BANK
+  INFRASTRUCTURES: TELCO
+  BASIC_MATERIALS: MINER
+  ENERGY: ENERGY_OIL_GAS
+  CONSUMER_NON_CYCLICALS: CONSUMER_STAPLES
+  CONSUMER_CYCLICALS: CONSUMER_DISCRETIONARY
+  HEALTHCARE: HEALTHCARE
+  PROPERTIES_AND_REAL_ESTATE: PROPERTY
+  INDUSTRIALS: CONGLOMERATE
+  # Deliberately absent so the ONBOARDING path stays exercised by real data:
+  #   TECHNOLOGY, TRANSPORTATION_AND_LOGISTICS
+
+# Coverage status assigned when a constituent maps to a supported family. The
+# generator never promotes a company past FINANCIALS on its own — moving a
+# company to FULL_RESEARCH is a human decision recorded in overrides below.
+default_coverage_status: FINANCIALS
+
+# Per-ticker overrides. `coverage_status` here wins over the derived value.
+# Use SUSPENDED for a halted or delisted issuer.
+overrides: {}

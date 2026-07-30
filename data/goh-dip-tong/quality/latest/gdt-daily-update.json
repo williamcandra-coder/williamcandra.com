@@ -1,0 +1,181 @@
+{
+  "checks": [
+    {
+      "expected": null,
+      "id": "prices.no_duplicates",
+      "message": "54 rows with unique (ticker, date)",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "CRITICAL",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "prices.ohlc_consistent",
+      "message": "all priced rows are internally consistent",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "prices.missing_has_reason",
+      "message": "every missing price carries a reason",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "CRITICAL",
+      "subject": null
+    },
+    {
+      "expected": 0,
+      "id": "schema.market-price.summary",
+      "message": "54/54 records conform to market-price.schema.json",
+      "observed": 0,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "data.trading_dates",
+      "message": "54 trading dates are plausible",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": 0,
+      "id": "data.no_duplicates",
+      "message": "no duplicate keys across 54 records on ('ticker', 'tradingDate')",
+      "observed": 0,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "data.missing_vs_zero",
+      "message": "54 records: every null carries a reason and no value contradicts one",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "data.price_jump",
+      "message": "no unexplained large price moves",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    }
+  ],
+  "counts": {
+    "filesChanged": 0,
+    "recordsIn": 54,
+    "recordsInvalid": 0,
+    "recordsMissing": 1,
+    "recordsValid": 53,
+    "recordsWritten": 54,
+    "tickersFailed": 0,
+    "tickersSucceeded": 3
+  },
+  "failedTickers": [],
+  "generatedAt": "2026-07-30T09:48:54Z",
+  "notPromotedReason": null,
+  "promoted": true,
+  "runId": "gdt-daily-update-20260730T094854Z",
+  "schemaVersion": "1.0.0",
+  "sources": [
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "bank_indonesia",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "bps",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": true,
+      "lastSuccessAt": "2026-07-30T09:22:53Z",
+      "providerId": "fixture_disclosures",
+      "rightsStatus": "PUBLIC_METADATA_ONLY",
+      "staleDays": null
+    },
+    {
+      "enabled": true,
+      "lastSuccessAt": "2026-07-30T09:33:14Z",
+      "providerId": "fixture_financials",
+      "rightsStatus": "PUBLIC_DERIVED_OUTPUT_APPROVED",
+      "staleDays": null
+    },
+    {
+      "enabled": true,
+      "lastSuccessAt": "2026-07-30T09:22:52Z",
+      "providerId": "fixture_idx30_registry",
+      "rightsStatus": "PUBLIC_METADATA_ONLY",
+      "staleDays": null
+    },
+    {
+      "enabled": true,
+      "lastSuccessAt": "2026-07-30T09:22:54Z",
+      "providerId": "fixture_macro",
+      "rightsStatus": "PUBLIC_METADATA_ONLY",
+      "staleDays": null
+    },
+    {
+      "enabled": true,
+      "lastSuccessAt": null,
+      "providerId": "fixture_market_prices",
+      "rightsStatus": "PRIVATE_RESEARCH_ONLY",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "idx_disclosures",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "idx_financials",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "idx_index_constituents",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "idx_market_prices",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "ojk",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    }
+  ],
+  "status": "PASS",
+  "workflow": "gdt-daily-update",
+  "writeMode": "commit"
+}

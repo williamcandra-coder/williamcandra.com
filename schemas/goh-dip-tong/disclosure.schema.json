@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://williamcandra.com/schemas/goh-dip-tong/disclosure.schema.json",
+  "title": "Disclosure metadata record",
+  "description": "Metadata about one issuer disclosure. Metadata only by design: title, official URL, type, dates, hash. Full document text is never stored. Large or restricted documents are represented by the manifest block instead.",
+  "type": "object",
+  "required": [
+    "disclosureId",
+    "ticker",
+    "disclosureType",
+    "title",
+    "publishedAt",
+    "officialUrl",
+    "flaggedForFinancialUpdate",
+    "source"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "disclosureId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable id from the source. Used for deduplication across runs - a rerun must not create a second row."
+    },
+    "ticker": { "type": "string", "pattern": "^[A-Z]{4}$" },
+    "disclosureType": {
+      "type": "string",
+      "enum": [
+        "FINANCIAL_REPORT",
+        "ANNUAL_REPORT",
+        "MATERIAL_INFORMATION",
+        "CORPORATE_ACTION",
+        "GOVERNANCE_ACTION",
+        "PUBLIC_EXPOSE",
+        "INVESTOR_MATERIAL",
+        "CORRECTION",
+        "RESTATEMENT",
+        "OTHER"
+      ]
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "summary": { "type": ["string", "null"], "maxLength": 500, "description": "Own-words summary only. Never a copy of copyrighted article text." },
+    "language": { "type": ["string", "null"], "enum": ["id", "en", null] },
+    "publishedAt": { "type": "string", "format": "date-time" },
+    "periodRef": {
+      "type": ["string", "null"],
+      "description": "Business period the disclosure concerns, e.g. FY2025 or Q1-2026. Distinct from publishedAt."
+    },
+    "officialUrl": { "type": "string", "minLength": 1 },
+    "contentHash": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Hash of the document, recorded only when a permitted temporary download occurred."
+    },
+    "flaggedForFinancialUpdate": {
+      "type": "boolean",
+      "description": "True when this disclosure should be picked up by gdt-financial-update."
+    },
+    "processedByFinancialUpdate": { "type": "boolean" },
+    "manifest": {
+      "type": ["object", "null"],
+      "description": "Stand-in for a document that must not be committed. Records where it lives and what happened, never its content.",
+      "required": ["storedInRepo", "retrievalOutcome"],
+      "additionalProperties": false,
+      "properties": {
+        "storedInRepo": { "type": "boolean", "const": false },
+        "byteSize": { "type": ["integer", "null"], "minimum": 0 },
+        "mediaType": { "type": ["string", "null"] },
+        "retrievalOutcome": {
+          "type": "string",
+          "enum": ["NOT_ATTEMPTED", "SUCCESS", "BLOCKED_BY_RIGHTS", "BLOCKED_BY_ACCESS", "FETCH_FAILED", "TOO_LARGE"]
+        },
+        "objectStoreKey": {
+          "type": ["string", "null"],
+          "description": "Reserved for later object-storage integration. Consumers must not change when this becomes non-null."
+        }
+      }
+    },
+    "eventStatus": {
+      "type": ["string", "null"],
+      "enum": ["RUMOR", "MEDIA_REPORT", "PROPOSAL", "OFFICIAL_DECISION", "IMPLEMENTED", "COMPANY_IMPACT_CONFIRMED", null]
+    },
+    "source": {
+      "type": "object",
+      "required": ["providerId", "retrievedAt", "rightsStatus"],
+      "additionalProperties": false,
+      "properties": {
+        "providerId": { "type": "string", "minLength": 1 },
+        "retrievedAt": { "type": "string", "format": "date-time" },
+        "rightsStatus": {
+          "type": "string",
+          "enum": [
+            "PUBLIC_RAW_DATA_APPROVED",
+            "PUBLIC_DERIVED_OUTPUT_APPROVED",
+            "PUBLIC_METADATA_ONLY",
+            "PRIVATE_RESEARCH_ONLY",
+            "DISCOVERY_ONLY",
+            "MANUAL_REVIEW_REQUIRED",
+            "DISABLED"
+          ]
+        }
+      }
+    }
+  }
+}

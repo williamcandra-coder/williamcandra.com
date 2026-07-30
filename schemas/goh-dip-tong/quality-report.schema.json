@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://williamcandra.com/schemas/goh-dip-tong/quality-report.schema.json",
+  "title": "Data quality report",
+  "description": "Output of one validation pass. `promoted` is the fail-closed switch: when false, no generated dataset or config was replaced and the last validated state still stands.",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "workflow", "generatedAt", "status", "promoted", "checks", "counts"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "runId": { "type": "string", "minLength": 1 },
+    "workflow": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "writeMode": { "type": "string", "enum": ["validate_only", "commit"] },
+    "status": {
+      "type": "string",
+      "enum": ["PASS", "PASS_WITH_WARNINGS", "FAIL"]
+    },
+    "promoted": {
+      "type": "boolean",
+      "description": "False means nothing was written to current datasets. Invalid data never replaces the last validated data."
+    },
+    "notPromotedReason": { "type": ["string", "null"] },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "outcome", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "severity": { "type": "string", "enum": ["CRITICAL", "WARNING", "INFO"] },
+          "outcome": { "type": "string", "enum": ["PASS", "FAIL", "SKIP"] },
+          "message": { "type": "string" },
+          "subject": { "type": ["string", "null"], "description": "Ticker, dataset or file the check applies to." },
+          "observed": {},
+          "expected": {}
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["recordsIn", "recordsValid", "recordsInvalid", "recordsMissing"],
+      "additionalProperties": false,
+      "properties": {
+        "recordsIn": { "type": "integer", "minimum": 0 },
+        "recordsValid": { "type": "integer", "minimum": 0 },
+        "recordsInvalid": { "type": "integer", "minimum": 0 },
+        "recordsMissing": { "type": "integer", "minimum": 0, "description": "Records carrying a null value plus a reason. Expected, not an error." },
+        "recordsWritten": { "type": "integer", "minimum": 0 },
+        "filesChanged": { "type": "integer", "minimum": 0 },
+        "tickersSucceeded": { "type": "integer", "minimum": 0 },
+        "tickersFailed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "failedTickers": {
+      "type": "array",
+      "description": "Fail-soft record: one issuer failing must not corrupt the others.",
+      "items": {
+        "type": "object",
+        "required": ["ticker", "reason"],
+        "additionalProperties": false,
+        "properties": {
+          "ticker": { "type": "string" },
+          "reason": { "type": "string" },
+          "stage": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["providerId", "enabled", "rightsStatus"],
+        "additionalProperties": false,
+        "properties": {
+          "providerId": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "rightsStatus": { "type": "string" },
+          "lastSuccessAt": { "type": ["string", "null"], "format": "date-time" },
+          "staleDays": { "type": ["number", "null"] }
+        }
+      }
+    }
+  }
+}

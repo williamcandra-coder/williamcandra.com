@@ -1,0 +1,116 @@
+# Goh Dip Tong — IDX30 registry update
+#
+# Discovers current IDX30 membership, diffs it against the committed universe,
+# appends the change history, and opens a pull request when something changed.
+#
+# COMMIT POLICY (Stage 1 spec section 1.9)
+# This workflow never pushes to the default branch. Generated changes land on a
+# dedicated gdt/auto/* branch and merge is manual.
+#
+# WRITE MODE
+#   scheduled run  -> commit   (promote validated output; a PR is the only way out)
+#   manual dispatch -> whatever the operator chooses, defaulting to validate_only
+#
+# Schedule source of truth: config/goh-dip-tong/schedules.yml
+name: gdt-registry-update
+
+on:
+  workflow_dispatch:
+    inputs:
+      write_mode:
+        description: "validate_only collects and validates but promotes nothing"
+        type: choice
+        options: [validate_only, commit]
+        default: validate_only
+      provider:
+        description: "Force a provider id from sources.yml (optional)"
+        type: string
+        required: false
+  schedule:
+    # Tue 05:30 WIB — before the Jakarta trading week, so a membership change is
+    # reviewable on Tuesday morning.
+    - cron: "30 22 * * 1"
+
+# Read-only by default; the job below narrows to exactly what a PR needs.
+permissions:
+  contents: read
+
+concurrency:
+  group: gdt-registry-update
+  cancel-in-progress: false
+
+jobs:
+  registry-update:
+    runs-on: ubuntu-latest
+    # Scheduled runs do nothing until GDT_SCHEDULES_ENABLED is deliberately set
+    # to 'true'. Manual dispatch is never gated.
+    if: github.event_name != 'schedule' || vars.GDT_SCHEDULES_ENABLED == 'true'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pipeline dependencies
+        run: python -m pip install --quiet -r pipeline/goh_dip_tong/requirements.txt
+
+      - name: Show source status and rights
+        run: python -m pipeline.goh_dip_tong.cli sources
+
+      - name: Update IDX30 registry
+        run: |
+          python -m pipeline.goh_dip_tong.cli registry-update \
+            --write-mode "${{ inputs.write_mode || 'commit' }}" \
+            ${{ inputs.provider && format('--provider {0}', inputs.provider) || '' }}
+
+      - name: Validate the generated UI config contract
+        run: python -m pipeline.goh_dip_tong.cli quality
+
+      - name: Repository-data guard
+        run: python -m pipeline.goh_dip_tong.cli repo-guard
+
+      - name: Detect generated changes
+        id: diff
+        run: |
+          if git diff --quiet -- config/goh-dip-tong data/goh-dip-tong; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No data or config change — exiting successfully without committing."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git --no-pager diff --stat -- config/goh-dip-tong data/goh-dip-tong
+          fi
+
+      - name: Open pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH="gdt/auto/registry-$(date -u +%Y%m%d-%H%M%S)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          # Staging is restricted to generated paths. Nothing else can ride along.
+          git add config/goh-dip-tong data/goh-dip-tong
+          git commit -m "data(gdt): update index-membership through $(date -u +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+
+          BODY=data/goh-dip-tong/registry/history/latest-diff.md
+          [ -f "$BODY" ] || echo "See the file diff for details." > "$BODY"
+          gh pr create \
+            --title "data(gdt): IDX30 registry update $(date -u +%Y-%m-%d)" \
+            --body-file "$BODY" \
+            --base "${{ github.ref_name }}" \
+            --head "$BRANCH"
+
+      - name: Upload quality report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdt-registry-update-quality
+          path: data/goh-dip-tong/quality/latest/
+          if-no-files-found: ignore

@@ -1,0 +1,77 @@
+{
+  "contentHash": "f3757b40b261d3ba3011939be412b821544ca8063e092dc98b19b9c87f838860",
+  "disclaimers": [
+    "Development data. Generated from committed fixtures, not from a live or authoritative market data source.",
+    "Not investment advice. No buy or sell recommendation, no guaranteed return, and no personalised investment recommendation is expressed or implied.",
+    "Values are labelled by basis (reported, restated, normalized, derived, forecast, market-implied) and must be displayed with that label.",
+    "Missing values are null with a stated reason and must never be rendered as zero."
+  ],
+  "facts": [
+    {
+      "basis": "REPORTED",
+      "currency": "IDR",
+      "fiscalYear": 2025,
+      "metric": "net_profit",
+      "missingReason": null,
+      "periodEnd": "2025-12-31",
+      "periodStart": "2025-01-01",
+      "periodType": "FY",
+      "publishedAt": "2026-07-24T09:12:00Z",
+      "qualityStatus": "UNVALIDATED",
+      "retrievedAt": "2026-07-30T09:22:53Z",
+      "revision": 1,
+      "sourceRef": "FIX-DISC-2026-0001",
+      "unit": "IDR",
+      "value": 34100000000000.0
+    },
+    {
+      "basis": "REPORTED",
+      "currency": "IDR",
+      "fiscalYear": 2025,
+      "metric": "revenue",
+      "missingReason": null,
+      "periodEnd": "2025-12-31",
+      "periodStart": "2025-01-01",
+      "periodType": "FY",
+      "publishedAt": "2026-07-24T09:12:00Z",
+      "qualityStatus": "UNVALIDATED",
+      "retrievedAt": "2026-07-30T09:22:53Z",
+      "revision": 1,
+      "sourceRef": "FIX-DISC-2026-0001",
+      "unit": "IDR",
+      "value": 316400000000000.0
+    }
+  ],
+  "identity": {
+    "coverageStatus": "FINANCIALS",
+    "inIdx30": true,
+    "industryCode": "INDUSTRIAL_CONGLOMERATES",
+    "industryName": "Industrial Conglomerates",
+    "modelFamily": "CONGLOMERATE",
+    "name": "Astra International Tbk",
+    "reportingCurrency": "IDR",
+    "sectorCode": "INDUSTRIALS",
+    "sectorName": "Industrials"
+  },
+  "macroContext": [],
+  "marketContext": {
+    "asOfDate": null,
+    "available": false,
+    "close": null,
+    "currency": null,
+    "reason": "Market-data redistribution rights are not documented; the price provider is PRIVATE_RESEARCH_ONLY.",
+    "rightsStatus": "PRIVATE_RESEARCH_ONLY"
+  },
+  "quality": {
+    "completeness": 1.0,
+    "flags": [
+      "FIXTURE_DATA"
+    ],
+    "missingCriticalMetrics": [],
+    "status": "UNVALIDATED"
+  },
+  "recentEvents": [],
+  "schemaVersion": "1.0.0",
+  "snapshotAt": "2026-07-30T09:23:07Z",
+  "ticker": "ASII"
+}
