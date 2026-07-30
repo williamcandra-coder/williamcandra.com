@@ -571,16 +571,29 @@ chk $? "24 workflow tests pass (triggers, permissions, commit policy, secrets)"
 # ═══════════════════════════════════════════════════════════════════════════
 hdr "12. No-change workflow runs do not create commits"
 
+# Two ways to be safe, and every workflow must satisfy one of them: either it
+# gates its commit on a detected change, or it has no commit machinery at all.
+# Checking only the first would wrongly fail a read-only workflow; checking
+# neither would let a committing workflow slip through ungated.
 GATED=0
+COMMITTING=0
+READONLY=0
 for f in .github/workflows/gdt-*.yml; do
   n=$(basename "$f" .yml)
-  [ "$n" = "gdt-data-quality" ] && continue
-  grep -q 'git diff --quiet' "$f" || { no "$n: no change detection"; GATED=1; }
-  grep -q "steps.diff.outputs.changed == 'true'" "$f" || {
-    no "$n: commit not gated on change"; GATED=1; }
+  if grep -q 'git commit' "$f"; then
+    COMMITTING=$((COMMITTING + 1))
+    grep -q 'git diff --quiet' "$f" || { no "$n: no change detection"; GATED=1; }
+    grep -q "steps.diff.outputs.changed == 'true'" "$f" || {
+      no "$n: commit not gated on change"; GATED=1; }
+  else
+    READONLY=$((READONLY + 1))
+    for verb in 'git push' 'gh pr create' 'git merge' 'git add'; do
+      grep -q "$verb" "$f" && { no "$n: read-only workflow contains '$verb'"; GATED=1; }
+    done
+  fi
 done
 [ "$GATED" = "0" ]
-chk $? "all 6 committing workflows gate the commit step on a detected change"
+chk $? "every workflow either gates its commit on a change ($COMMITTING) or cannot commit at all ($READONLY)"
 
 grep -lq "exiting successfully without committing" .github/workflows/gdt-registry-update.yml
 chk $? "each prints 'exiting successfully without committing' on the no-change path"

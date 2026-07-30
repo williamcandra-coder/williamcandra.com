@@ -206,6 +206,37 @@ by `test_workflows.py` — a cron edited in only one place fails CI.
 | `gdt-financial-update` | `45 12 * * *` | 19:45 |
 | `gdt-macro-update` | `40 23 * * 0` | Mon 06:40 |
 | `gdt-data-quality` | `5 6 * * *` + every PR | 13:05 |
+| `gdt-source-connectivity-smoke` | *manual only* | — |
+
+### Source connectivity smoke test
+
+```bash
+python3 -m pipeline.goh_dip_tong.cli connectivity-smoke --output /tmp/connectivity.json
+```
+
+Diagnostic only. Probes the `official_url` of each configured live source and
+records **metadata only**: provider id, URL, timestamp, HTTP status, redirect
+target, content type, response size (from `Content-Length`) and an outcome. **No
+response body is read, stored or printed.**
+
+Outcomes: `REACHABLE_UNVALIDATED` · `UNREACHABLE_FROM_GITHUB_ACTIONS` ·
+`AUTHENTICATION_REQUIRED` · `ACCESS_CONTROLLED` · `CONTENT_TYPE_UNEXPECTED` ·
+`NETWORK_ERROR` · `NOT_TESTED`
+
+Conservative by construction: one request per provider, `HEAD` first with `GET`
+only if the method is rejected, redirects recorded but never followed, no
+retries, a pause between providers, and an identifying User-Agent. Nothing
+bypasses authentication, rate limiting or bot protection — a 401 or 403 is the
+answer, recorded and moved past.
+
+**`REACHABLE_UNVALIDATED` is the best possible result and it enables nothing.**
+HTTP 200 means a socket opened. Enabling a source remains a human decision
+requiring an edit to `sources.yml` *and* a dated rights review in
+`SOURCE_REGISTER.md`. Every record carries `enablesProvider: false`.
+
+Run it from the Actions tab via `gdt-source-connectivity-smoke` (manual dispatch
+only — it has no schedule). The report is uploaded as the artifact
+`gdt-source-connectivity-report`.
 
 ### Scheduled runs are OFF by default
 

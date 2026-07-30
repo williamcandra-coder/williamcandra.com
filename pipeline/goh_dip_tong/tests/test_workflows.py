@@ -9,15 +9,23 @@ import re
 import pytest
 import yaml
 
-WORKFLOW_NAMES = [
+#: Workflows that may produce generated changes and open a pull request.
+COMMITTING_WORKFLOWS = [
     "gdt-registry-update",
     "gdt-historical-backfill",
     "gdt-daily-update",
     "gdt-disclosure-watch",
     "gdt-financial-update",
     "gdt-macro-update",
-    "gdt-data-quality",
 ]
+
+#: Workflows that must never write to the repository at all.
+READ_ONLY_WORKFLOWS = [
+    "gdt-data-quality",
+    "gdt-source-connectivity-smoke",
+]
+
+WORKFLOW_NAMES = COMMITTING_WORKFLOWS + READ_ONLY_WORKFLOWS
 
 
 def load(path):
@@ -46,9 +54,12 @@ def schedules(request):
 # --- existence and triggers ------------------------------------------------
 
 
-def test_all_seven_workflows_exist(real_settings):
+def test_all_declared_workflows_exist(real_settings):
     for name in WORKFLOW_NAMES:
         assert (real_settings.workflows_dir / f"{name}.yml").exists(), name
+    # Nothing may sit in the workflows directory undeclared and therefore untested.
+    on_disk = sorted(p.stem for p in real_settings.workflows_dir.glob("gdt-*.yml"))
+    assert on_disk == sorted(WORKFLOW_NAMES)
 
 
 def test_every_workflow_supports_manual_dispatch(workflows):
@@ -196,7 +207,7 @@ def test_no_change_means_no_commit(workflows, repo_root):
 
 
 def _committing(workflows):
-    return [(name, doc) for name, doc in workflows.items() if name != "gdt-data-quality"]
+    return [(name, doc) for name, doc in workflows.items() if name in COMMITTING_WORKFLOWS]
 
 
 # --- safety gate -----------------------------------------------------------
@@ -256,7 +267,7 @@ def test_every_workflow_installs_the_pipeline_requirements(repo_root):
 
 
 def test_committing_workflows_run_the_repo_guard(repo_root):
-    for name in WORKFLOW_NAMES:
+    for name in COMMITTING_WORKFLOWS + ["gdt-data-quality"]:
         text = (repo_root / ".github" / "workflows" / f"{name}.yml").read_text(encoding="utf-8")
         assert "cli repo-guard" in text, f"{name} does not run the repository guard"
 
@@ -290,3 +301,85 @@ def test_acceptance_script_is_repo_relative_and_sandboxed(repo_root):
     assert "trap 'rm -rf \"$WORK\"' EXIT" in text, "sandbox is not cleaned up"
     # The isolation self-check is what actually enforces the promise.
     assert "REPO_TREE_BEFORE" in text and "REPO_TREE_AFTER" in text
+
+
+# --- gdt-source-connectivity-smoke: manual-only, read-only, cannot commit ---
+
+
+CONNECTIVITY = "gdt-source-connectivity-smoke"
+
+
+@pytest.fixture(scope="module")
+def connectivity_text(request):
+    from pipeline.goh_dip_tong.settings import find_repo_root
+
+    return (find_repo_root() / ".github/workflows" / f"{CONNECTIVITY}.yml").read_text(
+        encoding="utf-8")
+
+
+def test_connectivity_smoke_is_manual_only(workflows):
+    """No schedule key at all — it must never probe third-party hosts unattended."""
+    document = workflows[CONNECTIVITY]
+    assert "workflow_dispatch" in document["on"]
+    assert "schedule" not in document["on"], "connectivity probe must not be scheduled"
+    assert "push" not in document["on"]
+    assert "pull_request" not in document["on"]
+    assert list(document["on"]) == ["workflow_dispatch"]
+
+
+def test_connectivity_smoke_is_read_only(workflows):
+    document = workflows[CONNECTIVITY]
+    assert document["permissions"] == {"contents": "read"}
+    for job_name, job in document["jobs"].items():
+        assert job.get("permissions") is None, f"{job_name} requests extra permissions"
+
+
+def test_connectivity_smoke_cannot_commit_push_or_open_a_pr(connectivity_text):
+    for forbidden in ("git commit", "git push", "gh pr create", "git merge",
+                      "git add", "peter-evans/create-pull-request"):
+        assert forbidden not in connectivity_text, f"contains {forbidden!r}"
+
+
+def test_connectivity_smoke_does_not_touch_data_or_config(connectivity_text):
+    """Its report goes to RUNNER_TEMP, outside the working tree."""
+    assert "RUNNER_TEMP" in connectivity_text or "runner.temp" in connectivity_text
+    assert "--output \"${RUNNER_TEMP}/connectivity-report.json\"" in connectivity_text
+    # It must not write anywhere under the generated trees.
+    assert "--output config/" not in connectivity_text
+    assert "--output data/" not in connectivity_text
+
+
+def test_connectivity_smoke_asserts_a_clean_tree_and_no_activation(connectivity_text):
+    assert "git diff --quiet" in connectivity_text
+    assert "git status --porcelain --untracked-files=all" in connectivity_text
+    assert "live providers are enabled" in connectivity_text
+
+
+def test_connectivity_smoke_uploads_an_artifact(connectivity_text):
+    assert "actions/upload-artifact@v4" in connectivity_text
+    assert "gdt-source-connectivity-report" in connectivity_text
+
+
+def test_connectivity_smoke_declares_the_full_outcome_vocabulary(connectivity_text):
+    from pipeline.goh_dip_tong.validation.connectivity import OUTCOMES
+
+    for outcome in OUTCOMES:
+        assert outcome in connectivity_text, f"{outcome} not documented in the workflow"
+
+
+def test_connectivity_smoke_states_that_200_enables_nothing(connectivity_text):
+    lowered = connectivity_text.lower()
+    assert "http 200 means a socket opened" in lowered
+    assert "does not enable any provider" in lowered
+
+
+def test_connectivity_smoke_does_not_enable_providers_or_schedules(connectivity_text):
+    assert "GDT_SCHEDULES_ENABLED" not in connectivity_text
+    assert "enabled: true" not in connectivity_text
+
+
+def test_connectivity_smoke_is_registered_in_schedules_yml(schedules):
+    declared = schedules["workflows"][CONNECTIVITY]
+    assert declared["cron"] is None
+    assert declared["commit_policy"] == "never"
+    assert declared["branch_prefix"] is None

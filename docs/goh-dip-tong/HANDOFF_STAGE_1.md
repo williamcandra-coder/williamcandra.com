@@ -11,12 +11,12 @@ against fixtures. **It has never touched a live data source.**
 
 | | |
 |---|---|
-| Unit tests | **180 passed**, 0 failed |
+| Unit tests | **218 passed**, 0 failed |
 | Acceptance checks | **63/63 passed** (62 requirement checks + 1 isolation self-check) |
 | Fixture collectors | **Implemented and tested** — five providers run end to end |
 | Live provider interfaces | **Scaffolded only** — registered, disabled, never exercised |
 | Live `parse()` methods | **Not implemented** — they raise `NotImplementedError` by design |
-| Live source connectivity | **Not verified from GitHub Actions** — only from the build sandbox, where every host was refused |
+| Live source connectivity | **Not verified from GitHub Actions.** `gdt-source-connectivity-smoke` now exists to measure it on demand, but has not been run — only the build sandbox has been tested, where every host was refused |
 | Production data sources | **None enabled** — zero live providers are runnable |
 | IDX30 config | **Non-authoritative fixture data** (`authoritative: false`, `provenance: "FIXTURE"`) |
 | Market-price output | **Private and git-ignored** — routed to `data/goh-dip-tong/_private/` |
@@ -111,11 +111,12 @@ williamcandra.com/
 │   ├── idx30  company  financial-fact  market-price
 │   └── disclosure  event  quality-report  research-input
 │
-├── .github/workflows/                            # 7 workflows
+├── .github/workflows/                            # 8 workflows
 │   ├── gdt-registry-update.yml      gdt-historical-backfill.yml
 │   ├── gdt-daily-update.yml         gdt-disclosure-watch.yml
 │   ├── gdt-financial-update.yml     gdt-macro-update.yml
-│   └── gdt-data-quality.yml
+│   ├── gdt-data-quality.yml
+│   └── gdt-source-connectivity-smoke.yml    # manual, read-only diagnostic
 │
 └── docs/goh-dip-tong/
     ├── SOURCE_REGISTER.md  DATA_DICTIONARY.md  PIPELINE_RUNBOOK.md
@@ -193,6 +194,7 @@ Full detail in `PIPELINE_RUNBOOK.md`.
 | `gdt-financial-update` | dispatch + schedule | `45 12 * * *` | 19:45 | PR to `gdt/auto/financials-*` |
 | `gdt-macro-update` | dispatch + schedule | `40 23 * * 0` | Mon 06:40 | PR to `gdt/auto/macro-*` |
 | `gdt-data-quality` | dispatch + schedule + **every PR** | `5 6 * * *` | 13:05 | never commits |
+| `gdt-source-connectivity-smoke` | **dispatch only** | — | — | never commits |
 
 `config/goh-dip-tong/schedules.yml` is the single source of truth;
 `test_workflows.py` asserts the YAML matches it, so a cron edited in one place
@@ -346,7 +348,7 @@ it must not be committed at all.
 
 ## 7. Tests
 
-`python3 -m pytest pipeline/goh_dip_tong/tests -q` → **180 passed, 0 failed, ~1.7s**
+`python3 -m pytest pipeline/goh_dip_tong/tests -q` → **218 passed, 0 failed, ~1.9s**
 
 | Module | Tests | Covers |
 |---|---|---|
@@ -483,7 +485,7 @@ Contract notes for Stage 2:
 | 8 | Rerunning does not duplicate rows | ✅ three-pass idempotency verified |
 | 9 | Invalid data does not replace last validated data | ✅ fail-closed + atomic writes |
 | 10 | Stage 1 handoff file exists | ✅ this document |
-| 11 | Tests pass | ✅ 180/180 unit + 63/63 acceptance checks |
+| 11 | Tests pass | ✅ 218/218 unit + 63/63 acceptance checks |
 | 12 | No secret or restricted raw document committed | ✅ guard passes; price data git-ignored |
 
 ---
@@ -491,7 +493,9 @@ Contract notes for Stage 2:
 ## 10. Known gaps for Stage 2
 
 1. **No live data.** Resolve network access *and* usage rights per source before
-   enabling anything. Both locks must be released.
+   enabling anything. Both locks must be released. `gdt-source-connectivity-smoke`
+   (manual, read-only) answers the access half on demand — it reports
+   reachability metadata and enables nothing.
 2. **Live `parse()` methods are unimplemented by design.** Write each against a
    real captured response and add that response as a test fixture.
 3. **TTM aggregation is not implemented.** `financial-facts/trailing/` exists and

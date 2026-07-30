@@ -103,6 +103,22 @@ workflows:
     commit_policy: pull_request
     branch_prefix: gdt/auto/macro
 
+  gdt-source-connectivity-smoke:
+    file: .github/workflows/gdt-source-connectivity-smoke.yml
+    purpose: >
+      Diagnostic probe of configured official source URLs. Records reachability
+      metadata only; enables nothing and collects no data.
+    dispatch: true
+    cron: null
+    local_time: null
+    rationale: >
+      Manual only, deliberately. Probing third-party hosts unattended is not
+      something to schedule, and the result never justifies an automated action —
+      the best possible outcome is REACHABLE_UNVALIDATED.
+    write_mode_on_schedule: null
+    commit_policy: never
+    branch_prefix: null
+
   gdt-data-quality:
     file: .github/workflows/gdt-data-quality.yml
     purpose: "Schema validation, quality gates, repository guard and the Stage 1 test suite."

@@ -1,0 +1,118 @@
+# Goh Dip Tong — source connectivity smoke test
+#
+# DIAGNOSTIC ONLY. MANUAL ONLY. READ-ONLY.
+#
+# Answers one question: can a GitHub Actions runner reach the official URL of
+# each configured source? The build sandbox could not (HTTP 403 on CONNECT to
+# every host) and whether a hosted runner can is unknown. This measures it
+# instead of guessing.
+#
+# WHAT THIS WORKFLOW DOES NOT DO
+#   - it does not enable any provider, whatever the results say;
+#   - it does not collect, parse or store any source data;
+#   - it does not read or write config/goh-dip-tong/ or data/goh-dip-tong/;
+#   - it does not commit, push, open a pull request or merge;
+#   - it has no schedule and cannot fire on its own;
+#   - it never bypasses authentication, rate limiting or bot protection —
+#     a 401 or 403 is recorded as the answer and the probe moves on.
+#
+# HTTP 200 MEANS A SOCKET OPENED. NOTHING MORE.
+# The best possible outcome is REACHABLE_UNVALIDATED. Enabling a source is a
+# separate, human decision requiring an edit to config/goh-dip-tong/sources.yml
+# AND a dated rights review in docs/goh-dip-tong/SOURCE_REGISTER.md.
+#
+# WHAT IS CAPTURED
+# Provider id, URL, timestamp, HTTP status, redirect target, content type,
+# response size (from Content-Length) and an outcome. **No response body is
+# read, stored or printed.**
+#
+# Outcomes: REACHABLE_UNVALIDATED · UNREACHABLE_FROM_GITHUB_ACTIONS ·
+#           AUTHENTICATION_REQUIRED · ACCESS_CONTROLLED ·
+#           CONTENT_TYPE_UNEXPECTED · NETWORK_ERROR · NOT_TESTED
+name: gdt-source-connectivity-smoke
+
+# Manual only. There is deliberately no `schedule:` key — this workflow must
+# never probe third-party hosts unattended.
+on:
+  workflow_dispatch:
+    inputs:
+      timeout_seconds:
+        description: "Per-request timeout"
+        type: string
+        default: "15"
+      delay_seconds:
+        description: "Pause between providers; keep this conservative"
+        type: string
+        default: "2"
+
+# Read-only. This workflow has no write access and no commit step, so it cannot
+# alter the repository even if something went wrong.
+permissions:
+  contents: read
+
+concurrency:
+  group: gdt-source-connectivity-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pipeline dependencies
+        run: python -m pip install --quiet -r pipeline/goh_dip_tong/requirements.txt
+
+      - name: Show source status before probing
+        # Establishes on the record that every live provider is disabled going
+        # in, so nothing this run reports can be mistaken for activation.
+        run: python -m pipeline.goh_dip_tong.cli sources
+
+      - name: Probe configured official source URLs
+        run: |
+          python -m pipeline.goh_dip_tong.cli connectivity-smoke \
+            --output "${RUNNER_TEMP}/connectivity-report.json" \
+            --timeout "${{ inputs.timeout_seconds || '15' }}" \
+            --delay "${{ inputs.delay_seconds || '2' }}"
+
+      - name: Assert nothing was enabled or modified
+        run: |
+          set -euo pipefail
+          # The report is written to RUNNER_TEMP, outside the working tree, so a
+          # diagnostic artifact can never end up in a generated-data commit.
+          if ! git diff --quiet; then
+            echo "::error::the connectivity probe modified tracked files"
+            git --no-pager diff --stat
+            exit 1
+          fi
+          if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
+            echo "::error::the connectivity probe left files behind"
+            git status --porcelain --untracked-files=all
+            exit 1
+          fi
+          # Belt and braces: re-assert that no provider became runnable.
+          python - <<'PY'
+          import sys, yaml, pathlib
+          cfg = yaml.safe_load(pathlib.Path("config/goh-dip-tong/sources.yml").read_text())
+          live = {p: c for p, c in cfg["providers"].items() if c.get("kind") == "http"}
+          enabled = [p for p, c in live.items() if c.get("enabled")]
+          if enabled:
+              print(f"::error::live providers are enabled: {enabled}")
+              sys.exit(1)
+          print(f"All {len(live)} live providers still disabled. Nothing was activated.")
+          PY
+          echo "Working tree clean; no provider enabled."
+
+      - name: Upload connectivity report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdt-source-connectivity-report
+          path: ${{ runner.temp }}/connectivity-report.json
+          if-no-files-found: warn
+          retention-days: 30

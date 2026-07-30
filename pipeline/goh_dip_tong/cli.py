@@ -50,6 +50,7 @@ from .publishing.writers import (
     write_text_if_changed,
 )
 from .settings import get_settings, utc_now_iso
+from .validation import connectivity as connectivity_mod
 from .validation import quality as quality_mod
 from .validation.repo_guard import RepoGuard
 from .validation.rights import RightsGate
@@ -966,6 +967,48 @@ def cmd_quality(args) -> int:
                    sources=_source_rows(registry), verbose=args.verbose)
 
 
+def cmd_connectivity_smoke(args) -> int:
+    """Diagnostic probe of configured official source URLs.
+
+    Enables nothing. Collects nothing. Writes a metadata-only report and always
+    exits 0 when the probe itself ran — an unreachable source is a finding to
+    record, not a build failure.
+    """
+    settings = get_settings()
+    print("[gdt-source-connectivity-smoke]")
+    print("  DIAGNOSTIC ONLY — reachability is not permission.")
+    print("  No provider is enabled by this run, whatever the results say.")
+    print()
+
+    report = connectivity_mod.probe_sources(
+        settings,
+        delay_seconds=args.delay,
+        timeout=args.timeout,
+    )
+
+    print(connectivity_mod.format_table(report))
+    print()
+    counts = report["counts"]
+    print(f"  probed={counts['probed']} not_tested={counts['notTested']} "
+          f"reachable_unvalidated={counts['reachableUnvalidated']}")
+    print(f"  providers enabled by this run: {report['providersEnabledByThisRun']}")
+    print(f"  response bodies retained: {report['bodiesRetained']}")
+
+    # Deliberately outside data/ and config/: this is a diagnostic artifact, not
+    # a dataset, and it must never appear in a generated-data commit.
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(canonical_json(report), encoding="utf-8")
+    print(f"  report written: {out}")
+
+    _emit_github_output(
+        reachable=counts["reachableUnvalidated"],
+        probed=counts["probed"],
+        providers_enabled=0,
+    )
+    return EXIT_OK
+
+
 # ---------------------------------------------------------------------------
 # argument parsing
 # ---------------------------------------------------------------------------
@@ -1012,6 +1055,16 @@ def build_parser() -> argparse.ArgumentParser:
     snapshot = sub.add_parser("research-snapshot", parents=[common], help="emit the Stage 2 contract for one ticker")
     snapshot.add_argument("--ticker", required=True)
     snapshot.set_defaults(func=cmd_research_snapshot)
+
+    smoke = sub.add_parser("connectivity-smoke", parents=[common],
+                           help="diagnostic probe of configured source URLs (enables nothing)")
+    smoke.add_argument("--output", default="connectivity-report.json",
+                       help="where to write the metadata-only report")
+    smoke.add_argument("--timeout", type=float,
+                       default=connectivity_mod.DEFAULT_TIMEOUT)
+    smoke.add_argument("--delay", type=float, default=connectivity_mod.DEFAULT_DELAY,
+                       help="seconds between providers; keep this conservative")
+    smoke.set_defaults(func=cmd_connectivity_smoke)
 
     sub.add_parser("repo-guard", parents=[common], help="run the repository-data guard").set_defaults(func=cmd_repo_guard)
     sub.add_parser("sources", parents=[common], help="show source status and rights").set_defaults(func=cmd_sources)
