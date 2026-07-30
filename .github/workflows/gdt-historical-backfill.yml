@@ -1,0 +1,172 @@
+# Goh Dip Tong — historical backfill
+#
+# MANUAL ONLY. There is deliberately no `schedule` trigger: backfill is
+# expensive, correction-sensitive and rewrites history, so Stage 1 spec section
+# 1.7 requires a human to start it.
+#
+# Backfill guarantees (all enforced by the pipeline, not by this YAML):
+#   idempotent        rerunning produces no duplicate canonical rows
+#   resume-capable    unchanged partitions are not rewritten
+#   incremental       records are merged by primary key, not appended blindly
+#   correction-aware  a restatement is a new revision; the prior value survives
+#   fail-soft         one issuer or data type failing does not abort the others
+#   fail-closed       invalid results are never promoted to current datasets
+#
+# Commits are grouped into ONE pull request for the whole run — never one commit
+# per row or per small file.
+name: gdt-historical-backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "What to backfill"
+        type: choice
+        options: [all, ticker, data_type]
+        default: all
+      ticker:
+        description: "Ticker, when scope=ticker (e.g. BBCA)"
+        type: string
+        required: false
+      data_type:
+        description: "Data type, when scope=data_type"
+        type: choice
+        options:
+          - market_prices_daily
+          - disclosure_metadata
+          - financial_facts
+          - macro_series
+        required: false
+      start_year:
+        description: "First year to backfill (optional)"
+        type: string
+        required: false
+      end_year:
+        description: "Last year to backfill (optional)"
+        type: string
+        required: false
+      provider:
+        description: "Force a provider id from sources.yml (optional)"
+        type: string
+        required: false
+      write_mode:
+        description: "validate_only collects and validates but promotes nothing"
+        type: choice
+        options: [validate_only, commit]
+        default: validate_only
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gdt-historical-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pipeline dependencies
+        run: python -m pip install --quiet -r pipeline/goh_dip_tong/requirements.txt
+
+      - name: Show source status and rights
+        run: python -m pipeline.goh_dip_tong.cli sources
+
+      - name: Verify an active IDX30 universe exists
+        run: |
+          test -f config/goh-dip-tong/idx30.current.json || {
+            echo "::error::config/goh-dip-tong/idx30.current.json is missing."
+            echo "Run gdt-registry-update first. Backfill will not guess a ticker list."
+            exit 1
+          }
+
+      - name: Run backfill
+        run: |
+          python -m pipeline.goh_dip_tong.cli backfill \
+            --scope "${{ inputs.scope }}" \
+            --write-mode "${{ inputs.write_mode }}" \
+            ${{ inputs.ticker     && format('--ticker {0}',     inputs.ticker)     || '' }} \
+            ${{ inputs.data_type  && format('--data-type {0}',  inputs.data_type)  || '' }} \
+            ${{ inputs.start_year && format('--start-year {0}', inputs.start_year) || '' }} \
+            ${{ inputs.end_year   && format('--end-year {0}',   inputs.end_year)   || '' }} \
+            ${{ inputs.provider   && format('--provider {0}',   inputs.provider)   || '' }}
+
+      - name: Full data-quality audit
+        run: python -m pipeline.goh_dip_tong.cli quality
+
+      - name: Repository-data guard
+        run: python -m pipeline.goh_dip_tong.cli repo-guard
+
+      - name: Verify idempotency
+        if: inputs.write_mode == 'commit'
+        run: |
+          set -euo pipefail
+          # Re-running an identical backfill must produce no further change. If
+          # it does, the merge keys are wrong and the dataset would grow on every
+          # run — fail here rather than committing a duplicating pipeline.
+          git add -A -- config/goh-dip-tong data/goh-dip-tong
+          python -m pipeline.goh_dip_tong.cli backfill \
+            --scope "${{ inputs.scope }}" --write-mode commit >/dev/null
+          if ! git diff --quiet -- config/goh-dip-tong data/goh-dip-tong; then
+            echo "::error::backfill is not idempotent — a second identical run changed files:"
+            git --no-pager diff --stat -- config/goh-dip-tong data/goh-dip-tong
+            exit 1
+          fi
+          echo "Second identical run produced no change. Backfill is idempotent."
+
+      - name: Detect generated changes
+        id: diff
+        run: |
+          if git diff --cached --quiet -- config/goh-dip-tong data/goh-dip-tong \
+             && git diff --quiet -- config/goh-dip-tong data/goh-dip-tong; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No data change — exiting successfully without committing."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH="gdt/auto/backfill-$(date -u +%Y%m%d-%H%M%S)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add config/goh-dip-tong data/goh-dip-tong
+          # One grouped commit for the whole backfill run.
+          git commit -m "data(gdt): backfill ${{ inputs.scope }} through $(date -u +%Y-%m-%d)"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "data(gdt): historical backfill (${{ inputs.scope }}) $(date -u +%Y-%m-%d)" \
+            --body "Historical backfill.
+
+          - scope: \`${{ inputs.scope }}\`
+          - ticker: \`${{ inputs.ticker || 'n/a' }}\`
+          - data type: \`${{ inputs.data_type || 'all' }}\`
+          - years: \`${{ inputs.start_year || 'earliest' }}\` to \`${{ inputs.end_year || 'latest' }}\`
+
+          Idempotency was verified in-run: a second identical execution produced no change.
+          Review the data diff and the attached quality report before merging." \
+            --base "${{ github.ref_name }}" \
+            --head "$BRANCH"
+
+      - name: Upload quality report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdt-historical-backfill-quality
+          path: data/goh-dip-tong/quality/
+          if-no-files-found: ignore

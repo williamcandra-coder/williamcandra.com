@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://williamcandra.com/schemas/goh-dip-tong/company.schema.json",
+  "title": "Company master",
+  "description": "Generated company master. Includes former IDX30 members: a company is never deleted when it leaves the index, only marked inactive.",
+  "type": "object",
+  "required": ["schemaVersion", "generatedAt", "companies", "contentHash"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "contentHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "companies": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/company" }
+    }
+  },
+  "$defs": {
+    "company": {
+      "type": "object",
+      "required": [
+        "ticker",
+        "name",
+        "sectorCode",
+        "industryCode",
+        "modelFamily",
+        "coverageStatus",
+        "inIdx30",
+        "firstSeenAt",
+        "lastSeenAt",
+        "nameHistory",
+        "classificationHistory"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ticker": { "type": "string", "pattern": "^[A-Z]{4}$" },
+        "name": { "type": "string", "minLength": 1 },
+        "legalName": { "type": ["string", "null"] },
+        "listingIdentity": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": {
+            "exchange": { "type": "string" },
+            "board": { "type": ["string", "null"] },
+            "listedAt": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+          }
+        },
+        "sectorCode": { "type": "string" },
+        "sectorName": { "type": "string" },
+        "industryCode": { "type": "string" },
+        "industryName": { "type": "string" },
+        "modelFamily": { "type": ["string", "null"] },
+        "coverageStatus": {
+          "type": "string",
+          "enum": ["FULL_RESEARCH", "FINANCIALS", "ONBOARDING", "SUSPENDED"]
+        },
+        "inIdx30": { "type": "boolean", "description": "Current membership. False for former members retained for history." },
+        "firstSeenAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "lastSeenAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "reportingCurrency": { "type": ["string", "null"], "enum": ["IDR", "USD", null] },
+        "sourceRef": { "type": ["string", "null"] },
+        "nameHistory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "observedAt"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string" },
+              "observedAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+            }
+          }
+        },
+        "classificationHistory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["sectorCode", "industryCode", "observedAt"],
+            "additionalProperties": false,
+            "properties": {
+              "sectorCode": { "type": "string" },
+              "industryCode": { "type": "string" },
+              "modelFamily": { "type": ["string", "null"] },
+              "observedAt": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

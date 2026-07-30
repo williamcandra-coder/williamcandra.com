@@ -1,0 +1,76 @@
+{
+  "_fixture": true,
+  "disclosures": [
+    {
+      "contentHash": null,
+      "disclosureId": "FIX-DISC-2026-0001",
+      "disclosureType": "FINANCIAL_REPORT",
+      "eventStatus": "OFFICIAL_DECISION",
+      "language": "id",
+      "manifest": {
+        "byteSize": 3184922,
+        "mediaType": "application/pdf",
+        "objectStoreKey": null,
+        "retrievalOutcome": "NOT_ATTEMPTED",
+        "storedInRepo": false
+      },
+      "officialUrl": "https://example.invalid/fixture/bbca-q2-2026",
+      "periodRef": "YTD_Q2-2026",
+      "publishedAt": "2026-07-24T09:12:00Z",
+      "ticker": "BBCA",
+      "title": "Laporan Keuangan Interim 30 Juni 2026"
+    },
+    {
+      "contentHash": null,
+      "disclosureId": "FIX-DISC-2026-0002",
+      "disclosureType": "CORPORATE_ACTION",
+      "eventStatus": "OFFICIAL_DECISION",
+      "language": "id",
+      "manifest": null,
+      "officialUrl": "https://example.invalid/fixture/tlkm-div-2025",
+      "periodRef": "FY2025",
+      "publishedAt": "2026-07-08T04:30:00Z",
+      "ticker": "TLKM",
+      "title": "Pembagian Dividen Tunai Tahun Buku 2025"
+    },
+    {
+      "contentHash": null,
+      "disclosureId": "FIX-DISC-2026-0003",
+      "disclosureType": "MATERIAL_INFORMATION",
+      "eventStatus": "IMPLEMENTED",
+      "language": "id",
+      "manifest": null,
+      "officialUrl": "https://example.invalid/fixture/asii-susp",
+      "periodRef": null,
+      "publishedAt": "2026-07-10T02:05:00Z",
+      "ticker": "ASII",
+      "title": "Penghentian Sementara Perdagangan Efek"
+    },
+    {
+      "contentHash": null,
+      "disclosureId": "FIX-DISC-2026-0004",
+      "disclosureType": "RESTATEMENT",
+      "eventStatus": "OFFICIAL_DECISION",
+      "language": "id",
+      "manifest": null,
+      "officialUrl": "https://example.invalid/fixture/bbca-restate-2025",
+      "periodRef": "FY2025",
+      "publishedAt": "2026-07-28T08:00:00Z",
+      "ticker": "BBCA",
+      "title": "Penyajian Kembali Laporan Keuangan Tahun Buku 2025"
+    },
+    {
+      "contentHash": null,
+      "disclosureId": "FIX-DISC-2026-0005",
+      "disclosureType": "MATERIAL_INFORMATION",
+      "eventStatus": "MEDIA_REPORT",
+      "language": "id",
+      "manifest": null,
+      "officialUrl": "https://example.invalid/fixture/mdka-media",
+      "periodRef": null,
+      "publishedAt": "2026-07-21T11:40:00Z",
+      "ticker": "MDKA",
+      "title": "Pemberitaan Media Mengenai Rencana Akuisisi"
+    }
+  ]
+}

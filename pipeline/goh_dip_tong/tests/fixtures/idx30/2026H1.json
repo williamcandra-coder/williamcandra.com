@@ -1,0 +1,313 @@
+{
+  "_fixture": true,
+  "_notice": "Development fixture authored in this repository. NOT retrieved from IDX and NOT an authoritative IDX30 constituent list. Any artefact generated from it carries provenance=FIXTURE and authoritative=false.",
+  "constituents": [
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "COAL",
+      "industryName": "Coal",
+      "name": "Alamtri Resources Indonesia Tbk",
+      "sectorCode": "ENERGY",
+      "sectorName": "Energy",
+      "sourceRef": "fixture:2026-02-02:ADRO",
+      "ticker": "ADRO"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "METALS_AND_MINERALS",
+      "industryName": "Metals and Minerals",
+      "name": "Amman Mineral Internasional Tbk",
+      "sectorCode": "BASIC_MATERIALS",
+      "sectorName": "Basic Materials",
+      "sourceRef": "fixture:2026-02-02:AMMN",
+      "ticker": "AMMN"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "RETAIL_STAPLES",
+      "industryName": "Retail - Staples",
+      "name": "Sumber Alfaria Trijaya Tbk",
+      "sectorCode": "CONSUMER_NON_CYCLICALS",
+      "sectorName": "Consumer Non-Cyclicals",
+      "sourceRef": "fixture:2026-02-02:AMRT",
+      "ticker": "AMRT"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "METALS_AND_MINERALS",
+      "industryName": "Metals and Minerals",
+      "name": "Aneka Tambang Tbk",
+      "sectorCode": "BASIC_MATERIALS",
+      "sectorName": "Basic Materials",
+      "sourceRef": "fixture:2026-02-02:ANTM",
+      "ticker": "ANTM"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "INDUSTRIAL_CONGLOMERATES",
+      "industryName": "Industrial Conglomerates",
+      "name": "Astra International Tbk",
+      "sectorCode": "INDUSTRIALS",
+      "sectorName": "Industrials",
+      "sourceRef": "fixture:2026-02-02:ASII",
+      "ticker": "ASII"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "BANKS",
+      "industryName": "Banks",
+      "name": "Bank Central Asia Tbk",
+      "sectorCode": "FINANCIALS",
+      "sectorName": "Financials",
+      "sourceRef": "fixture:2026-02-02:BBCA",
+      "ticker": "BBCA"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "BANKS",
+      "industryName": "Banks",
+      "name": "Bank Negara Indonesia (Persero) Tbk",
+      "sectorCode": "FINANCIALS",
+      "sectorName": "Financials",
+      "sourceRef": "fixture:2026-02-02:BBNI",
+      "ticker": "BBNI"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "BANKS",
+      "industryName": "Banks",
+      "name": "Bank Rakyat Indonesia (Persero) Tbk",
+      "sectorCode": "FINANCIALS",
+      "sectorName": "Financials",
+      "sourceRef": "fixture:2026-02-02:BBRI",
+      "ticker": "BBRI"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "BANKS",
+      "industryName": "Banks",
+      "name": "Bank Mandiri (Persero) Tbk",
+      "sectorCode": "FINANCIALS",
+      "sectorName": "Financials",
+      "sourceRef": "fixture:2026-02-02:BMRI",
+      "ticker": "BMRI"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "BANKS",
+      "industryName": "Banks",
+      "name": "Bank Syariah Indonesia Tbk",
+      "sectorCode": "FINANCIALS",
+      "sectorName": "Financials",
+      "sourceRef": "fixture:2026-02-02:BRIS",
+      "ticker": "BRIS"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "CHEMICALS",
+      "industryName": "Chemicals",
+      "name": "Barito Pacific Tbk",
+      "sectorCode": "BASIC_MATERIALS",
+      "sectorName": "Basic Materials",
+      "sourceRef": "fixture:2026-02-02:BRPT",
+      "ticker": "BRPT"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "ANIMAL_FEED_AND_PROTEIN",
+      "industryName": "Animal Feed and Protein",
+      "name": "Charoen Pokphand Indonesia Tbk",
+      "sectorCode": "CONSUMER_NON_CYCLICALS",
+      "sectorName": "Consumer Non-Cyclicals",
+      "sourceRef": "fixture:2026-02-02:CPIN",
+      "ticker": "CPIN"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "REAL_ESTATE_DEVELOPMENT",
+      "industryName": "Real Estate Development",
+      "name": "Ciputra Development Tbk",
+      "sectorCode": "PROPERTIES_AND_REAL_ESTATE",
+      "sectorName": "Properties and Real Estate",
+      "sourceRef": "fixture:2026-02-02:CTRA",
+      "ticker": "CTRA"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "CHEMICALS",
+      "industryName": "Chemicals",
+      "name": "Essa Industries Indonesia Tbk",
+      "sectorCode": "BASIC_MATERIALS",
+      "sectorName": "Basic Materials",
+      "sourceRef": "fixture:2026-02-02:ESSA",
+      "ticker": "ESSA"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "TELECOMMUNICATION",
+      "industryName": "Telecommunication",
+      "name": "XLSmart Telecom Sejahtera Tbk",
+      "sectorCode": "INFRASTRUCTURES",
+      "sectorName": "Infrastructures",
+      "sourceRef": "fixture:2026-02-02:EXCL",
+      "ticker": "EXCL"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "FOOD_AND_BEVERAGE",
+      "industryName": "Food and Beverage",
+      "name": "Indofood CBP Sukses Makmur Tbk",
+      "sectorCode": "CONSUMER_NON_CYCLICALS",
+      "sectorName": "Consumer Non-Cyclicals",
+      "sourceRef": "fixture:2026-02-02:ICBP",
+      "ticker": "ICBP"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "METALS_AND_MINERALS",
+      "industryName": "Metals and Minerals",
+      "name": "Vale Indonesia Tbk",
+      "sectorCode": "BASIC_MATERIALS",
+      "sectorName": "Basic Materials",
+      "sourceRef": "fixture:2026-02-02:INCO",
+      "ticker": "INCO"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "FOOD_AND_BEVERAGE",
+      "industryName": "Food and Beverage",
+      "name": "Indofood Sukses Makmur Tbk",
+      "sectorCode": "CONSUMER_NON_CYCLICALS",
+      "sectorName": "Consumer Non-Cyclicals",
+      "sourceRef": "fixture:2026-02-02:INDF",
+      "ticker": "INDF"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "PAPER_AND_FOREST",
+      "industryName": "Paper and Forest Products",
+      "name": "Indah Kiat Pulp & Paper Tbk",
+      "sectorCode": "BASIC_MATERIALS",
+      "sectorName": "Basic Materials",
+      "sourceRef": "fixture:2026-02-02:INKP",
+      "ticker": "INKP"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "TELECOMMUNICATION",
+      "industryName": "Telecommunication",
+      "name": "Indosat Tbk",
+      "sectorCode": "INFRASTRUCTURES",
+      "sectorName": "Infrastructures",
+      "sourceRef": "fixture:2026-02-02:ISAT",
+      "ticker": "ISAT"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "COAL",
+      "industryName": "Coal",
+      "name": "Indo Tambangraya Megah Tbk",
+      "sectorCode": "ENERGY",
+      "sectorName": "Energy",
+      "sourceRef": "fixture:2026-02-02:ITMG",
+      "ticker": "ITMG"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "ANIMAL_FEED_AND_PROTEIN",
+      "industryName": "Animal Feed and Protein",
+      "name": "Japfa Comfeed Indonesia Tbk",
+      "sectorCode": "CONSUMER_NON_CYCLICALS",
+      "sectorName": "Consumer Non-Cyclicals",
+      "sourceRef": "fixture:2026-02-02:JPFA",
+      "ticker": "JPFA"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "PHARMACEUTICALS",
+      "industryName": "Pharmaceuticals",
+      "name": "Kalbe Farma Tbk",
+      "sectorCode": "HEALTHCARE",
+      "sectorName": "Healthcare",
+      "sourceRef": "fixture:2026-02-02:KLBF",
+      "ticker": "KLBF"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "RETAIL_DISCRETIONARY",
+      "industryName": "Retail - Discretionary",
+      "name": "Mitra Adiperkasa Tbk",
+      "sectorCode": "CONSUMER_CYCLICALS",
+      "sectorName": "Consumer Cyclicals",
+      "sourceRef": "fixture:2026-02-02:MAPI",
+      "ticker": "MAPI"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "METALS_AND_MINERALS",
+      "industryName": "Metals and Minerals",
+      "name": "Merdeka Copper Gold Tbk",
+      "sectorCode": "BASIC_MATERIALS",
+      "sectorName": "Basic Materials",
+      "sourceRef": "fixture:2026-02-02:MDKA",
+      "ticker": "MDKA"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "OIL_GAS_AND_COAL",
+      "industryName": "Oil, Gas and Coal",
+      "name": "Medco Energi Internasional Tbk",
+      "sectorCode": "ENERGY",
+      "sectorName": "Energy",
+      "sourceRef": "fixture:2026-02-02:MEDC",
+      "ticker": "MEDC"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "GAS_UTILITIES",
+      "industryName": "Gas Utilities",
+      "name": "Perusahaan Gas Negara Tbk",
+      "sectorCode": "ENERGY",
+      "sectorName": "Energy",
+      "sourceRef": "fixture:2026-02-02:PGAS",
+      "ticker": "PGAS"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "COAL",
+      "industryName": "Coal",
+      "name": "Bukit Asam Tbk",
+      "sectorCode": "ENERGY",
+      "sectorName": "Energy",
+      "sourceRef": "fixture:2026-02-02:PTBA",
+      "ticker": "PTBA"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "CONSTRUCTION_MATERIALS",
+      "industryName": "Construction Materials",
+      "name": "Semen Indonesia (Persero) Tbk",
+      "sectorCode": "BASIC_MATERIALS",
+      "sectorName": "Basic Materials",
+      "sourceRef": "fixture:2026-02-02:SMGR",
+      "ticker": "SMGR"
+    },
+    {
+      "enteredAt": "2026-02-02",
+      "industryCode": "TELECOMMUNICATION",
+      "industryName": "Telecommunication",
+      "name": "Telkom Indonesia (Persero) Tbk",
+      "sectorCode": "INFRASTRUCTURES",
+      "sectorName": "Infrastructures",
+      "sourceRef": "fixture:2026-02-02:TLKM",
+      "ticker": "TLKM"
+    }
+  ],
+  "declaredConstituentCount": 30,
+  "effectiveFrom": "2026-02-02",
+  "effectiveTo": null,
+  "indexCode": "IDX30",
+  "publishedAt": null,
+  "sourceName": "Committed development fixture (fixture_idx30_registry)",
+  "sourceUrl": null
+}

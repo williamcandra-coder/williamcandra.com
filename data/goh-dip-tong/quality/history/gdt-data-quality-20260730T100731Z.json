@@ -1,0 +1,388 @@
+{
+  "checks": [
+    {
+      "expected": null,
+      "id": "schema.wellformed",
+      "message": "schemas/goh-dip-tong/company.schema.json is a valid Draft 2020-12 schema",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": "company"
+    },
+    {
+      "expected": null,
+      "id": "schema.wellformed",
+      "message": "schemas/goh-dip-tong/disclosure.schema.json is a valid Draft 2020-12 schema",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": "disclosure"
+    },
+    {
+      "expected": null,
+      "id": "schema.wellformed",
+      "message": "schemas/goh-dip-tong/event.schema.json is a valid Draft 2020-12 schema",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": "event"
+    },
+    {
+      "expected": null,
+      "id": "schema.wellformed",
+      "message": "schemas/goh-dip-tong/financial-fact.schema.json is a valid Draft 2020-12 schema",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": "financial-fact"
+    },
+    {
+      "expected": null,
+      "id": "schema.wellformed",
+      "message": "schemas/goh-dip-tong/idx30.schema.json is a valid Draft 2020-12 schema",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": "idx30"
+    },
+    {
+      "expected": null,
+      "id": "schema.wellformed",
+      "message": "schemas/goh-dip-tong/market-price.schema.json is a valid Draft 2020-12 schema",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": "market-price"
+    },
+    {
+      "expected": null,
+      "id": "schema.wellformed",
+      "message": "schemas/goh-dip-tong/quality-report.schema.json is a valid Draft 2020-12 schema",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": "quality-report"
+    },
+    {
+      "expected": null,
+      "id": "schema.wellformed",
+      "message": "schemas/goh-dip-tong/research-input.schema.json is a valid Draft 2020-12 schema",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": "research-input"
+    },
+    {
+      "expected": null,
+      "id": "schema.idx30",
+      "message": "document conforms to idx30.schema.json",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "CRITICAL",
+      "subject": "idx30.current.json"
+    },
+    {
+      "expected": null,
+      "id": "universe.ticker_unique",
+      "message": "all 30 tickers are unique",
+      "observed": 30,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "universe.count_matches_source",
+      "message": "source did not declare a constituent count; cannot cross-check",
+      "observed": 30,
+      "outcome": "SKIP",
+      "severity": "WARNING",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "universe.count_conventional",
+      "message": "active count is 30",
+      "observed": 30,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "universe.effective_range",
+      "message": "effective range 2026-02-02 → current",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "universe.entered_within_range",
+      "message": "all enteredAt dates fall within the effective period",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "universe.model_mapping",
+      "message": "all 30 constituents have a coherent model/coverage pairing",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "universe.onboarding",
+      "message": "no constituents are awaiting a model",
+      "observed": [],
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "quality.ui_contract",
+      "message": "every constituent carries the fields the Stage 3 picker needs",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "CRITICAL",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "schema.company",
+      "message": "document conforms to company.schema.json",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "CRITICAL",
+      "subject": "companies.json"
+    },
+    {
+      "expected": null,
+      "id": "sources.staleness",
+      "message": "fixture_market_prices: output is not committed (rights do not permit it), so freshness cannot be derived from the repository",
+      "observed": null,
+      "outcome": "SKIP",
+      "severity": "INFO",
+      "subject": "fixture_market_prices"
+    },
+    {
+      "expected": null,
+      "id": "sources.staleness",
+      "message": "every trackable enabled source has recent committed data",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "quality.rights_register",
+      "message": "declared rights match docs/goh-dip-tong/SOURCE_REGISTER.md",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "CRITICAL",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "guard.file_size",
+      "message": "all 66 generated files are within 2097152 bytes",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": 20971520,
+      "id": "guard.total_size",
+      "message": "guarded paths hold 231617 bytes (limit 20971520)",
+      "observed": 231617,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": 500,
+      "id": "guard.file_count",
+      "message": "66 files under guarded paths (limit 500)",
+      "observed": 66,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "guard.extension",
+      "message": "no forbidden or unexpected file types under guarded paths",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "guard.binary",
+      "message": "no accidental binaries found",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "guard.secret",
+      "message": "no secret-shaped strings in 66 files",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "guard.html_as_data",
+      "message": "no HTML or error pages stored as data",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "guard.duplicate_rows",
+      "message": "row duplication within limits",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "guard.schema_growth",
+      "message": "no unexpected schema growth",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    },
+    {
+      "expected": null,
+      "id": "guard.sentinel_value",
+      "message": "no suspicious sentinel values",
+      "observed": null,
+      "outcome": "PASS",
+      "severity": "INFO",
+      "subject": null
+    }
+  ],
+  "counts": {
+    "filesChanged": 0,
+    "recordsIn": 30,
+    "recordsInvalid": 0,
+    "recordsMissing": 0,
+    "recordsValid": 0,
+    "recordsWritten": 0,
+    "tickersFailed": 0,
+    "tickersSucceeded": 0
+  },
+  "failedTickers": [],
+  "generatedAt": "2026-07-30T10:07:31Z",
+  "notPromotedReason": null,
+  "promoted": false,
+  "runId": "gdt-data-quality-20260730T100731Z",
+  "schemaVersion": "1.0.0",
+  "sources": [
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "bank_indonesia",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "bps",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": true,
+      "lastSuccessAt": "2026-07-30T09:22:53Z",
+      "providerId": "fixture_disclosures",
+      "rightsStatus": "PUBLIC_METADATA_ONLY",
+      "staleDays": null
+    },
+    {
+      "enabled": true,
+      "lastSuccessAt": "2026-07-30T09:33:14Z",
+      "providerId": "fixture_financials",
+      "rightsStatus": "PUBLIC_DERIVED_OUTPUT_APPROVED",
+      "staleDays": null
+    },
+    {
+      "enabled": true,
+      "lastSuccessAt": "2026-07-30T09:22:52Z",
+      "providerId": "fixture_idx30_registry",
+      "rightsStatus": "PUBLIC_METADATA_ONLY",
+      "staleDays": null
+    },
+    {
+      "enabled": true,
+      "lastSuccessAt": "2026-07-30T09:22:54Z",
+      "providerId": "fixture_macro",
+      "rightsStatus": "PUBLIC_METADATA_ONLY",
+      "staleDays": null
+    },
+    {
+      "enabled": true,
+      "lastSuccessAt": null,
+      "providerId": "fixture_market_prices",
+      "rightsStatus": "PRIVATE_RESEARCH_ONLY",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "idx_disclosures",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "idx_financials",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "idx_index_constituents",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "idx_market_prices",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    },
+    {
+      "enabled": false,
+      "lastSuccessAt": null,
+      "providerId": "ojk",
+      "rightsStatus": "MANUAL_REVIEW_REQUIRED",
+      "staleDays": null
+    }
+  ],
+  "status": "PASS",
+  "workflow": "gdt-data-quality",
+  "writeMode": "validate_only"
+}
