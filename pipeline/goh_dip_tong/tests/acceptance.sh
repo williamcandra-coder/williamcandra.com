@@ -45,10 +45,43 @@ mk_sandbox() {
   printf '%s' "$dir"
 }
 
-# Fingerprint of everything the repository would track under the data tree.
+# Fingerprint of everything under the data tree, including the git-ignored
+# private subtree — a collector writing there is still a change we want to see.
 tree_hash() {
   find "$1" -type f ! -name '.gitkeep' -exec sha256sum {} \; | sed "s|$1||" \
     | sort | sha256sum | cut -d' ' -f1
+}
+
+# One full collection pass over every collector, inside a sandbox.
+run_cycle() {
+  local sandbox="$1" c
+  for c in registry-update daily-update disclosure-watch financial-update macro-update; do
+    (cd "$sandbox" && python3 -m pipeline.goh_dip_tong.cli "$c" \
+                       --write-mode commit >/dev/null 2>&1)
+  done
+}
+
+# Run cycles until the tree stops changing, up to a bound.
+#
+# A cold checkout needs more than one pass to settle: the first writes data the
+# repository has never held (the git-ignored price partitions), and that changes
+# the next quality report, which is itself part of the tree. Converging first is
+# what makes the subsequent idempotency measurement meaningful rather than a
+# measurement of start-up. Echoes the number of cycles used, or "UNSTABLE".
+converge() {
+  local sandbox="$1" max="${2:-6}" i previous current
+  previous="$(tree_hash "$sandbox/data/goh-dip-tong")"
+  for i in $(seq 1 "$max"); do
+    run_cycle "$sandbox"
+    current="$(tree_hash "$sandbox/data/goh-dip-tong")"
+    if [ "$current" = "$previous" ]; then
+      printf '%s' "$i"
+      return 0
+    fi
+    previous="$current"
+  done
+  printf 'UNSTABLE'
+  return 1
 }
 
 # Snapshot the repository up front; the closing self-check compares against it.
@@ -395,14 +428,24 @@ print(f"        unpublished macro series     → value={m['value']}, "
 PY
 chk $? "extraction failure, non-reporting and non-publication each stay null"
 
+# Collect prices in the sandbox first. `_private/` is git-ignored, so a clean
+# checkout has none — reading a file that only exists on a developer's warm tree
+# would make this check pass locally and fail in CI, which is exactly what it
+# did before. Produce the data here, then assert on it.
+(cd "$SB_STABLE" && python3 -m pipeline.goh_dip_tong.cli daily-update \
+                    --write-mode commit >/dev/null 2>&1)
 python3 - <<'PY'
-import csv, os, pathlib
+import csv, os, pathlib, sys
 p = pathlib.Path(os.environ["SB_STABLE"],
                  "data/goh-dip-tong/_private/market-prices/daily/ASII/2026.csv")
+if not p.exists():
+    print(f"        collector produced no price file at {p}")
+    sys.exit(1)
 row = next(r for r in csv.DictReader(p.open()) if r["tradingDate"] == "2026-07-10")
 assert row["close"] == "", f"close should be empty, got {row['close']!r}"
 assert row["missingReason"] == "TRADING_HALTED", row["missingReason"]
 assert row["volume"] == "0", row["volume"]
+print(f"        collected in-sandbox: {p.name} ({p.stat().st_size} bytes)")
 print(f"        suspended day: close={row['close']!r} reason={row['missingReason']} "
       f"volume={row['volume']}  ← a real zero next to a real null")
 PY
@@ -415,22 +458,23 @@ chk $? "54 normalization tests (missing-vs-zero, units, periods, signs) pass"
 # ═══════════════════════════════════════════════════════════════════════════
 hdr "9. Repeated collection does not create duplicates"
 
-# Warm-up cycle first: after any code change the quality reports legitimately
-# change once. The requirement is that STEADY-STATE repetition changes nothing.
-for c in registry-update daily-update disclosure-watch financial-update macro-update; do
-  (cd "$SB_STABLE" && python3 -m pipeline.goh_dip_tong.cli "$c" \
-                       --write-mode commit >/dev/null 2>&1)
-done
+# Converge first, then measure. Bounded so a genuinely non-idempotent pipeline
+# fails loudly here instead of looping forever.
+CONVERGED_AT="$(converge "$SB_STABLE" 6)"
+if [ "$CONVERGED_AT" = "UNSTABLE" ]; then
+  no "the generated tree never reached steady state within 6 cycles — the pipeline is not idempotent"
+  ev "each cycle kept changing files; the measurement below cannot be trusted"
+else
+  ok "generated tree reached steady state after $CONVERGED_AT cycle(s)"
+fi
+
 SB_BEFORE=$(tree_hash "$SB_STABLE/data/goh-dip-tong")
 for _ in 1 2 3; do
-  for c in registry-update daily-update disclosure-watch financial-update macro-update; do
-    (cd "$SB_STABLE" && python3 -m pipeline.goh_dip_tong.cli "$c" \
-                         --write-mode commit >/dev/null 2>&1)
-  done
+  run_cycle "$SB_STABLE"
 done
 SB_AFTER=$(tree_hash "$SB_STABLE/data/goh-dip-tong")
-[ "$SB_BEFORE" = "$SB_AFTER" ]
-chk $? "3 further full collection cycles left every file byte-identical (post warm-up)"
+[ "$SB_BEFORE" = "$SB_AFTER" ] && [ "$CONVERGED_AT" != "UNSTABLE" ]
+chk $? "3 further full collection cycles left every file byte-identical (post convergence)"
 ev "tree hash before: ${SB_BEFORE:0:32}…"
 ev "tree hash after:  ${SB_AFTER:0:32}…"
 
@@ -669,9 +713,17 @@ else
   ok "no price data is even visible to git"
 fi
 
-git check-ignore -q "data/goh-dip-tong/_private"
+# Probe a NONEXISTENT path *inside* the private tree. The .gitignore pattern
+# carries a trailing slash, so it matches a directory — and on a clean checkout
+# `_private/` does not exist, leaving git unable to classify the bare path. A
+# path underneath it matches the prefix whether or not anything is on disk, so
+# this asserts the rule rather than the developer's working tree.
+IGNORE_PROBE="data/goh-dip-tong/_private/nope/never.csv"
+[ ! -e "$IGNORE_PROBE" ]
+chk $? "probe path does not exist, so the result reflects the rule not the disk"
+git check-ignore -q "$IGNORE_PROBE"
 chk $? "the rights-restricted output tree is git-ignored"
-ev "$(git check-ignore -v data/goh-dip-tong/_private 2>/dev/null)"
+ev "$(git check-ignore -v "$IGNORE_PROBE" 2>/dev/null)"
 ev "$(find "$SB_STABLE/data/goh-dip-tong/_private" -name '*.csv' 2>/dev/null | wc -l) \
 price files produced in the sandbox, 0 reachable by git"
 
