@@ -7,7 +7,9 @@
 ## Status: `ARCHITECTURE_COMPLETE_FIXTURE_ONLY`
 
 Read this before building on Stage 1. The architecture is finished and proven
-against fixtures. **It has never touched a live data source.**
+against fixtures. **No data has ever been ingested from a live source.** The only
+live contact made is the read-only connectivity probe in §6b, which retrieved
+response headers and nothing else.
 
 | | |
 |---|---|
@@ -16,7 +18,7 @@ against fixtures. **It has never touched a live data source.**
 | Fixture collectors | **Implemented and tested** — five providers run end to end |
 | Live provider interfaces | **Scaffolded only** — registered, disabled, never exercised |
 | Live `parse()` methods | **Not implemented** — they raise `NotImplementedError` by design |
-| Live source connectivity | **Not verified from GitHub Actions.** `gdt-source-connectivity-smoke` now exists to measure it on demand, but has not been run — only the build sandbox has been tested, where every host was refused |
+| Live source connectivity | **Verified from GitHub Actions** (run [30537966831](https://github.com/williamcandra-coder/williamcandra.com/actions/runs/30537966831), 2026-07-30). Runners can reach the hosts; **5 of 7 refuse automated access with HTTP 403.** No source is validated for ingestion — see §6b |
 | Production data sources | **None enabled** — zero live providers are runnable |
 | IDX30 config | **Non-authoritative fixture data** (`authoritative: false`, `provenance: "FIXTURE"`) |
 | Market-price output | **Private and git-ignored** — routed to `data/goh-dip-tong/_private/` |
@@ -31,14 +33,15 @@ on any user-facing claim.
 
 Two limits deserve emphasis because they are easy to misread as "nearly done":
 
-- **Live connectivity is unverified in CI.** The build sandbox refused every
-  IDX, BI, BPS and OJK host (HTTP 403 on `CONNECT`). Whether a GitHub Actions
-  runner can reach them is *unknown and untested* — it has never been attempted.
-  Do not assume enabling a provider will simply work.
+- **Connectivity is now measured, and the answer is discouraging.** A GitHub
+  Actions runner *can* reach these hosts — but all four IDX endpoints answer
+  **HTTP 403**, and so does BPS. Only Bank Indonesia and OJK responded, both with
+  a 302 to a human-facing landing page. Full results in §6b. Do not read
+  "connectivity verified" as "nearly ingestible": it is the opposite.
 - **No live parser exists.** Each live adapter has `discover`/`fetch` wired to
   the shared contract, but `parse()` deliberately raises. Writing one requires a
   real captured response; guessing at a payload shape would produce untested code
-  that merely looks complete.
+  that merely looks complete. Nothing has yet returned a response worth parsing.
 
 ---
 
@@ -346,6 +349,78 @@ it must not be committed at all.
 
 ---
 
+## 6b. Source connectivity — verified results
+
+**Run [30537966831](https://github.com/williamcandra-coder/williamcandra.com/actions/runs/30537966831)** ·
+`gdt-source-connectivity-smoke` · ref `claude/gdt-stage-1` @ `51c4f067` ·
+2026-07-30T11:17Z · `timeout_seconds=15`, `delay_seconds=2` · conclusion **success**
+
+| Provider | HTTP | Outcome | Note |
+|---|---:|---|---|
+| `bank_indonesia` | **302** | `REACHABLE_UNVALIDATED` | → `https://www.bi.go.id/en/statistik/Default.aspx` |
+| `ojk` | **302** | `REACHABLE_UNVALIDATED` | → `https://www.ojk.go.id/en/Default.aspx` (160 bytes) |
+| `bps` | **403** | `ACCESS_CONTROLLED` | refused |
+| `idx_index_constituents` | **403** | `ACCESS_CONTROLLED` | refused |
+| `idx_market_prices` | **403** | `ACCESS_CONTROLLED` | refused |
+| `idx_disclosures` | **403** | `ACCESS_CONTROLLED` | refused |
+| `idx_financials` | **403** | `ACCESS_CONTROLLED` | refused |
+| `fixture_disclosures` | — | `NOT_TESTED` | local fixture; nothing to reach |
+| `fixture_financials` | — | `NOT_TESTED` | local fixture; nothing to reach |
+| `fixture_idx30_registry` | — | `NOT_TESTED` | local fixture; nothing to reach |
+| `fixture_macro` | — | `NOT_TESTED` | local fixture; nothing to reach |
+| `fixture_market_prices` | — | `NOT_TESTED` | local fixture; nothing to reach |
+
+```
+probed=7  not_tested=5  reachable_unvalidated=2
+providers enabled by this run: 0
+response bodies retained: False
+```
+
+Artifact: **`gdt-source-connectivity-report`** (30-day retention). All content
+types were `text/html; charset=UTF-8` — no endpoint returned a data content type.
+
+### What this changes, and what it does not
+
+**GitHub Actions connectivity is now verified. No live data source is validated
+for ingestion.** Those are different claims and the gap between them is the whole
+finding.
+
+The earlier unknown is resolved: hosted runners are not network-blocked the way
+the build sandbox was. The sandbox failed at the proxy with a 403 to `CONNECT`,
+before any connection existed. The runner reaches the hosts and **the hosts
+themselves refuse** — a materially worse result, because it is a deliberate
+refusal by the operator rather than an environment limitation we control.
+
+Reading each outcome honestly:
+
+- **`ACCESS_CONTROLLED` (5 of 7)** — IDX and BPS decline automated requests from
+  this address range. Not a bug to route around. Per `DATA_RIGHTS.md`, a source
+  that requires circumvention to work is a source that stays disabled.
+- **`REACHABLE_UNVALIDATED` (2 of 7)** — BI and OJK responded, both redirecting to
+  an ASPX landing page. A socket opened and a human-facing page exists. That is
+  *not* evidence of a usable data endpoint, and the probe deliberately did not
+  follow the redirect or read a body.
+
+### Consequences for enabling a source
+
+Every live provider remains `enabled: false` / `MANUAL_REVIEW_REQUIRED`. Both
+locks are untouched, and the run re-asserted this on exit
+(*"All 7 live providers still disabled. Nothing was activated."*).
+
+The two gates from `SOURCE_REGISTER.md` now stand as:
+
+| Gate | Status |
+|---|---|
+| Network access | **Partially resolved.** Runners reach the hosts; 5 of 7 are refused by the operator. |
+| Documented usage rights | **Unresolved.** No operator's terms have been read or recorded. |
+
+Nothing has changed about rights, and the access picture got worse rather than
+better. Before any of this can move, someone must resolve the operator
+relationship — an official data agreement, a licensed vendor, or a documented
+permitted-use path. Retrying the probe will not produce a different answer.
+
+---
+
 ## 7. Tests
 
 `python3 -m pytest pipeline/goh_dip_tong/tests -q` → **218 passed, 0 failed, ~1.9s**
@@ -493,9 +568,11 @@ Contract notes for Stage 2:
 ## 10. Known gaps for Stage 2
 
 1. **No live data.** Resolve network access *and* usage rights per source before
-   enabling anything. Both locks must be released. `gdt-source-connectivity-smoke`
-   (manual, read-only) answers the access half on demand — it reports
-   reachability metadata and enables nothing.
+   enabling anything. Both locks must be released. Connectivity has now been
+   measured from GitHub Actions (§6b): runners reach the hosts, but 5 of 7 refuse
+   automated access with HTTP 403, and no operator's terms have been reviewed.
+   Re-running `gdt-source-connectivity-smoke` will not change that — the block is
+   an operator decision, not an environment limitation.
 2. **Live `parse()` methods are unimplemented by design.** Write each against a
    real captured response and add that response as a test fixture.
 3. **TTM aggregation is not implemented.** `financial-facts/trailing/` exists and

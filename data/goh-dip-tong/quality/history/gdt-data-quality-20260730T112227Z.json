@@ -192,7 +192,7 @@
     {
       "expected": null,
       "id": "guard.file_size",
-      "message": "all 68 generated files are within 2097152 bytes",
+      "message": "all 66 generated files are within 2097152 bytes",
       "observed": null,
       "outcome": "PASS",
       "severity": "INFO",
@@ -201,8 +201,8 @@
     {
       "expected": 20971520,
       "id": "guard.total_size",
-      "message": "guarded paths hold 252970 bytes (limit 20971520)",
-      "observed": 252970,
+      "message": "guarded paths hold 232240 bytes (limit 20971520)",
+      "observed": 232240,
       "outcome": "PASS",
       "severity": "INFO",
       "subject": null
@@ -210,8 +210,8 @@
     {
       "expected": 500,
       "id": "guard.file_count",
-      "message": "68 files under guarded paths (limit 500)",
-      "observed": 68,
+      "message": "66 files under guarded paths (limit 500)",
+      "observed": 66,
       "outcome": "PASS",
       "severity": "INFO",
       "subject": null
@@ -237,7 +237,7 @@
     {
       "expected": null,
       "id": "guard.secret",
-      "message": "no secret-shaped strings in 68 files",
+      "message": "no secret-shaped strings in 66 files",
       "observed": null,
       "outcome": "PASS",
       "severity": "INFO",
@@ -291,10 +291,10 @@
     "tickersSucceeded": 0
   },
   "failedTickers": [],
-  "generatedAt": "2026-07-30T10:32:05Z",
+  "generatedAt": "2026-07-30T11:22:27Z",
   "notPromotedReason": null,
   "promoted": false,
-  "runId": "gdt-data-quality-20260730T103205Z",
+  "runId": "gdt-data-quality-20260730T112227Z",
   "schemaVersion": "1.0.0",
   "sources": [
     {
