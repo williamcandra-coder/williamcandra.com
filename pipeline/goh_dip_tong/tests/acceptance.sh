@@ -606,11 +606,14 @@ for b in bad:
     print(f"        MISMATCH {b}")
 sys.exit(1 if bad else 0)
 PY
-chk $? "all 7 workflow crons agree with schedules.yml"
+# Counted rather than hardcoded: a label that says "7" while the repository has
+# grown to 9 is a lie the test suite tells you every time it passes.
+WF_COUNT=$(ls .github/workflows/gdt-*.yml | wc -l | tr -d ' ')
+chk $? "all $WF_COUNT workflow crons agree with schedules.yml"
 
-python3 -m pytest pipeline/goh_dip_tong/tests/test_workflows.py -q 2>&1 \
-  | tail -1 | grep -q "passed"
-chk $? "24 workflow tests pass (triggers, permissions, commit policy, secrets)"
+WF_TESTS=$(python3 -m pytest pipeline/goh_dip_tong/tests/test_workflows.py -q 2>&1 | tail -1)
+echo "$WF_TESTS" | grep -q "passed" && [ "${WF_TESTS#*failed}" = "$WF_TESTS" ]
+chk $? "workflow tests pass — $WF_TESTS (triggers, permissions, commit policy, secrets)"
 
 # ═══════════════════════════════════════════════════════════════════════════
 hdr "12. No-change workflow runs do not create commits"
