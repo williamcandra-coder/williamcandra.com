@@ -94,6 +94,16 @@ one date cannot detect date-dependent churn.** Both the unit suite
 through 2026-08-01, 2026-12-31, 2027-03-14 and 2031-06-30 and require
 `filesChanged=0` with a byte-identical config tree at each.
 
+Two further points about how that is asserted. First, `filesChanged` is the
+pipeline's own accounting, and what actually opens a pull request is git — so
+the check also runs the workflow's own `git add config/goh-dip-tong
+data/goh-dip-tong` and requires nothing staged. A disagreement between our
+counter and git would itself be the finding. Second, silence on no-change must
+not become silence on change: the same date sweep covers a genuine membership
+change *and* a category change, where the ticker list is identical and only
+classification moved. A guard that made the pipeline quiet by making it blind
+would pass every no-change test ever written.
+
 A third variant is worth naming separately: a **side-car status file**. An
 earlier design wrote `pipeline-runs/last-success.json` on every successful run
 to support the staleness check. Its entire content is timestamps, so it changed

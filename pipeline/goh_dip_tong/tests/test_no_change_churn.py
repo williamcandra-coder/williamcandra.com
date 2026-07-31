@@ -148,6 +148,111 @@ def test_a_recorded_change_converges_in_one_further_run(sandbox, monkeypatch):
     assert path.read_bytes() == after_change, "next-day rerun appended"
 
 
+def _reclassify_one_ticker(settings, ticker="BRPT", donor="ADRO"):
+    """Fixture whose membership is identical but one ticker's category moved.
+
+    Borrowing a donor's sector/industry rather than inventing one keeps the
+    model mapping resolvable, so the test exercises reclassification instead of
+    accidentally exercising the ONBOARDING path.
+    """
+    path = (settings.repo_root / "pipeline" / "goh_dip_tong" / "tests"
+            / "fixtures" / "idx30" / "2026H1.json")
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    by = {c["ticker"]: c for c in doc["constituents"]}
+    for field in ("sectorCode", "sectorName", "industryCode", "industryName"):
+        by[ticker][field] = by[donor][field]
+    out = path.with_name("CATEGORY.json")
+    out.write_text(json.dumps(doc, indent=2), encoding="utf-8")
+
+    sources = settings.repo_root / "config" / "goh-dip-tong" / "sources.yml"
+    sources.write_text(
+        sources.read_text(encoding="utf-8").replace(
+            "fixtures/idx30/2026H1.json", "fixtures/idx30/CATEGORY.json"),
+        encoding="utf-8",
+    )
+
+
+def test_a_genuine_category_change_is_recorded(sandbox, monkeypatch):
+    """Requirement 4: silence on no-change must not silence reclassification.
+
+    Category changes are the quiet ones — membership is unchanged, so a diff
+    that only watched the ticker list would miss them entirely, and the Stage 2
+    model mapping would silently keep using the old family.
+    """
+    for _ in range(2):
+        _run(sandbox, "2026-07-31", monkeypatch)
+    path = sandbox.repo_root / "config" / "goh-dip-tong" / "idx30.history.jsonl"
+    before = len(path.read_text(encoding="utf-8").splitlines())
+
+    _reclassify_one_ticker(sandbox)
+    _run(sandbox, "2027-03-14", monkeypatch)
+
+    rows = [json.loads(line) for line in
+            path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    new = rows[before:]
+    assert [r["changeType"] for r in new] == ["RECLASSIFIED"], new
+    row = new[0]
+    assert row["ticker"] == "BRPT"
+    assert row["observedAt"] == "2027-03-14"
+    assert row["before"]["sectorCode"] != row["after"]["sectorCode"]
+
+    # The category master must follow, or Stage 3 groups by a stale sector.
+    categories = json.loads(
+        (sandbox.repo_root / "config" / "goh-dip-tong" / "categories.json")
+        .read_text(encoding="utf-8"))
+    energy = [s for s in categories["sectors"] if s["sectorCode"] == "ENERGY"]
+    assert energy and "BRPT" in energy[0]["tickers"]
+
+
+def test_a_category_change_converges_and_then_stays_quiet(sandbox, monkeypatch):
+    """The reclassification is recorded once, not once per subsequent day."""
+    for _ in range(2):
+        _run(sandbox, "2026-07-31", monkeypatch)
+    _reclassify_one_ticker(sandbox)
+    path = sandbox.repo_root / "config" / "goh-dip-tong" / "idx30.history.jsonl"
+
+    _run(sandbox, "2027-03-14", monkeypatch)
+    settled = path.read_bytes()
+    for date_iso in ("2027-03-14", "2027-03-15", "2028-01-01", "2031-06-30"):
+        _run(sandbox, date_iso, monkeypatch)
+        assert path.read_bytes() == settled, f"appended again on {date_iso}"
+
+
+def test_no_change_run_creates_no_pr_eligible_diff(sandbox, monkeypatch):
+    """Requirement 5, stated the way the workflow states it.
+
+    ``filesChanged=0`` is the pipeline's own accounting. What actually decides
+    whether a pull request gets opened is git, via the workflow's
+
+        git add config/goh-dip-tong data/goh-dip-tong
+        git diff --quiet
+
+    so the assertion is made against git, not against our own counter. A
+    discrepancy between the two would be the interesting failure.
+    """
+    import subprocess
+
+    root = sandbox.repo_root
+
+    def git(*args, **kwargs):
+        return subprocess.run(("git", "-C", str(root)) + args,
+                              capture_output=True, text=True, **kwargs)
+
+    for _ in range(3):                       # reach steady state first
+        _run(sandbox, "2026-07-31", monkeypatch)
+
+    git("init", "-q")
+    git("add", "-A")
+    git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "baseline")
+    assert git("status", "--porcelain").stdout == "", "baseline not clean"
+
+    for date_iso in LATER_DATES:
+        _run(sandbox, date_iso, monkeypatch)
+        git("add", "config/goh-dip-tong", "data/goh-dip-tong")
+        staged = git("diff", "--cached", "--stat").stdout.strip()
+        assert staged == "", f"{date_iso} would open a pull request:\n{staged}"
+
+
 def test_replay_still_works_after_the_change(sandbox, monkeypatch):
     """Both replay bases must survive; the fix removes noise, not history."""
     from pipeline.goh_dip_tong.publishing.history import membership_at

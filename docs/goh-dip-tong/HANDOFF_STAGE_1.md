@@ -13,8 +13,8 @@ response headers and nothing else.
 
 | | |
 |---|---|
-| Unit tests | **234 passed**, 0 failed |
-| Acceptance checks | **68/68 passed** (67 requirement checks + 1 isolation self-check) |
+| Unit tests | **237 passed**, 0 failed |
+| Acceptance checks | **71/71 passed** (70 requirement checks + 1 isolation self-check) |
 | Fixture collectors | **Implemented and tested** — five providers run end to end |
 | Live provider interfaces | **Scaffolded only** — registered, disabled, never exercised |
 | Live `parse()` methods | **Not implemented** — they raise `NotImplementedError` by design |
@@ -426,7 +426,7 @@ permitted-use path. Retrying the probe will not produce a different answer.
 
 ## 7. Tests
 
-`python3 -m pytest pipeline/goh_dip_tong/tests -q` → **234 passed, 0 failed, ~12s**
+`python3 -m pytest pipeline/goh_dip_tong/tests -q` → **237 passed, 0 failed, ~25s**
 
 | Module | Tests | Covers |
 |---|---|---|
@@ -436,7 +436,7 @@ permitted-use path. Retrying the probe will not produce a different answer.
 | `test_change_detection.py` | 24 | ADDED/REMOVED/RENAMED/RECLASSIFIED, no-change silence, append-only history |
 | `test_backfill.py` | 22 | idempotency, duplicates, restatements, fail-soft, fail-closed |
 | `test_universe.py` | 21 | schemas, uniqueness, dates, model mapping, ordering, UI contract |
-| `test_no_change_churn.py` | 8 | date-swept idempotency: no-change runs write nothing on any date |
+| `test_no_change_churn.py` | 11 | date-swept idempotency: no-change runs write nothing and stage nothing on any date; membership and category changes still recorded |
 
 ### Every required Stage 1 test area (spec §1.11)
 
@@ -500,8 +500,11 @@ switch — and `lastSeenAt` is a volatile field, with the volatile strip now
 recursing into lists so it can see stamps on array elements. Legacy `UNCHANGED`
 rows already committed are preserved untouched and treated as immaterial.
 
-Verified across 2026-08-01, 2026-12-31, 2027-03-14 and 2031-06-30:
-`filesChanged=0` with a byte-identical config tree at every date.
+Verified across 2026-08-01, 2026-12-31, 2027-03-14 and 2031-06-30: `filesChanged=0`
+with a byte-identical config tree at every date, and — asserted against git rather
+than against our own counter — nothing staged by the workflow's
+`git add config/goh-dip-tong data/goh-dip-tong`, so no pull request can open.
+Genuine membership *and* category changes are still recorded, once each.
 
 ```
 cli sources     → rights and SOURCE_REGISTER.md are consistent
@@ -584,7 +587,7 @@ Contract notes for Stage 2:
 | 8 | Rerunning does not duplicate rows | ✅ three-pass idempotency verified |
 | 9 | Invalid data does not replace last validated data | ✅ fail-closed + atomic writes |
 | 10 | Stage 1 handoff file exists | ✅ this document |
-| 11 | Tests pass | ✅ 234/234 unit + 68/68 acceptance checks |
+| 11 | Tests pass | ✅ 237/237 unit + 71/71 acceptance checks |
 | 12 | No secret or restricted raw document committed | ✅ guard passes; price data git-ignored |
 
 ---
