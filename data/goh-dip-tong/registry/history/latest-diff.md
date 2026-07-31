@@ -1,3 +1,1 @@
-### UNCHANGED (1)
-
-- ***** — universe verified unchanged (30 constituents)
+No IDX30 membership or classification changes detected.

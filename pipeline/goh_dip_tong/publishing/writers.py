@@ -97,22 +97,38 @@ def write_json_if_changed(path: Path, obj: Any) -> bool:
 #: Fields that record *when we looked*, not *what we found*. A run that finds
 #: identical data must not rewrite a file just because the clock moved — that
 #: would turn every scheduled run into a diff and bury real changes in noise.
-VOLATILE_FIELDS = ("generatedAt", "retrievedAt", "snapshotAt", "source.retrievedAt")
+#:
+#: ``lastSeenAt`` belongs here for the same reason. For a company still in the
+#: index it restates what ``inIdx30: true`` already says, but it is stamped with
+#: the run date, so leaving it in the comparison rewrote all 30 constituent rows
+#: on the first run of every calendar day.
+VOLATILE_FIELDS = ("generatedAt", "retrievedAt", "snapshotAt", "source.retrievedAt",
+                   "lastSeenAt")
 
 
 def _strip_volatile(value: Any, fields: Iterable[str]) -> Any:
-    """Copy of ``value`` with the named (possibly dotted) paths removed."""
+    """Copy of ``value`` with the named paths removed, at any depth.
+
+    A dotted path ("source.retrievedAt") is anchored: it matches only that
+    position. A bare name is matched wherever it appears, including inside
+    lists — documents like companies.json carry their volatile stamps on each
+    element of an array, not at the top level, and a top-level-only strip
+    silently failed to see them.
+    """
+    fields = list(fields)
+    if isinstance(value, list):
+        return [_strip_volatile(item, fields) for item in value]
     if not isinstance(value, dict):
         return value
-    out = dict(value)
+
+    bare = [f for f in fields if "." not in f]
+    out = {k: _strip_volatile(v, bare) for k, v in value.items() if k not in bare}
+
     for field_path in fields:
         head, _, tail = field_path.partition(".")
-        if head not in out:
+        if not tail or head not in out:
             continue
-        if tail:
-            out[head] = _strip_volatile(out[head], [tail])
-        else:
-            out.pop(head, None)
+        out[head] = _strip_volatile(out[head], [tail])
     return out
 
 

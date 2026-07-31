@@ -525,6 +525,117 @@ HL=$(wc -l < "$SB_STABLE/config/goh-dip-tong/idx30.history.jsonl")
 [ "$HL" = "$BEFORE_LINES" ]
 chk $? "membership history unchanged after 3 cycles ($HL rows)"
 
+# Everything above runs on today's date, which is precisely how the membership
+# heartbeat survived review: the seed data was generated today, so each per-day
+# stamp already matched what was committed and nothing appeared to move. The
+# clock is swept deliberately here — on the first run of any later day the old
+# code appended an UNCHANGED row and rewrote all 30 lastSeenAt values, turning
+# every scheduled run into a pull request containing no facts.
+DATE_BEFORE=$(tree_hash "$SB_STABLE/config/goh-dip-tong")
+DATE_DRIFT=0
+for FUTURE in 2026-08-01 2026-12-31 2027-03-14 2031-06-30; do
+  CHANGED=$( (cd "$SB_STABLE" && python3 -m pipeline.goh_dip_tong.tests._clock \
+                "$FUTURE" registry-update --write-mode commit 2>&1) \
+             | grep -oP 'filesChanged=\K\d+' | head -1 )
+  [ "$CHANGED" = "0" ] || { no "$FUTURE: filesChanged=$CHANGED, expected 0"; DATE_DRIFT=1; }
+  NOW=$(tree_hash "$SB_STABLE/config/goh-dip-tong")
+  [ "$NOW" = "$DATE_BEFORE" ] || { no "$FUTURE: committed config drifted"; DATE_DRIFT=1; }
+done
+ev "swept 2026-08-01 · 2026-12-31 · 2027-03-14 · 2031-06-30"
+[ "$DATE_DRIFT" = "0" ]
+chk $? "a no-change run on a later calendar date reports filesChanged=0 and writes nothing"
+
+# The committed history still carries the UNCHANGED rows written before the
+# fix. They are left exactly where they are — the file is append-only, and
+# rewriting history to hide an old mistake is worse than the mistake. So the
+# assertion is that the count did not grow, not that it is zero.
+UNCH_BASE=$(grep -c '"changeType": *"UNCHANGED"' \
+              "$REPO/config/goh-dip-tong/idx30.history.jsonl" || true)
+UNCH=$(grep -c '"changeType": *"UNCHANGED"' \
+         "$SB_STABLE/config/goh-dip-tong/idx30.history.jsonl" || true)
+ev "legacy UNCHANGED rows preserved: $UNCH_BASE"
+[ "$UNCH" = "$UNCH_BASE" ]
+chk $? "no new UNCHANGED row was written by any of those runs ($UNCH = $UNCH_BASE)"
+
+python3 - <<'PY'
+import inspect, os, sys
+sys.path.insert(0, os.environ["REPO"])
+from pipeline.goh_dip_tong.publishing.change_detection import detect_changes
+assert "emit_unchanged" not in inspect.signature(detect_changes).parameters, \
+    "the emit_unchanged switch is back"
+print("        detect_changes has no emit_unchanged switch to turn back on")
+PY
+chk $? "the heartbeat cannot be re-enabled by a caller"
+
+# filesChanged is our own accounting. What actually decides whether a pull
+# request opens is git, running exactly what the workflow runs. Asserting
+# against git rather than against our counter is the point: a disagreement
+# between the two is the interesting failure.
+GITSB="$WORK/prgate"
+rm -rf "$GITSB"; cp -r "$SB_STABLE" "$GITSB"
+git -C "$GITSB" init -q .
+git -C "$GITSB" add -A >/dev/null 2>&1
+git -C "$GITSB" -c user.email=t@t -c user.name=t commit -qm baseline >/dev/null 2>&1
+PR_DIFF=0
+for FUTURE in 2027-03-14 2031-06-30; do
+  (cd "$GITSB" && python3 -m pipeline.goh_dip_tong.tests._clock \
+      "$FUTURE" registry-update --write-mode commit >/dev/null 2>&1)
+  git -C "$GITSB" add config/goh-dip-tong data/goh-dip-tong >/dev/null 2>&1
+  if ! git -C "$GITSB" diff --cached --quiet; then
+    no "$FUTURE: a no-change run staged a commit"
+    git -C "$GITSB" --no-pager diff --cached --stat
+    PR_DIFF=1
+  fi
+done
+[ "$PR_DIFF" = "0" ]
+chk $? "a no-change run stages nothing, so no pull request can be opened"
+
+# The quiet half of the contract: silence on no-change must not become silence
+# on a category change, where membership is identical and only classification
+# moved. A diff that only watched the ticker list would miss it, and Stage 2
+# would keep mapping the company to its old model family.
+CATSB="$WORK/category"
+export CATSB
+rm -rf "$CATSB"; cp -r "$SB_STABLE" "$CATSB"
+python3 - <<'PY'
+import json, os, pathlib
+sb = pathlib.Path(os.environ["CATSB"])
+p = sb / "pipeline/goh_dip_tong/tests/fixtures/idx30/CATEGORY.json"
+src = json.loads((p.parent / "2026H1.json").read_text())
+by = {c["ticker"]: c for c in src["constituents"]}
+for f in ("sectorCode", "sectorName", "industryCode", "industryName"):
+    by["BRPT"][f] = by["ADRO"][f]          # donor keeps the model mapping valid
+p.write_text(json.dumps(src, indent=2))
+s = sb / "config/goh-dip-tong/sources.yml"
+s.write_text(s.read_text().replace("fixtures/idx30/2026H1.json",
+                                   "fixtures/idx30/CATEGORY.json"))
+PY
+CAT_BEFORE=$(wc -l < "$CATSB/config/goh-dip-tong/idx30.history.jsonl")
+(cd "$CATSB" && python3 -m pipeline.goh_dip_tong.tests._clock \
+    2027-03-14 registry-update --write-mode commit >/dev/null 2>&1)
+CAT_AFTER=$(wc -l < "$CATSB/config/goh-dip-tong/idx30.history.jsonl")
+tail -n +$((CAT_BEFORE + 1)) "$CATSB/config/goh-dip-tong/idx30.history.jsonl" \
+  | python3 -c "
+import json, sys
+rows = [json.loads(l) for l in sys.stdin if l.strip()]
+assert [r['changeType'] for r in rows] == ['RECLASSIFIED'], rows
+r = rows[0]
+assert r['ticker'] == 'BRPT' and r['observedAt'] == '2027-03-14', r
+assert r['before']['sectorCode'] != r['after']['sectorCode'], r
+print(f\"        BRPT {r['before']['sectorCode']} → {r['after']['sectorCode']} \"
+      f\"recorded as RECLASSIFIED on {r['observedAt']}\")
+"
+chk $? "a category change with identical membership is still recorded ($CAT_BEFORE → $CAT_AFTER rows)"
+
+CAT_H1=$(sha256sum "$CATSB/config/goh-dip-tong/idx30.history.jsonl" | cut -d' ' -f1)
+for FUTURE in 2027-03-15 2031-06-30; do
+  (cd "$CATSB" && python3 -m pipeline.goh_dip_tong.tests._clock \
+      "$FUTURE" registry-update --write-mode commit >/dev/null 2>&1)
+done
+CAT_H2=$(sha256sum "$CATSB/config/goh-dip-tong/idx30.history.jsonl" | cut -d' ' -f1)
+[ "$CAT_H1" = "$CAT_H2" ]
+chk $? "that category change is recorded once, not once per following day"
+
 # ═══════════════════════════════════════════════════════════════════════════
 hdr "10. Invalid data cannot replace the last validated dataset"
 

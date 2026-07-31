@@ -35,12 +35,25 @@ def detect_changes(
     observed_at: str,
     effective_from: Optional[str] = None,
     source_ref: Optional[str] = None,
-    emit_unchanged: bool = False,
 ) -> list:
     """Diff two universes.
 
-    Emits ADDED / REMOVED / RENAMED / RECLASSIFIED, and optionally an UNCHANGED
-    snapshot row so a run that found nothing still leaves a trace that it looked.
+    Emits ADDED / REMOVED / RENAMED / RECLASSIFIED — events only. A run that
+    finds nothing returns an empty list and therefore writes nothing.
+
+    This used to also emit an ``UNCHANGED`` snapshot row so that a run which
+    found nothing still left a trace that it looked. That was a mistake. The row
+    is keyed on the observation *date*, so the first run of every new calendar
+    day appended one, which made a no-change run rewrite the history file and
+    open a pull request containing no facts — exactly the churn the no-change /
+    no-commit rule exists to prevent. Worse, the defect was invisible for as
+    long as every run happened on the date the seed data was generated.
+
+    "We looked and nothing had changed" is a statement about a pipeline run, not
+    about the index, and it is already recorded per run under
+    ``data/goh-dip-tong/pipeline-runs/``. The membership history holds membership
+    events, and a file that only grows when something actually happened is one a
+    reviewer can read.
 
     A single ticker can produce both a RENAMED and a RECLASSIFIED row in one
     run; they are distinct facts and collapsing them would lose information.
@@ -48,8 +61,8 @@ def detect_changes(
     # Membership is a date-granularity concept, and the history file is keyed on
     # observedAt. Recording a full timestamp would make every rerun on the same
     # day a "new" row, so a workflow that runs four times a day would append four
-    # identical UNCHANGED entries. Truncating to the date keeps the trail
-    # idempotent per day while still distinguishing genuinely separate days.
+    # identical entries for one real event. Truncating to the date keeps the
+    # trail idempotent per day while still distinguishing separate days.
     observed_at = observed_at[:10]
 
     prev_by_ticker = {c.ticker: c for c in previous}
@@ -132,20 +145,6 @@ def detect_changes(
                 )
             )
 
-    if emit_unchanged and not changes:
-        changes.append(
-            MembershipChange(
-                change_type=ChangeType.UNCHANGED,
-                ticker="*",
-                observed_at=observed_at,
-                effective_from=effective_from,
-                before=None,
-                after={"constituentCount": len(curr_by_ticker)},
-                detail=f"universe verified unchanged ({len(curr_by_ticker)} constituents)",
-                source_ref=source_ref,
-            )
-        )
-
     return changes
 
 
@@ -184,5 +183,10 @@ def summarise_changes(changes: list) -> str:
 
 
 def has_material_change(changes: list) -> bool:
-    """Whether anything happened that justifies rewriting the current config."""
+    """Whether anything happened that justifies rewriting the current config.
+
+    ``UNCHANGED`` is no longer emitted, but rows written before that fix are
+    still in the committed history and must never count as material — so the
+    filter stays rather than collapsing to ``bool(changes)``.
+    """
     return any(str(c.change_type) != str(ChangeType.UNCHANGED) for c in changes)
