@@ -48,9 +48,9 @@ never rewritten, reordered or removed.
 
 | Field | Meaning |
 |---|---|
-| `changeType` | `ADDED`, `REMOVED`, `RENAMED`, `RECLASSIFIED`, `UNCHANGED`. |
-| `ticker` | Affected ticker; `*` for an `UNCHANGED` universe snapshot. |
-| `observedAt` | **Date**, not timestamp. Membership is a date-granularity concept, and a date keeps a four-times-daily workflow from appending four identical rows. |
+| `changeType` | `ADDED`, `REMOVED`, `RENAMED`, `RECLASSIFIED`. `UNCHANGED` is **legacy** — no longer written, but present on rows recorded before the heartbeat was removed, and never rewritten because the file is append-only. Consumers must still tolerate it and must not treat it as a membership event. |
+| `ticker` | Affected ticker; `*` on a legacy `UNCHANGED` row. |
+| `observedAt` | **Date**, not timestamp. Membership is a date-granularity concept, and a date keeps a four-times-daily workflow from appending four rows for one event. A row exists only when something actually changed, so crossing a day boundary adds nothing. |
 | `before` / `after` | Identity snapshots either side of the change. |
 | `detail` | Human-readable description, used in the pull-request body. |
 
@@ -71,6 +71,14 @@ Company master. **Includes former constituents** with `inIdx30: false` — a
 company leaving the index is marked inactive, never deleted, or every past
 research snapshot referencing it breaks. Carries `nameHistory` and
 `classificationHistory`, each appended only on an actual change.
+
+`lastSeenAt` is a **volatile** field: it records when we last looked, not what
+we found, so it is excluded from the change comparison and from `contentHash`.
+Without that, all thirty rows were restamped on the first run of every calendar
+day and the file churned daily while the index stood still. The consequence is
+that the stored value is the date of the last *substantive* write rather than
+the last run — which is the honest reading, since for a company still in the
+index `inIdx30: true` already answers the question.
 
 ### `config/goh-dip-tong/categories.json`
 Sector, industry and model-family master with constituent counts. Lets the UI

@@ -525,6 +525,48 @@ HL=$(wc -l < "$SB_STABLE/config/goh-dip-tong/idx30.history.jsonl")
 [ "$HL" = "$BEFORE_LINES" ]
 chk $? "membership history unchanged after 3 cycles ($HL rows)"
 
+# Everything above runs on today's date, which is precisely how the membership
+# heartbeat survived review: the seed data was generated today, so each per-day
+# stamp already matched what was committed and nothing appeared to move. The
+# clock is swept deliberately here — on the first run of any later day the old
+# code appended an UNCHANGED row and rewrote all 30 lastSeenAt values, turning
+# every scheduled run into a pull request containing no facts.
+DATE_BEFORE=$(tree_hash "$SB_STABLE/config/goh-dip-tong")
+DATE_DRIFT=0
+for FUTURE in 2026-08-01 2026-12-31 2027-03-14 2031-06-30; do
+  CHANGED=$( (cd "$SB_STABLE" && python3 -m pipeline.goh_dip_tong.tests._clock \
+                "$FUTURE" registry-update --write-mode commit 2>&1) \
+             | grep -oP 'filesChanged=\K\d+' | head -1 )
+  [ "$CHANGED" = "0" ] || { no "$FUTURE: filesChanged=$CHANGED, expected 0"; DATE_DRIFT=1; }
+  NOW=$(tree_hash "$SB_STABLE/config/goh-dip-tong")
+  [ "$NOW" = "$DATE_BEFORE" ] || { no "$FUTURE: committed config drifted"; DATE_DRIFT=1; }
+done
+ev "swept 2026-08-01 · 2026-12-31 · 2027-03-14 · 2031-06-30"
+[ "$DATE_DRIFT" = "0" ]
+chk $? "a no-change run on a later calendar date reports filesChanged=0 and writes nothing"
+
+# The committed history still carries the UNCHANGED rows written before the
+# fix. They are left exactly where they are — the file is append-only, and
+# rewriting history to hide an old mistake is worse than the mistake. So the
+# assertion is that the count did not grow, not that it is zero.
+UNCH_BASE=$(grep -c '"changeType": *"UNCHANGED"' \
+              "$REPO/config/goh-dip-tong/idx30.history.jsonl" || true)
+UNCH=$(grep -c '"changeType": *"UNCHANGED"' \
+         "$SB_STABLE/config/goh-dip-tong/idx30.history.jsonl" || true)
+ev "legacy UNCHANGED rows preserved: $UNCH_BASE"
+[ "$UNCH" = "$UNCH_BASE" ]
+chk $? "no new UNCHANGED row was written by any of those runs ($UNCH = $UNCH_BASE)"
+
+python3 - <<'PY'
+import inspect, os, sys
+sys.path.insert(0, os.environ["REPO"])
+from pipeline.goh_dip_tong.publishing.change_detection import detect_changes
+assert "emit_unchanged" not in inspect.signature(detect_changes).parameters, \
+    "the emit_unchanged switch is back"
+print("        detect_changes has no emit_unchanged switch to turn back on")
+PY
+chk $? "the heartbeat cannot be re-enabled by a caller"
+
 # ═══════════════════════════════════════════════════════════════════════════
 hdr "10. Invalid data cannot replace the last validated dataset"
 

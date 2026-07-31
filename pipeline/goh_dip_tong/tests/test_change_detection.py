@@ -85,16 +85,48 @@ def test_rename_and_reclassify_together_produce_two_distinct_events(constituent_
     assert types_of(changes) == ["RECLASSIFIED", "RENAMED"]
 
 
-def test_unchanged_snapshot_is_emitted_when_asked(constituent_factory):
-    universe = [constituent_factory(ticker="BBCA")]
-    changes = detect_changes(universe, universe, OBSERVED, emit_unchanged=True)
-    assert types_of(changes) == ["UNCHANGED"]
-    assert not has_material_change(changes)
-
-
-def test_no_change_produces_nothing_by_default(constituent_factory):
+def test_no_change_produces_nothing(constituent_factory):
     universe = [constituent_factory(ticker="BBCA")]
     assert detect_changes(universe, universe, OBSERVED) == []
+
+
+def test_no_change_produces_nothing_on_any_date(constituent_factory):
+    """The regression this fixes was invisible on the seed date.
+
+    An UNCHANGED row keyed on the observation date meant the first run of every
+    new calendar day appended one, so the history churned and a no-change run
+    opened an empty pull request. Because every run happened on the date the
+    fixtures were generated, the row always deduplicated and nothing looked
+    wrong. Sweeping the date is what makes the assertion mean anything.
+    """
+    universe = [constituent_factory(ticker="BBCA")]
+    for observed in ("2026-01-01", "2026-07-30", "2026-07-31", "2027-03-14",
+                     "2031-12-31"):
+        assert detect_changes(universe, universe, observed) == [], observed
+
+
+def test_detect_changes_has_no_unchanged_switch(constituent_factory):
+    """No caller can opt the heartbeat back in."""
+    import inspect
+
+    assert "emit_unchanged" not in inspect.signature(detect_changes).parameters
+
+
+def test_legacy_unchanged_rows_are_still_treated_as_immaterial():
+    """Rows written before the fix stay in the committed history.
+
+    They are never rewritten — the file is append-only — so every consumer has
+    to keep tolerating them rather than assuming they cannot occur.
+    """
+    from pipeline.goh_dip_tong.contracts.enums import ChangeType
+    from pipeline.goh_dip_tong.contracts.records import MembershipChange
+
+    legacy = MembershipChange(
+        change_type=ChangeType.UNCHANGED, ticker="*", observed_at="2026-07-30",
+        effective_from=None, before=None, after={"constituentCount": 30},
+        detail="universe verified unchanged (30 constituents)", source_ref=None,
+    )
+    assert not has_material_change([legacy])
 
 
 def test_first_run_reports_every_constituent_as_added(idx30_h1, real_settings):
@@ -171,24 +203,46 @@ def test_history_is_append_only_and_idempotent(sandbox, constituent_factory):
     assert sandbox.idx30_history.read_text(encoding="utf-8") == first
 
 
-def test_repeated_unchanged_runs_on_one_day_append_only_one_row(sandbox,
-                                                                constituent_factory):
-    """A four-times-daily workflow must not append four identical rows."""
+def test_repeated_unchanged_runs_on_one_day_append_nothing(sandbox,
+                                                           constituent_factory):
+    """A four-times-daily workflow must not append anything at all."""
     universe = [constituent_factory(ticker="BBCA")]
     for _ in range(4):
-        changes = detect_changes(universe, universe, "2026-08-04T09:17:00Z",
-                                 emit_unchanged=True)
+        changes = detect_changes(universe, universe, "2026-08-04T09:17:00Z")
         history.append_changes(changes, sandbox)
-    assert len(history.load_history(sandbox)) == 1
+    assert history.load_history(sandbox) == []
 
 
-def test_a_later_day_appends_a_new_row(sandbox, constituent_factory):
+def test_later_days_still_append_nothing(sandbox, constituent_factory):
+    """The inverted assertion.
+
+    This test previously required a new row on each new day, which is the
+    defect written down as a requirement: the history grew by one row per day
+    forever while the index stood still. Crossing a day boundary is not an
+    event.
+    """
     universe = [constituent_factory(ticker="BBCA")]
-    for day in ("2026-08-04T09:00:00Z", "2026-08-05T09:00:00Z"):
-        history.append_changes(
-            detect_changes(universe, universe, day, emit_unchanged=True), sandbox
-        )
-    assert len(history.load_history(sandbox)) == 2
+    for day in ("2026-08-04T09:00:00Z", "2026-08-05T09:00:00Z",
+                "2027-01-01T09:00:00Z", "2031-06-30T09:00:00Z"):
+        history.append_changes(detect_changes(universe, universe, day), sandbox)
+    assert history.load_history(sandbox) == []
+
+
+def test_a_real_change_on_a_later_day_does_append(sandbox, constituent_factory):
+    """The counterpart: silence on no-change must not mean silence on change."""
+    before = [constituent_factory(ticker="BBCA")]
+    after = [constituent_factory(ticker="BBCA"), constituent_factory(ticker="BBRI")]
+
+    history.append_changes(detect_changes(before, before, "2026-08-04T09:00:00Z"),
+                           sandbox)
+    assert history.load_history(sandbox) == []
+
+    history.append_changes(detect_changes(before, after, "2027-01-01T09:00:00Z"),
+                           sandbox)
+    rows = history.load_history(sandbox)
+    assert [r["changeType"] for r in rows] == ["ADDED"]
+    assert rows[0]["ticker"] == "BBRI"
+    assert rows[0]["observedAt"] == "2027-01-01"
 
 
 def test_existing_history_rows_are_never_rewritten(sandbox, constituent_factory):

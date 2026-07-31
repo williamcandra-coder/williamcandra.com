@@ -196,7 +196,6 @@ def cmd_registry_update(args) -> int:
         current=constituents,
         observed_at=observed_at,
         effective_from=effective_from,
-        emit_unchanged=True,
     )
     material = change_detection.has_material_change(changes)
     print(f"  constituents: {len(constituents)} | previous: {len(previous)} | "

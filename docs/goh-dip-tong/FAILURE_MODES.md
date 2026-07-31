@@ -69,7 +69,30 @@ slips through unnoticed.
 `contentHash` is computed with them stripped. A run that finds identical data
 rewrites nothing, and the stored `retrievedAt` keeps recording when we *first*
 saw that content. Membership history uses date-granularity `observedAt`, so a
-four-times-daily workflow appends at most one `UNCHANGED` row per day.
+four-times-daily workflow cannot append four rows for one event.
+
+A second variant, and the one that actually got through review: a **per-day
+stamp**. Truncating a timestamp to a date does not make it stable, it makes it
+stable *for a day*. Two fields had this shape — an `UNCHANGED` heartbeat row
+appended to `idx30.history.jsonl` whenever a run found nothing, and
+`companies.json`'s `lastSeenAt`, restamped on all thirty constituents every run.
+Both were invisible for as long as every run happened on the date the seed data
+was generated: the value already committed was today's, so nothing moved. On the
+first run of the next day, both moved at once, and a no-change run would have
+opened a pull request containing no facts.
+
+The heartbeat is gone — membership history now records membership events only,
+and "we looked and nothing had changed" lives in the per-run report under
+`data/goh-dip-tong/pipeline-runs/`, where a statement about a run belongs.
+`lastSeenAt` joined `VOLATILE_FIELDS`, and the volatile strip now recurses into
+lists, because these stamps sit on array elements rather than at the top level
+and a top-level-only strip never saw them.
+
+The lesson generalises past these two fields: **a test that only ever runs on
+one date cannot detect date-dependent churn.** Both the unit suite
+(`test_no_change_churn.py`) and the acceptance script now drive the pipeline
+through 2026-08-01, 2026-12-31, 2027-03-14 and 2031-06-30 and require
+`filesChanged=0` with a byte-identical config tree at each.
 
 A third variant is worth naming separately: a **side-car status file**. An
 earlier design wrote `pipeline-runs/last-success.json` on every successful run

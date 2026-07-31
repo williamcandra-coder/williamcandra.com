@@ -1,12 +1,10 @@
 {
-  "changeCounts": {
-    "UNCHANGED": 1
-  },
+  "changeCounts": {},
   "constituentCount": 30,
-  "generatedAt": "2026-07-30T09:22:54Z",
+  "generatedAt": "2026-07-31T07:28:37Z",
   "materialChange": false,
   "provider": "fixture_idx30_registry",
-  "runId": "gdt-registry-update-20260730T092254Z",
+  "runId": "gdt-registry-update-20260731T072837Z",
   "workflow": "gdt-registry-update",
   "writeMode": "commit"
 }
