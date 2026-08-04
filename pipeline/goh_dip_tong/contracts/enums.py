@@ -108,6 +108,10 @@ class MissingReason(StrEnum):
     SOURCE_UNAVAILABLE = "SOURCE_UNAVAILABLE"
     RIGHTS_WITHHELD = "RIGHTS_WITHHELD"
     INSUFFICIENT_PERIODS = "INSUFFICIENT_PERIODS"
+    #: A ratio whose denominator was zero, missing or wrongly signed. Stage 2
+    #: added this so a division can fail visibly rather than returning inf/nan
+    #: or being swallowed into a zero.
+    UNDEFINED_DENOMINATOR = "UNDEFINED_DENOMINATOR"
     PENDING_REVIEW = "PENDING_REVIEW"
     SUPERSEDED = "SUPERSEDED"
     TRADING_HALTED = "TRADING_HALTED"

@@ -191,6 +191,117 @@ metrics:
     sign_convention: "positive"
     concepts: ["LeaseLiabilities"]
 
+  # --- Bank drivers, as reported ---------------------------------------------
+  #
+  # Added in Stage 2 for the BANK model family (spec section 2.5). These are
+  # REPORTED inputs the engine reads; the ratios built from them live in the
+  # derived section below. None of them is collected by any enabled provider
+  # today — every one is absent from the fixture data, which is exactly why the
+  # bank valuation refuses. Defining them here does not create them.
+  earning_assets:
+    label: "Earning assets"
+    statement: BALANCE_SHEET
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: instant
+    sign_convention: "positive"
+    concepts: ["EarningAssets", "InterestEarningAssets"]
+    applies_to_model_families: [BANK]
+    notes: "The NIM denominator. Not the same as total assets."
+  loans:
+    label: "Gross loans"
+    statement: BALANCE_SHEET
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: instant
+    sign_convention: "positive"
+    concepts: ["LoansReceivable", "LoansAndAdvancesToCustomers"]
+    applies_to_model_families: [BANK]
+    notes: "Gross of allowance. Netting it against the allowance here would make coverage uncomputable."
+  deposits:
+    label: "Customer deposits"
+    statement: BALANCE_SHEET
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: instant
+    sign_convention: "positive"
+    concepts: ["DepositsFromCustomers", "CustomerDeposits"]
+    applies_to_model_families: [BANK]
+  casa_deposits:
+    label: "Current account and savings account deposits"
+    statement: BALANCE_SHEET
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: instant
+    sign_convention: "positive"
+    concepts: ["CurrentAccountsAndSavingsDeposits"]
+    applies_to_model_families: [BANK]
+    notes: "The low-cost funding subset of deposits. Drives funding cost."
+  fee_income:
+    label: "Fee and commission income"
+    statement: INCOME_STATEMENT
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: duration
+    sign_convention: "positive"
+    concepts: ["FeeAndCommissionIncome"]
+    applies_to_model_families: [BANK]
+  operating_expense:
+    label: "Operating expense"
+    statement: INCOME_STATEMENT
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: duration
+    sign_convention: "positive magnitude; subtracted by the engine, not stored negative"
+    concepts: ["OperatingExpenses", "GeneralAndAdministrativeExpense"]
+  provision_expense:
+    label: "Impairment charge on loans"
+    statement: INCOME_STATEMENT
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: duration
+    sign_convention: "positive magnitude"
+    concepts: ["ImpairmentLossOnFinancialAssets", "ProvisionForImpairmentLosses"]
+    applies_to_model_families: [BANK]
+    notes: "The period charge, not the balance-sheet allowance. Confusing the two overstates credit cost by an order of magnitude."
+  non_performing_loans:
+    label: "Non-performing loans"
+    statement: BALANCE_SHEET
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: instant
+    sign_convention: "positive"
+    concepts: ["NonPerformingLoans"]
+    applies_to_model_families: [BANK]
+    notes: "Stored as an amount, not a ratio. The ratio is derived, so its denominator stays visible."
+  loan_loss_allowance:
+    label: "Allowance for loan losses"
+    statement: BALANCE_SHEET
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: instant
+    sign_convention: "positive magnitude"
+    concepts: ["AllowanceForImpairmentLosses"]
+    applies_to_model_families: [BANK]
+  tier1_capital:
+    label: "Tier 1 capital"
+    statement: BALANCE_SHEET
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: instant
+    sign_convention: "positive"
+    concepts: ["Tier1Capital"]
+    applies_to_model_families: [BANK]
+  risk_weighted_assets:
+    label: "Risk-weighted assets"
+    statement: BALANCE_SHEET
+    basis: REPORTED
+    unit_kind: currency
+    period_kind: instant
+    sign_convention: "positive"
+    concepts: ["RiskWeightedAssets"]
+    applies_to_model_families: [BANK]
+
   # --- Cash flow, as reported ------------------------------------------------
   cfo:
     label: "Net cash from operating activities"
@@ -272,6 +383,107 @@ metrics:
     not_applicable_to_model_families: [BANK, INSURANCE]
     notes: "Meaningless for banks. The engine must return null with reason NOT_APPLICABLE_TO_MODEL, not 0."
 
+  # --- Derived, universal ----------------------------------------------------
+  eps:
+    label: "Earnings per share"
+    basis: DERIVED
+    unit_kind: currency
+    period_kind: duration
+    derived_from: [net_profit_attributable_to_parent, shares_outstanding]
+    notes: "Numerator is profit attributable to the PARENT, not ProfitLoss. See net_profit_attributable_to_parent."
+  bvps:
+    label: "Book value per share"
+    basis: DERIVED
+    unit_kind: currency
+    period_kind: instant
+    derived_from: [equity_attributable_to_parent, shares_outstanding]
+    notes: "Parent equity over the share count. Using total_equity here would credit minorities to the parent's book."
+  roe:
+    label: "Return on equity"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: duration
+    derived_from: [net_profit_attributable_to_parent, equity_attributable_to_parent]
+    notes: "Computed on average parent equity across the period, not the closing balance."
+  roa:
+    label: "Return on assets"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: duration
+    derived_from: [net_profit, total_assets]
+  payout_ratio:
+    label: "Dividend payout ratio"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: duration
+    derived_from: [dividends_paid, net_profit_attributable_to_parent]
+  sustainable_growth:
+    label: "Sustainable growth rate"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: duration
+    derived_from: [roe, payout_ratio]
+    notes: "g = ROE x (1 - payout). Feeds terminal value, so the r > g guard depends on it."
+
+  # --- Derived, bank ---------------------------------------------------------
+  net_interest_income:
+    label: "Net interest income"
+    basis: DERIVED
+    unit_kind: currency
+    period_kind: duration
+    derived_from: [interest_income, interest_expense]
+    applies_to_model_families: [BANK]
+  nim:
+    label: "Net interest margin"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: duration
+    derived_from: [net_interest_income, earning_assets]
+    applies_to_model_families: [BANK]
+    notes: "Over average earning assets. Over total assets it is not NIM and is not comparable."
+  cost_of_credit:
+    label: "Cost of credit"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: duration
+    derived_from: [provision_expense, loans]
+    applies_to_model_families: [BANK]
+  npl_ratio_gross:
+    label: "Gross NPL ratio"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: instant
+    derived_from: [non_performing_loans, loans]
+    applies_to_model_families: [BANK]
+  npl_coverage_ratio:
+    label: "NPL coverage ratio"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: instant
+    derived_from: [loan_loss_allowance, non_performing_loans]
+    applies_to_model_families: [BANK]
+  casa_ratio:
+    label: "CASA ratio"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: instant
+    derived_from: [casa_deposits, deposits]
+    applies_to_model_families: [BANK]
+  capital_adequacy_ratio:
+    label: "Tier 1 capital adequacy ratio"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: instant
+    derived_from: [tier1_capital, risk_weighted_assets]
+    applies_to_model_families: [BANK]
+  cost_to_income_ratio:
+    label: "Cost-to-income ratio"
+    basis: DERIVED
+    unit: RATIO
+    period_kind: duration
+    derived_from: [operating_expense, net_interest_income, fee_income]
+    applies_to_model_families: [BANK]
+
 # Reasons a metric may be null. A missing value ALWAYS carries one of these.
 # Section 1.1: extraction failure must never become zero.
 missing_reasons:
@@ -281,5 +493,10 @@ missing_reasons:
   SOURCE_UNAVAILABLE: "The source could not be reached or is disabled."
   RIGHTS_WITHHELD: "Collected but withheld because rights do not permit this use."
   INSUFFICIENT_PERIODS: "A derived metric lacked the required input periods."
+  UNDEFINED_DENOMINATOR: >
+    A ratio's denominator was zero, missing, or of the wrong sign, so the ratio
+    is undefined. Added in Stage 2. This exists so a division can fail visibly
+    instead of returning inf, nan, or a caught-and-swallowed zero — a concealed
+    divide-by-zero is the derived-metric equivalent of missing becoming zero.
   PENDING_REVIEW: "Value exists but failed validation and was not promoted."
   SUPERSEDED: "Value was replaced by a restatement; see the successor revision."

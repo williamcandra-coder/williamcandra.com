@@ -288,12 +288,42 @@ def test_committing_workflows_run_the_repo_guard(repo_root):
 
 
 def test_data_quality_runs_unit_tests_acceptance_and_guard(repo_root):
-    """All three gates must stay wired in; dropping one silently would leave
+    """All five gates must stay wired in; dropping one silently would leave
     the build green while the checks it covers stopped running."""
     text = (repo_root / ".github/workflows/gdt-data-quality.yml").read_text(encoding="utf-8")
     assert "python -m pytest pipeline/goh_dip_tong/tests -q" in text
     assert "./pipeline/goh_dip_tong/tests/acceptance.sh" in text
     assert "cli repo-guard" in text
+    # Stage 2. The engine tests live outside pipeline/, so the path above does
+    # not collect them — an engine regression would otherwise never fail CI.
+    assert "python -m pytest engine/goh_dip_tong/tests -q" in text
+    assert "./engine/goh_dip_tong/tests/acceptance_stage2.sh" in text
+
+
+def test_data_quality_runs_on_engine_pull_requests(workflows):
+    """A pull request that only touches engine/ must still be gated."""
+    triggers = workflows["gdt-data-quality"].get("on", workflows["gdt-data-quality"].get(True))
+    assert "engine/**" in triggers["pull_request"]["paths"]
+
+
+def test_the_stage_2_acceptance_script_exists_and_is_executable(repo_root):
+    import os
+
+    path = repo_root / "engine/goh_dip_tong/tests/acceptance_stage2.sh"
+    assert path.exists(), "acceptance_stage2.sh is missing"
+    assert os.access(path, os.X_OK), "acceptance_stage2.sh is not executable"
+
+
+def test_the_stage_2_acceptance_script_is_repo_relative_and_sandboxed(repo_root):
+    """Same isolation contract as Stage 1's, for the same reason: it runs on
+    every pull request and must not move the repository."""
+    text = (repo_root / "engine/goh_dip_tong/tests/acceptance_stage2.sh").read_text(
+        encoding="utf-8")
+    assert "/home/user/" not in text, "hard-coded developer path"
+    assert 'REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"' in text
+    assert "mktemp -d" in text, "destructive work is not sandboxed"
+    assert "trap 'rm -rf \"$WORK\"' EXIT" in text, "sandbox is not cleaned up"
+    assert "REPO_DATA_BEFORE" in text and "REPO_DATA_AFTER" in text
 
 
 def test_acceptance_script_exists_and_is_executable(repo_root):

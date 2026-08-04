@@ -1,0 +1,542 @@
+#!/usr/bin/env bash
+# ============================================================================
+# Goh Dip Tong — Stage 2 acceptance test (slice 1)
+#
+#   ./engine/goh_dip_tong/tests/acceptance_stage2.sh
+#
+# Verifies what this slice actually claims: contracts, the formula registry,
+# missing-value propagation, the input loader and point-in-time selection, the
+# output schema, fixture provenance labelling, the valuation refusal framework,
+# the canonical bank metric definitions and the segment contract correction.
+#
+# It does NOT verify forecast or valuation mathematics. None exists yet, and an
+# acceptance script that passed for absent functionality would be worse than no
+# script at all.
+#
+# ISOLATION
+# Read-only assertions run against the repository. Every operation that WRITES
+# runs inside a throwaway sandbox under $(mktemp -d), removed on exit. The
+# closing self-check fails the build if the repository tree moved, so this is
+# safe to run in CI on a pull request and safe to run locally mid-work.
+#
+# EXIT CODE
+#   0  every check passed
+#   1  one or more checks failed (count printed in the summary)
+# ============================================================================
+set -uo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+export REPO
+cd "$REPO"
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+PASS=0
+FAIL=0
+
+hdr() { printf '\n\033[1m%s\033[0m\n%s\n' "$1" "$(printf '─%.0s' $(seq 1 78))"; }
+ok()  { printf '  \033[32mPASS\033[0m  %s\n' "$1"; PASS=$((PASS + 1)); }
+no()  { printf '  \033[31mFAIL\033[0m  %s\n' "$1"; FAIL=$((FAIL + 1)); }
+chk() { if [ "$1" = "0" ]; then ok "$2"; else no "$2"; fi; }
+ev()  { printf '        %s\n' "$1"; }
+
+py() { python3 -c "$1"; }
+
+tree_hash() {
+  find "$1" -type f ! -name '.gitkeep' -exec sha256sum {} \; | sed "s|$1||" \
+    | sort | sha256sum | cut -d' ' -f1
+}
+
+mk_sandbox() {
+  local dir="$WORK/$1"
+  mkdir -p "$dir"
+  (cd "$REPO" && tar --exclude=.git --exclude=__pycache__ \
+                     --exclude=.pytest_cache -cf - .) | (cd "$dir" && tar -xf -)
+  printf '%s' "$dir"
+}
+
+REPO_DATA_BEFORE="$(tree_hash "$REPO/data/goh-dip-tong")"
+REPO_CONFIG_BEFORE="$(tree_hash "$REPO/config/goh-dip-tong")"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "1. Engine contracts"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.contracts.calculated import Calculated, Period
+from pipeline.goh_dip_tong.contracts.enums import PeriodType
+from pipeline.goh_dip_tong.contracts.records import ContractError, Measure
+p = Period(PeriodType.FY, '2025-12-31')
+try:
+    Calculated(metric_id='x', measure=Measure.of(1.0, unit='IDR'), period=p,
+               formula_id='', model_version='0', calculated_at='x')
+except ContractError:
+    raise SystemExit(0)
+raise SystemExit(1)"
+chk $? "a calculated value cannot exist without a formula ID"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from pipeline.goh_dip_tong.contracts.records import ContractError, Measure
+try:
+    Measure(value=None, unit='IDR')
+except ContractError:
+    raise SystemExit(0)
+raise SystemExit(1)"
+chk $? "a missing value cannot be constructed without a reason"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.contracts.enums import ResearchStatus
+need = {'DISCOVERY','FINANCIALS_VALIDATED','MODEL_UNDER_VALIDATION',
+        'FULL_RESEARCH','MODEL_SUSPENDED','STALE'}
+raise SystemExit(0 if need == {str(s) for s in ResearchStatus} else 1)"
+chk $? "the spec section 2.8 research-status vocabulary is complete"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "2. Formula registry"
+
+RH_DECLARED=$(py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong import FORMULA_REGISTRY_HASH; print(FORMULA_REGISTRY_HASH)")
+RH_ACTUAL=$(python3 -m engine.goh_dip_tong.cli registry-hash)
+[ "$RH_DECLARED" = "$RH_ACTUAL" ]
+chk $? "the formula registry hash matches the declared constant"
+ev "declared: ${RH_DECLARED:0:32}…"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.common import arithmetic
+from engine.goh_dip_tong.contracts.registry import REGISTRY
+raise SystemExit(0 if all(REGISTRY.get(f).doc for f in REGISTRY.ids()) else 1)"
+chk $? "every registered formula is documented"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.contracts.registry import FormulaRegistry
+r = FormulaRegistry()
+try:
+    @r.formula('bad', inputs=('a','b'), output_metric='x')
+    def bad(a): return a
+except Exception:
+    raise SystemExit(0 if len(r) == 0 else 1)
+raise SystemExit(1)"
+chk $? "a formula whose signature disagrees with its declaration is rejected"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "3. Missing-value propagation"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.common.arithmetic import safe_div
+from pipeline.goh_dip_tong.contracts.enums import MissingReason
+from pipeline.goh_dip_tong.contracts.records import Measure
+r = safe_div(Measure.of(10, unit='IDR'), Measure.of(0, unit='IDR'))
+raise SystemExit(0 if r.value is None and
+                 r.missing_reason == MissingReason.UNDEFINED_DENOMINATOR else 1)"
+chk $? "a zero denominator returns UNDEFINED_DENOMINATOR, not zero or infinity"
+
+py "
+import sys, json; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.common.arithmetic import safe_div
+from pipeline.goh_dip_tong.contracts.records import Measure
+for a, b in ((1e308, 1e-308), (1, 0), (0, 0)):
+    json.dumps(safe_div(Measure.of(a, unit='IDR'), Measure.of(b, unit='IDR')).value,
+               allow_nan=False)
+raise SystemExit(0)"
+chk $? "no derived value can serialise as NaN or Infinity"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.contracts.calculated import Calculated, Period
+from engine.goh_dip_tong.contracts.registry import FormulaRegistry
+from pipeline.goh_dip_tong.contracts.enums import MissingReason, PeriodType
+from pipeline.goh_dip_tong.contracts.records import Measure
+seen = []
+r = FormulaRegistry()
+@r.formula('w', inputs=('a',), output_metric='x')
+def w(a):
+    seen.append(a); return Measure.of(0.0, unit='RATIO')
+p = Period(PeriodType.FY, '2025-12-31')
+c = Calculated(metric_id='a',
+               measure=Measure.missing(MissingReason.NOT_REPORTED, unit='IDR'),
+               period=p, formula_id='source.fact', model_version='0',
+               calculated_at='x')
+out = r.compute('w', p, {'a': c}, model_version='0', calculated_at='x')
+raise SystemExit(0 if not seen and out.value is None else 1)"
+chk $? "no formula body is ever invoked with a missing input"
+
+grep -q "UNDEFINED_DENOMINATOR" "$REPO/config/goh-dip-tong/metrics.yml"
+chk $? "UNDEFINED_DENOMINATOR is declared in the canonical metrics registry"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "4. Input loader and point-in-time selection"
+
+PIT=$(py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.inputs import loader
+from engine.goh_dip_tong.settings import get_engine_settings
+s = get_engine_settings()
+def np(d):
+    ei = loader.load(s, 'BBCA', as_of=d, model_version='0.1.0', calculated_at='x')
+    for c in ei.facts:
+        if c.metric_id == 'net_profit' and str(c.period.period_type) == 'FY':
+            return c.value, str(c.basis)
+print(np('2026-07-25'), np('2026-07-29'))")
+echo "$PIT" | grep -q "54800000000000.0, 'REPORTED'"
+chk $? "a cutoff before the restatement returns the originally reported figure"
+echo "$PIT" | grep -q "53950000000000.0, 'RESTATED'"
+chk $? "a cutoff after the restatement returns the revision"
+ev "$PIT"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.inputs import point_in_time as pit
+rows = [{'factKey':'X','revision':1,'source':{'publishedAt':'2030-01-01T00:00:00Z'}}]
+sel = pit.select_facts(rows, '2026-07-31')
+raise SystemExit(0 if sel.rows == [] and sel.excluded_future == 1 else 1)"
+chk $? "a record published after the cutoff never reaches the selected set"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.inputs import point_in_time as pit
+sel = pit.select_facts([{'factKey':'X','revision':1,'source':{}}], '2026-07-31')
+raise SystemExit(0 if sel.rows == [] and sel.excluded_undated == 1 else 1)"
+chk $? "an undated record is never assumed to have been known"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.inputs import loader
+from engine.goh_dip_tong.settings import get_engine_settings
+s = get_engine_settings()
+def cpi(d):
+    ei = loader.load(s, 'BBCA', as_of=d, model_version='0.1.0', calculated_at='x')
+    return [r['value'] for r in ei.macro
+            if r['seriesId'] == 'BPS_CPI_YOY' and r['observationPeriod'] == '2026-05']
+raise SystemExit(0 if cpi('2026-06-15') == [2.41] and cpi('2026-07-25') == [2.38] else 1)"
+chk $? "a revised macro print is used only once its release vintage has passed"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "5. Output schema"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from pipeline.goh_dip_tong.settings import get_settings
+from pipeline.goh_dip_tong.validation.schema import SCHEMA_FILES, validate_all_schemas
+r = validate_all_schemas(get_settings())
+raise SystemExit(0 if r.ok and 'research-snapshot' in SCHEMA_FILES else 1)"
+chk $? "research-snapshot.schema.json is registered and is a legal Draft 2020-12 schema"
+
+[ -f "$REPO/schemas/goh-dip-tong/research-snapshot.schema.json" ] && \
+[ -f "$REPO/schemas/goh-dip-tong/research-input.schema.json" ]
+chk $? "engine input and engine output are separate contracts"
+
+SB=$(mk_sandbox schema)
+(cd "$SB" && python3 -m engine.goh_dip_tong.cli research-build --all >/dev/null 2>&1)
+chk $? "every available issuer builds and validates against the output schema"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from pipeline.goh_dip_tong.validation.schema import get_validator
+v = get_validator('research-snapshot')
+raise SystemExit(0 if list(v.iter_errors({'schemaVersion':'1.0.0','ticker':'BBCA'})) else 1)"
+chk $? "a document without a mode fails validation"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "6. Fixture provenance labelling"
+
+SB=$(mk_sandbox label)
+(cd "$SB" && python3 -m engine.goh_dip_tong.cli research-build --all \
+             --write-mode commit >/dev/null 2>&1)
+
+MODES=$(py "
+import json, pathlib
+root = pathlib.Path('$SB/data/goh-dip-tong/research-snapshots')
+docs = [json.loads(p.read_text()) for p in sorted(root.rglob('*/*/*.json'))]
+print(len(docs), sorted({d['mode'] for d in docs}))")
+echo "$MODES" | grep -q "FIXTURE_TEST_ONLY"
+chk $? "every generated snapshot is labelled FIXTURE_TEST_ONLY"
+echo "$MODES" | grep -qv "PRODUCTION"
+chk $? "no generated snapshot is labelled PRODUCTION"
+ev "$MODES"
+
+py "
+import json, pathlib
+root = pathlib.Path('$SB/data/goh-dip-tong/research-snapshots')
+for p in sorted(root.rglob('*/*/*.json')):
+    d = json.loads(p.read_text())
+    assert d['mode'] == 'FIXTURE_TEST_ONLY'
+    assert 'FIXTURE_TEST_ONLY' in d['quality']['flags']
+    assert d['disclaimers'][0].startswith('FIXTURE_TEST_ONLY')
+    assert d['modelAudit']['inputProvenance']['mode'] == 'FIXTURE_TEST_ONLY'
+raise SystemExit(0)"
+chk $? "the label appears in all four independent carriers"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.contracts.enums import EngineMode
+from engine.goh_dip_tong.inputs.provenance import assess
+from engine.goh_dip_tong.settings import get_engine_settings
+from pipeline.goh_dip_tong.publishing.writers import read_json
+s = get_engine_settings()
+u = dict(read_json(s.pipeline.idx30_current))
+u['authoritative'] = True; u['provenance'] = 'LIVE'
+p = assess(s, u, {'quality': {'flags': []}})
+raise SystemExit(0 if p.mode == EngineMode.FIXTURE_TEST_ONLY and p.reasons else 1)"
+chk $? "PRODUCTION mode is unreachable — no single flag reaches it"
+
+! grep -rl "EngineMode.PRODUCTION" "$REPO/engine" --include="*.py" \
+  | grep -v "provenance.py\|enums.py\|tests/" | grep -q .
+chk $? "only provenance.assess may decide the mode"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "7. Valuation refusal framework"
+
+REF=$(py "
+import json, pathlib
+root = pathlib.Path('$SB/data/goh-dip-tong/research-snapshots')
+out = []
+for p in sorted(root.rglob('*/*/*.json')):
+    d = json.loads(p.read_text())
+    out.append((d['ticker'], d['valuation']['status'], d['valuation']['reason'],
+                len(d['valuation']['missingInputs'])))
+print(out)")
+echo "$REF" | grep -qv "VALUED"
+chk $? "no issuer produced a valuation"
+[ "$(echo "$REF" | grep -o "REFUSED" | wc -l)" -ge 3 ]
+chk $? "every issuer produced a structured refusal"
+ev "$REF"
+
+py "
+import json, pathlib
+root = pathlib.Path('$SB/data/goh-dip-tong/research-snapshots')
+for p in sorted(root.rglob('*/*/*.json')):
+    v = json.loads(p.read_text())['valuation']
+    assert v['note'], 'a refusal must explain itself'
+    assert v['failedGates'], 'a refusal must name the gates that failed'
+    assert 'VALIDATED_RISK_FREE_RATE' in v['failedGates']
+    assert 'MARKET_DATA_AVAILABLE' in v['failedGates']
+raise SystemExit(0)"
+chk $? "every refusal names its failed gates, including the risk-free rate"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.contracts.enums import ValuationMethod
+from engine.goh_dip_tong.contracts.refusal import MethodNotPermitted
+from engine.goh_dip_tong.models.bank import BankModel
+for m in (ValuationMethod.EV_EBITDA, ValuationMethod.ENTERPRISE_DCF,
+          ValuationMethod.FCF_YIELD):
+    try:
+        BankModel().assert_method_permitted(m)
+    except MethodNotPermitted:
+        continue
+    raise SystemExit(1)
+raise SystemExit(0)"
+chk $? "enterprise-value methods raise for a bank rather than being unselected"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.models.registry import build_registry
+from engine.goh_dip_tong.settings import get_engine_settings
+cfg = get_engine_settings().pipeline.models()
+reg = build_registry(cfg)
+raise SystemExit(0 if set(reg) == set(cfg['model_families'])
+                 and not any(m.implemented for m in reg.values()) else 1)"
+chk $? "every declared family is registered and none claims implemented mathematics"
+
+py "
+import ast, sys
+text = open('$REPO/engine/goh_dip_tong/cli.py').read()
+bad = [n for n in ast.walk(ast.parse(text))
+       if isinstance(n, ast.keyword) and n.arg == 'allow_synthetic_cost_of_equity'
+       and isinstance(n.value, ast.Constant) and n.value.value is True]
+raise SystemExit(0 if not bad else 1)"
+chk $? "the CLI never permits a synthetic cost of equity"
+
+py "
+import yaml
+c = yaml.safe_load(open('$REPO/engine/goh_dip_tong/config/cost-of-capital.yml'))
+ids = {r['id'] for r in c['risk_free']['rejected_substitutes']}
+raise SystemExit(0 if c['risk_free']['validated'] is False
+                 and c['synthetic']['usable_in_production'] is False
+                 and 'BI_7DRR' in ids else 1)"
+chk $? "BI_7DRR is recorded as a rejected risk-free substitute"
+
+py "
+import json, pathlib
+root = pathlib.Path('$SB/data/goh-dip-tong/research-snapshots')
+for p in sorted(root.rglob('*/*/*.json')):
+    for row in json.loads(p.read_text())['modelAudit']['macroContext']:
+        assert row['usedInCalculation'] is False
+raise SystemExit(0)"
+chk $? "no macro series feeds any calculation"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "8. Canonical bank metric definitions"
+
+py "
+import sys, yaml; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.models.bank import BANK_REQUIRED_METRICS
+defined = set(yaml.safe_load(open('$REPO/config/goh-dip-tong/metrics.yml'))['metrics'])
+missing = sorted(set(BANK_REQUIRED_METRICS) - defined)
+if missing: print('undefined:', missing)
+raise SystemExit(0 if not missing else 1)"
+chk $? "every metric the bank model requires is defined in metrics.yml"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.models.bank import BANK_REQUIRED_METRICS
+raise SystemExit(0 if len(BANK_REQUIRED_METRICS) == 17 == len(set(BANK_REQUIRED_METRICS)) else 1)"
+chk $? "the bank model declares 17 distinct required metrics"
+
+py "
+import yaml
+m = yaml.safe_load(open('$REPO/config/goh-dip-tong/metrics.yml'))['metrics']
+raise SystemExit(0 if 'BANK' in m['net_debt']['not_applicable_to_model_families'] else 1)"
+chk $? "net_debt remains not applicable to banks"
+
+py "
+import yaml
+m = yaml.safe_load(open('$REPO/config/goh-dip-tong/metrics.yml'))['metrics']
+derived = ['roe','bvps','eps','nim','payout_ratio','cost_of_credit',
+           'npl_ratio_gross','npl_coverage_ratio','casa_ratio',
+           'capital_adequacy_ratio','cost_to_income_ratio','sustainable_growth',
+           'net_interest_income','roa']
+bad = [d for d in derived if m.get(d, {}).get('basis') != 'DERIVED']
+if bad: print('not labelled DERIVED:', bad)
+raise SystemExit(0 if not bad else 1)"
+chk $? "every new ratio is labelled DERIVED, not REPORTED"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "9. Segment contract correction"
+
+py "
+import json
+s = json.load(open('$REPO/schemas/goh-dip-tong/research-input.schema.json'))
+raise SystemExit(0 if 'segment' in s['\$defs']['snapshotFact']['properties'] else 1)"
+chk $? "research-input.schema.json carries an optional segment field"
+
+py "
+import json
+d = json.load(open('$REPO/data/goh-dip-tong/research-snapshots/sample/BBCA.json'))
+rev = [f for f in d['facts'] if f['metric'] == 'revenue' and f['periodType'] == 'FY']
+segs = {f['segment'] for f in rev}
+raise SystemExit(0 if len(rev) == 2 and None in segs and 'WHOLESALE_BANKING' in segs else 1)"
+chk $? "consolidated and segment facts are distinguishable in the sample snapshot"
+
+py "
+import json
+d = json.load(open('$REPO/data/goh-dip-tong/research-snapshots/sample/BBCA.json'))
+raise SystemExit(0 if d['quality']['missingCriticalMetrics'] == [] else 1)"
+chk $? "a segment-level null no longer reports a present consolidated metric as missing"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "10. Synthetic data never enters the published tree"
+
+py "
+import hashlib, pathlib
+def h(root):
+    return {hashlib.sha256(p.read_bytes()).hexdigest(): str(p)
+            for p in sorted(root.rglob('*')) if p.is_file()}
+fx = h(pathlib.Path('$REPO/engine/goh_dip_tong/fixtures'))
+for tree in ('$REPO/data/goh-dip-tong', '$SB/data/goh-dip-tong'):
+    overlap = set(fx) & set(h(pathlib.Path(tree)))
+    if overlap: print(tree, sorted(overlap)); raise SystemExit(1)
+raise SystemExit(0)"
+chk $? "no published file shares a hash with any engine fixture"
+
+! grep -rl "SYNTHETIC" "$REPO/data/goh-dip-tong" "$SB/data/goh-dip-tong" 2>/dev/null | grep -q .
+chk $? "no published document carries the SYNTHETIC flag"
+
+! find "$REPO/data/goh-dip-tong" "$SB/data/goh-dip-tong" -name "SYNB*" 2>/dev/null | grep -q .
+chk $? "the synthetic ticker appears nowhere in the published tree"
+
+py "
+import json
+u = json.load(open('$REPO/config/goh-dip-tong/idx30.current.json'))
+raise SystemExit(0 if 'SYNB' not in {c['ticker'] for c in u['constituents']} else 1)"
+chk $? "the synthetic ticker is not in the IDX30 universe"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "11. Determinism and no churn"
+
+SB=$(mk_sandbox determinism)
+(cd "$SB" && python3 -m engine.goh_dip_tong.cli research-build --all \
+             --as-of 2026-07-31 --write-mode commit >/dev/null 2>&1)
+D1="$(tree_hash "$SB/data/goh-dip-tong/research-snapshots")"
+(cd "$SB" && python3 -m engine.goh_dip_tong.cli research-build --all \
+             --as-of 2026-07-31 --write-mode commit >/dev/null 2>&1)
+D2="$(tree_hash "$SB/data/goh-dip-tong/research-snapshots")"
+[ "$D1" = "$D2" ]
+chk $? "rebuilding the same inputs writes nothing new"
+
+for D in 2026-08-01 2026-12-31 2027-03-14 2027-07-31; do
+  (cd "$SB" && python3 -m engine.goh_dip_tong.cli research-build --all \
+               --as-of "$D" --write-mode commit >/dev/null 2>&1)
+done
+D3="$(tree_hash "$SB/data/goh-dip-tong/research-snapshots")"
+[ "$D1" = "$D3" ]
+chk $? "rebuilding on four later calendar dates deposits nothing"
+ev "date sweep: 2026-08-01, 2026-12-31, 2027-03-14, 2027-07-31 → tree unmoved"
+
+H1=$(PYTHONHASHSEED=0 python3 -m engine.goh_dip_tong.cli registry-hash)
+H2=$(PYTHONHASHSEED=12345 python3 -m engine.goh_dip_tong.cli registry-hash)
+[ "$H1" = "$H2" ]
+chk $? "the registry hash does not depend on the process hash seed"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "12. Boundaries"
+
+! grep -rlw "BBCA" "$REPO/engine" --include="*.py" | grep -qv tests/
+chk $? "no ticker is hard-coded in engine source (tests excluded)"
+
+git diff --quiet HEAD -- index.html goh-pok-tong.html _config.yml CNAME
+chk $? "index.html, goh-pok-tong.html, _config.yml and CNAME are untouched"
+
+git diff --quiet HEAD -- config/goh-dip-tong/schedules.yml config/goh-dip-tong/sources.yml
+chk $? "schedules.yml and sources.yml are unchanged — nothing enabled"
+
+py "
+import yaml
+p = yaml.safe_load(open('$REPO/config/goh-dip-tong/sources.yml'))['providers']
+live = [k for k, v in p.items() if v.get('kind') != 'fixture' and v.get('enabled')]
+raise SystemExit(0 if not live else 1)"
+chk $? "no live provider is enabled"
+
+[ ! -f "$REPO/goh-dip-tong.html" ]
+chk $? "no UI was built (Stage 3 scope)"
+
+py "
+import ast, pathlib
+bad = []
+for p in sorted(pathlib.Path('$REPO/pipeline').rglob('*.py')):
+    for n in ast.walk(ast.parse(p.read_text())):
+        if isinstance(n, ast.Import):
+            bad += [a.name for a in n.names if a.name.split('.')[0] == 'engine']
+        elif isinstance(n, ast.ImportFrom) and n.module and n.level == 0:
+            if n.module.split('.')[0] == 'engine': bad.append(n.module)
+raise SystemExit(0 if not bad else 1)"
+chk $? "no Stage 1 module imports the engine — the dependency stays one-way"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "Isolation self-check"
+
+REPO_DATA_AFTER="$(tree_hash "$REPO/data/goh-dip-tong")"
+REPO_CONFIG_AFTER="$(tree_hash "$REPO/config/goh-dip-tong")"
+[ "$REPO_DATA_BEFORE" = "$REPO_DATA_AFTER" ] && \
+[ "$REPO_CONFIG_BEFORE" = "$REPO_CONFIG_AFTER" ]
+chk $? "this acceptance run left generated datasets and config byte-identical"
+ev "data/   ${REPO_DATA_BEFORE:0:24}… → ${REPO_DATA_AFTER:0:24}…"
+ev "config/ ${REPO_CONFIG_BEFORE:0:24}… → ${REPO_CONFIG_AFTER:0:24}…"
+ev "every write went to a throwaway sandbox under \$(mktemp -d), now removed"
+
+# ═══════════════════════════════════════════════════════════════════════════
+printf '\n\033[1m%s\033[0m\n%s\n' "RESULT" "$(printf '─%.0s' $(seq 1 78))"
+printf "  checks passed: %d\n  checks failed: %d\n" "$PASS" "$FAIL"
+if [ "$FAIL" = "0" ]; then
+  printf "  \033[32mSTAGE 2 SLICE 1 ACCEPTANCE: PASS\033[0m\n"
+  exit 0
+fi
+printf "  \033[31mSTAGE 2 SLICE 1 ACCEPTANCE: FAIL\033[0m\n"
+exit 1

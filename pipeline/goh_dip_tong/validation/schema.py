@@ -22,6 +22,10 @@ SCHEMA_FILES = {
     "event": "event.schema.json",
     "quality-report": "quality-report.schema.json",
     "research-input": "research-input.schema.json",
+    # Stage 2 engine output. Registered here so it is covered by the same
+    # "every declared schema is a legal Draft 2020-12 document" audit as the
+    # rest, rather than living in a second, unaudited place.
+    "research-snapshot": "research-snapshot.schema.json",
 }
 
 

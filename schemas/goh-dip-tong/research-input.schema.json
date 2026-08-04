@@ -90,6 +90,11 @@
       "additionalProperties": false,
       "properties": {
         "metric": { "type": "string" },
+        "segment": {
+          "type": ["string", "null"],
+          "description": "Null for a consolidated figure; a segment code for segment-level detail. Optional, but without it a consolidated fact and a segment fact for the same metric and period are indistinguishable, and an engine cannot tell which one to value from.",
+          "default": null
+        },
         "periodType": { "type": "string" },
         "periodStart": { "type": ["string", "null"] },
         "periodEnd": { "type": "string" },
