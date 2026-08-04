@@ -781,7 +781,13 @@ def cmd_research_snapshot(args) -> int:
     snapshot_facts = sorted(
         (
             {
-                "metric": f["metric"], "periodType": f["periodType"],
+                "metric": f["metric"],
+                # Carried through so a consolidated figure and a segment-level
+                # figure for the same metric and period stay distinguishable.
+                # Without it the engine sees two identical-looking rows and
+                # cannot tell which one to value from.
+                "segment": f.get("segment"),
+                "periodType": f["periodType"],
                 "periodStart": f["periodStart"], "periodEnd": f["periodEnd"],
                 "fiscalYear": f["fiscalYear"], "basis": f["basis"], "value": f["value"],
                 "missingReason": f["missingReason"], "unit": f["unit"],
@@ -793,10 +799,14 @@ def cmd_research_snapshot(args) -> int:
             }
             for f in facts
         ),
-        key=lambda r: (r["periodEnd"], r["metric"]),
+        key=lambda r: (r["periodEnd"], r["metric"], r["segment"] or ""),
     )
 
-    present = sum(1 for f in snapshot_facts if f["value"] is not None)
+    # Completeness and the missing list describe the CONSOLIDATED position.
+    # Counting segment rows here reported a metric as missing while the
+    # consolidated figure for it was present and populated two lines above.
+    consolidated = [f for f in snapshot_facts if f["segment"] is None]
+    present = sum(1 for f in consolidated if f["value"] is not None)
     payload = {
         "schemaVersion": "1.0.0",
         "ticker": ticker,
@@ -826,9 +836,9 @@ def cmd_research_snapshot(args) -> int:
         "recentEvents": [],
         "quality": {
             "status": "UNVALIDATED",
-            "completeness": round(present / len(snapshot_facts), 4) if snapshot_facts else 0.0,
+            "completeness": round(present / len(consolidated), 4) if consolidated else 0.0,
             "missingCriticalMetrics": sorted(
-                {f["metric"] for f in snapshot_facts if f["value"] is None}
+                {f["metric"] for f in consolidated if f["value"] is None}
             ),
             "flags": ["FIXTURE_DATA"],
         },

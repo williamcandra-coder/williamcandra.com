@@ -1,0 +1,50 @@
+# Goh Dip Tong Stage 2 — engine configuration
+#
+# Engine-owned on purpose. Stage 1's config tree is collection policy and is
+# published to the site for the Stage 3 UI to read; discount-rate assumptions
+# and gate thresholds are neither collection policy nor UI data.
+#
+# Everything here changes what the engine calculates, so every value is a
+# reviewable diff rather than a literal buried in a function.
+
+schemaVersion: "1.0.0"
+
+# Stamped onto every calculated value. Bump together with FORMULA_REGISTRY_HASH
+# in engine/goh_dip_tong/__init__.py whenever a registered formula changes;
+# test_registry.py fails the build if they move apart.
+model_version: "0.1.0"
+
+gates:
+  # Three annual periods is the minimum that distinguishes a trend from a
+  # level. Forecasts are equation-driven and need a historical anchor; one
+  # period gives an equation nothing to anchor to.
+  min_annual_periods: 3
+
+  # Beyond this, inputs are stale and the snapshot says so. Set wide enough to
+  # cover a normal annual reporting gap plus filing lag.
+  max_input_age_days: 400
+
+emission:
+  # A snapshot is written only when its substantive content differs from the
+  # newest one already stored for that issuer. Without this, a daily rebuild
+  # would deposit an identical file under a new date every day and the
+  # repository would grow with no information in it.
+  write_only_when_content_changes: true
+
+  # Issuers below this status still get a snapshot: a refusal that names what
+  # is missing is more useful than silence, and it is what makes the coverage
+  # gap auditable.
+  min_research_status: DISCOVERY
+
+numeric:
+  # IEEE-754 doubles with a pinned operation order, matching Stage 1's Measure
+  # so no conversion boundary exists between collection and calculation. Sums
+  # iterate ordered sequences only — float addition is not associative, so an
+  # unordered sum depends on how the collection happened to be built.
+  #
+  # If cross-platform byte drift ever appears in a golden fixture, the
+  # documented fallback is Decimal for monetary arithmetic.
+  representation: "ieee754_double"
+  # Reconciliation tolerance for bridge and cross-check assertions, as a
+  # fraction of the value being reconciled.
+  relative_tolerance: 0.0001

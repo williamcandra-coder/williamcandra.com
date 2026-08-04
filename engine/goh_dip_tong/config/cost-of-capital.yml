@@ -1,0 +1,76 @@
+# Goh Dip Tong Stage 2 — cost of capital
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# THE RISK-FREE RATE DECISION
+#
+# There is no validated risk-free input, and the engine will not manufacture
+# one. The VALIDATED_RISK_FREE_RATE gate therefore fails for every real issuer,
+# and every real issuer's valuation is REFUSED.
+#
+# BI_7DRR — the Bank Indonesia 7-day reverse repo rate — is collected as macro
+# context and is NOT a risk-free rate. It is a short-term policy rate. Using it
+# to discount multi-decade equity cash flows understates the discount rate,
+# which inflates every valuation built on it, and does so invisibly: the output
+# looks like a normal CAPM figure.  It stays contextual macro data.
+#
+# What would resolve this: a validated long-dated Indonesian government bond
+# yield (IndoGB 10-year or similar), with a documented source, a retrieval
+# date, and rights permitting the derived use. None exists today.
+# ─────────────────────────────────────────────────────────────────────────────
+
+schemaVersion: "1.0.0"
+
+risk_free:
+  # The gate reads this. It is false and stays false until a real yield source
+  # is collected, reviewed and recorded here.
+  validated: false
+  instrument: null
+  source: null
+  value: null
+  unit: RATIO
+  as_of: null
+  note: >
+    No validated risk-free input. BI_7DRR is a policy rate held as macro
+    context and must not be substituted here.
+
+  rejected_substitutes:
+    - id: BI_7DRR
+      reason: >
+        Short-term policy rate, not a risk-free yield. Substituting it
+        understates the cost of equity and inflates every valuation derived
+        from it, while looking like an ordinary CAPM input.
+
+# Equity risk premium. Declared so the shape is reviewable; unusable while the
+# risk-free rate above is unvalidated.
+equity_risk_premium:
+  validated: false
+  value: null
+  source: null
+
+# Betas are configuration, never estimated. Estimating a beta needs a price
+# history, and the market-price provider is PRIVATE_RESEARCH_ONLY.
+beta:
+  validated: false
+  by_family: {}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SYNTHETIC — engine test fixtures ONLY
+#
+# Used exclusively by the synthetic-bank golden fixture so valuation
+# mathematics can be exercised and proven. Reaching it requires
+# ModelContext(allow_synthetic_cost_of_equity=True), which only the test
+# harness passes — the CLI never does, and test_refusal.py asserts that.
+#
+# No value below may appear in any document under the published data tree.
+# ─────────────────────────────────────────────────────────────────────────────
+synthetic:
+  label: SYNTHETIC
+  usable_in_production: false
+  cost_of_equity: 0.12
+  risk_free: 0.065
+  equity_risk_premium: 0.055
+  beta: 1.0
+  note: >
+    Invented for testing. These are not estimates of any real market
+    parameter and must never leave engine/goh_dip_tong/fixtures/ or the
+    golden test outputs.
