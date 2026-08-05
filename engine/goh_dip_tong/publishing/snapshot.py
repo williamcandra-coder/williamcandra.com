@@ -97,16 +97,24 @@ def build(
     calculated_at: str,
 ) -> dict:
     """Assemble the output document. Pure: this writes nothing."""
-    refusal = model.evaluate(engine_input, context)
+    outcome = model.evaluate(engine_input, context)
     gates = model.gates(engine_input, context)
+    valued = not isinstance(outcome, ValuationRefusal)
 
     facts = [c.to_json() for c in engine_input.facts]
     freshness = _freshness(engine_input, settings)
-    status = _research_status(engine_input, model, refusal, freshness["stale"])
+    status = _research_status(engine_input, model, outcome, freshness["stale"])
     not_produced = {
         "status": "NOT_PRODUCED",
         "reason": _NOT_PRODUCED_REASON.format(version=ENGINE_VERSION),
     }
+    # Sections that exist only when a valuation was produced. A refusal leaves
+    # them as explicit absences rather than empty objects, so a reader can tell
+    # "the engine declined" from "the engine produced nothing".
+    drivers = _driver_section(outcome) if valued else dict(not_produced)
+    forecast = _forecast_section(outcome) if valued else dict(not_produced)
+    uncle = (outcome.views["uncle"].to_json() if valued else dict(not_produced))
+    analyst = (outcome.views["analyst"].to_json() if valued else dict(not_produced))
 
     document = {
         "schemaVersion": SCHEMA_VERSION,
@@ -148,18 +156,16 @@ def build(
         "reported": {"values": facts, "count": len(facts)},
         "normalized": dict(not_produced),
         "derivedMetrics": dict(not_produced),
-        "drivers": dict(not_produced),
-        "forecast": dict(not_produced),
+        "drivers": drivers,
+        "forecast": forecast,
         "thesis": dict(not_produced),
         "counterThesis": dict(not_produced),
-        "uncleView": dict(not_produced),
-        "analystView": dict(not_produced),
+        "uncleView": uncle,
+        "analystView": analyst,
 
-        "valuation": (
-            refusal.to_json() if isinstance(refusal, ValuationRefusal) else refusal
-        ),
+        "valuation": outcome.to_json(),
 
-        "marketImplied": _market_implied(engine_input),
+        "marketImplied": _market_implied(engine_input, outcome if valued else None),
 
         "catalysts": [],
         "risks": [],
@@ -355,7 +361,35 @@ def _quality(engine_input: EngineInput, model: SectorModel) -> dict:
     }
 
 
-def _market_implied(engine_input: EngineInput) -> dict:
+def _driver_section(valuation) -> dict:
+    """The assumption set behind each scenario, with its historical anchor.
+
+    Spec section 2.6 wants every assumption to state where it came from. The
+    anchor and the offset are both here, so the scenario's claim is the
+    difference between them rather than an unexplained number.
+    """
+    return {
+        "status": "PRODUCED",
+        "scenarios": {
+            name: valuation.projections[name].assumptions.to_json()
+            for name in valuation.scenario_order
+        },
+    }
+
+
+def _forecast_section(valuation) -> dict:
+    """The projected line items, per scenario, per year."""
+    return {
+        "status": "PRODUCED",
+        "horizon": valuation.projections[valuation.scenario_order[0]].horizon,
+        "scenarios": {
+            name: valuation.projections[name].to_json()
+            for name in valuation.scenario_order
+        },
+    }
+
+
+def _market_implied(engine_input: EngineInput, valuation=None) -> dict:
     """Spec section 2.7, structurally unavailable.
 
     Solving a price back to operating assumptions requires a price. The
@@ -364,11 +398,19 @@ def _market_implied(engine_input: EngineInput) -> dict:
     useful than an empty object.
     """
     market = engine_input.market_context or {}
+    if valuation is not None and getattr(valuation, "implied", None):
+        return {
+            "available": True,
+            "reason": None,
+            "rightsStatus": market.get("rightsStatus"),
+            "cases": valuation.implied.to_json(),
+        }
     if market.get("available"):
         return {
             "available": False,
-            "reason": "A price is available but the reverse solver is implemented "
-                      "in a later slice.",
+            "reason": "A price is available but no sustainable ROE reproduces "
+                      "it within the solver's bracket, so no market-implied "
+                      "case can be stated.",
             "rightsStatus": market.get("rightsStatus"),
             "cases": {},
         }

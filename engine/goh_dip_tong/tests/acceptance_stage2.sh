@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Goh Dip Tong — Stage 2 acceptance test (slice 1)
+# Goh Dip Tong — Stage 2 acceptance test (slices 1-2)
 #
 #   ./engine/goh_dip_tong/tests/acceptance_stage2.sh
 #
-# Verifies what this slice actually claims: contracts, the formula registry,
-# missing-value propagation, the input loader and point-in-time selection, the
-# output schema, fixture provenance labelling, the valuation refusal framework,
-# the canonical bank metric definitions and the segment contract correction.
+# Slice 1: contracts, the formula registry, missing-value propagation, the
+# input loader and point-in-time selection, the output schema, fixture
+# provenance labelling, the valuation refusal framework, the canonical bank
+# metric definitions and the segment contract correction.
 #
-# It does NOT verify forecast or valuation mathematics. None exists yet, and an
-# acceptance script that passed for absent functionality would be worse than no
-# script at all.
+# Slice 2: the BANK driver chain, the five-year forecast, bear/base/bull
+# scenarios, residual income with two cross-checks, the terminal guards, the
+# reverse-implied ROE solver, the valuation bridge, and the two views.
+#
+# It does NOT verify any other model family. None is implemented, and an
+# acceptance script that passed for absent functionality would be worse than
+# no script at all.
 #
 # ISOLATION
 # Read-only assertions run against the repository. Every operation that WRITES
@@ -341,9 +345,8 @@ from engine.goh_dip_tong.models.registry import build_registry
 from engine.goh_dip_tong.settings import get_engine_settings
 cfg = get_engine_settings().pipeline.models()
 reg = build_registry(cfg)
-raise SystemExit(0 if set(reg) == set(cfg['model_families'])
-                 and not any(m.implemented for m in reg.values()) else 1)"
-chk $? "every declared family is registered and none claims implemented mathematics"
+raise SystemExit(0 if set(reg) == set(cfg['model_families']) else 1)"
+chk $? "every declared family is registered"
 
 py "
 import ast, sys
@@ -486,7 +489,146 @@ H2=$(PYTHONHASHSEED=12345 python3 -m engine.goh_dip_tong.cli registry-hash)
 chk $? "the registry hash does not depend on the process hash seed"
 
 # ═══════════════════════════════════════════════════════════════════════════
-hdr "12. Boundaries"
+hdr "12. BANK forecast and valuation (slice 2)"
+
+SB=$(mk_sandbox bankmodel)
+rm -f "$SB"/data/goh-dip-tong/research-snapshots/sample/*.json
+cp "$REPO/engine/goh_dip_tong/fixtures/synthetic-bank/SYNB.json" \
+   "$SB/data/goh-dip-tong/research-snapshots/sample/SYNB.json"
+
+SYNB=$(cd "$SB" && py "
+import json, sys
+sys.path.insert(0, '.')
+from engine.goh_dip_tong.settings import get_engine_settings
+from engine.goh_dip_tong.tests.conftest_bank import evaluate
+r = evaluate(get_engine_settings())
+print(json.dumps({
+    'status': r.to_json()['status'],
+    'method': str(r.method),
+    'coe': r.base.cost_of_equity.basis,
+    'values': {s: r.scenarios[s].primary.value_per_share.value
+               for s in r.scenario_order},
+}))")
+
+echo "$SYNB" | grep -q '"status": "VALUED"'
+chk $? "the synthetic bank is valued"
+echo "$SYNB" | grep -q '"coe": "SYNTHETIC"'
+chk $? "its discount rate is labelled SYNTHETIC"
+echo "$SYNB" | grep -q '"method": "RESIDUAL_INCOME"'
+chk $? "residual income is the primary method"
+ev "$(echo "$SYNB" | cut -c1-140)"
+
+echo "$SYNB" | py "
+import json, sys
+d = json.load(sys.stdin)['values']
+raise SystemExit(0 if d['BEAR'] <= d['BASE'] <= d['BULL'] else 1)"
+chk $? "bear <= base <= bull"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.valuation import methods
+from engine.goh_dip_tong.valuation.guards import TerminalGuards
+r = methods.steady_state_value(1000.0, 0.15, 0.5, 0.12, TerminalGuards())
+ok = (abs(r['JUSTIFIED_PB'] - r['RESIDUAL_INCOME']) < 1e-9
+      and abs(r['DIVIDEND_DISCOUNT'] - r['RESIDUAL_INCOME']) < 1e-9)
+raise SystemExit(0 if ok else 1)"
+chk $? "residual income, justified P/B and DDM reconcile on a steady state"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.valuation.guards import TerminalAssumptionInvalid, TerminalGuards
+g = TerminalGuards()
+for r, gr in ((0.12, 0.12), (0.12, 0.115), (0.12, 0.15)):
+    try:
+        g.check_spread(r, gr)
+    except TerminalAssumptionInvalid:
+        continue
+    raise SystemExit(1)
+raise SystemExit(0)"
+chk $? "the r-g guard refuses at, inside and beyond the minimum spread"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.valuation.guards import TerminalAssumptionInvalid, TerminalGuards
+g = TerminalGuards()
+for omega in (1.0, 1.5, -0.1):
+    try:
+        g.check_persistence(omega)
+    except TerminalAssumptionInvalid:
+        continue
+    raise SystemExit(1)
+raise SystemExit(0)"
+chk $? "an invalid persistence factor is refused"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.expectations import reverse_solver
+from engine.goh_dip_tong.valuation import methods
+from engine.goh_dip_tong.valuation.guards import TerminalGuards
+G = TerminalGuards(); BOOK, SH, PAY, RATE = 200e12, 1.2e11, 0.5, 0.12
+def at(roe):
+    try:
+        return methods.steady_state_value(BOOK, roe, PAY, RATE, G)['RESIDUAL_INCOME']/SH
+    except Exception:
+        return None
+br = reverse_solver.admissible_bracket(RATE, PAY, G)
+r = reverse_solver.solve_implied_roe(at, at(0.17), 0.17, at(0.17), bracket=br)
+raise SystemExit(0 if abs(r.implied_sustainable_roe - 0.17) < 1e-6 else 1)"
+chk $? "the reverse solver round-trips to the ROE it was given"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.common.solvers import NoRootInBracket
+from engine.goh_dip_tong.expectations import reverse_solver
+from engine.goh_dip_tong.valuation import methods
+from engine.goh_dip_tong.valuation.guards import TerminalGuards
+G = TerminalGuards(); BOOK, SH, PAY, RATE = 200e12, 1.2e11, 0.5, 0.12
+def at(roe):
+    try:
+        return methods.steady_state_value(BOOK, roe, PAY, RATE, G)['RESIDUAL_INCOME']/SH
+    except Exception:
+        return None
+br = reverse_solver.admissible_bracket(RATE, PAY, G)
+try:
+    reverse_solver.solve_implied_roe(at, 1e12, 0.15, at(0.15), bracket=br)
+except NoRootInBracket:
+    raise SystemExit(0)
+raise SystemExit(1)"
+chk $? "an unreachable price refuses instead of extrapolating"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.models.bank import build_bridge
+from engine.goh_dip_tong.valuation.guards import TerminalGuards
+G = TerminalGuards()
+prev = dict(sustainable_roe=0.15, payout=0.5, cost_of_equity=0.12,
+            opening_book=200e12, shares=1.2e11)
+inside = dict(prev, sustainable_roe=0.17, cost_of_equity=0.11, opening_book=218e12)
+outside = dict(inside, payout=0.6)
+a = build_bridge(200e12, 1.2e11, 0.5, 0.12, G, prev, inside, tolerance=1e-9)
+b = build_bridge(200e12, 1.2e11, 0.5, 0.12, G, prev, outside, tolerance=1e-9)
+raise SystemExit(0 if a.reconciles and not b.reconciles and b.unexplained != 0 else 1)"
+chk $? "the bridge reconciles on declared factors and reports the rest as unexplained"
+
+py "
+import ast
+src = open('$REPO/engine/goh_dip_tong/narration/views.py').read()
+bad = [type(n.op).__name__ for n in ast.walk(ast.parse(src))
+       if isinstance(n, ast.BinOp)
+       and type(n.op).__name__ in {'Add','Sub','Mult','Div','Pow'}]
+raise SystemExit(0 if not bad else 1)"
+chk $? "the narration layer contains no arithmetic"
+
+py "
+import sys; sys.path.insert(0,'$REPO')
+from engine.goh_dip_tong.models.registry import build_registry
+from engine.goh_dip_tong.settings import get_engine_settings
+reg = build_registry(get_engine_settings().pipeline.models())
+raise SystemExit(0 if sorted(f for f, m in reg.items() if m.implemented) == ['BANK'] else 1)"
+chk $? "only BANK implements valuation mathematics"
+
+# ═══════════════════════════════════════════════════════════════════════════
+hdr "13. Boundaries"
 
 ! grep -rlw "BBCA" "$REPO/engine" --include="*.py" | grep -qv tests/
 chk $? "no ticker is hard-coded in engine source (tests excluded)"
@@ -535,8 +677,8 @@ ev "every write went to a throwaway sandbox under \$(mktemp -d), now removed"
 printf '\n\033[1m%s\033[0m\n%s\n' "RESULT" "$(printf '─%.0s' $(seq 1 78))"
 printf "  checks passed: %d\n  checks failed: %d\n" "$PASS" "$FAIL"
 if [ "$FAIL" = "0" ]; then
-  printf "  \033[32mSTAGE 2 SLICE 1 ACCEPTANCE: PASS\033[0m\n"
+  printf "  \033[32mSTAGE 2 SLICES 1-2 ACCEPTANCE: PASS\033[0m\n"
   exit 0
 fi
-printf "  \033[31mSTAGE 2 SLICE 1 ACCEPTANCE: FAIL\033[0m\n"
+printf "  \033[31mSTAGE 2 SLICES 1-2 ACCEPTANCE: FAIL\033[0m\n"
 exit 1
