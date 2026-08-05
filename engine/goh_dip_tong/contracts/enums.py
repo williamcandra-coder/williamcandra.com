@@ -52,6 +52,38 @@ class ResearchStatus(StrEnum):
     STALE = "STALE"
 
 
+class UiState(StrEnum):
+    """What Stage 3 renders. Derived, never assigned.
+
+    Deliberately a third vocabulary rather than a reuse of either existing one.
+    ``coverageStatus`` is Stage 1's view of a company and ``researchStatus`` is
+    the engine's view of how far research has got; neither alone tells a UI
+    what to draw, because "suspended" and "stale" are facts about *freshness
+    and coverage* while "model under validation" is a fact about *the model*,
+    and a renderer needs one answer.
+
+    :func:`engine.goh_dip_tong.publishing.ui_states.derive` maps the two source
+    vocabularies onto this one in a fixed precedence, so exactly one state
+    applies to any document and the mapping is inspectable rather than
+    scattered through a template.
+    """
+
+    #: A valuation was produced and the research package is complete.
+    FULL_RESEARCH = "FULL_RESEARCH"
+    #: A model family applies but cannot produce a validated valuation.
+    MODEL_UNDER_VALIDATION = "MODEL_UNDER_VALIDATION"
+    #: Identity known, no model family mapped yet.
+    ONBOARDING = "ONBOARDING"
+    #: Inputs are older than the configured threshold.
+    STALE = "STALE"
+    #: Coverage is withdrawn — halted, delisted, or suspended by Stage 1.
+    SUSPENDED = "SUSPENDED"
+    #: A model family applies and some validated facts exist, but not enough
+    #: of them to attempt the model. Distinct from MODEL_UNDER_VALIDATION:
+    #: there the model ran and refused, here it never had inputs to run on.
+    PARTIAL = "PARTIAL"
+
+
 class ScenarioName(StrEnum):
     BEAR = "BEAR"
     BASE = "BASE"
@@ -139,6 +171,7 @@ class GateId(StrEnum):
 __all__ = [
     "EngineMode",
     "ResearchStatus",
+    "UiState",
     "ScenarioName",
     "ValuationMethod",
     "ValuationOutcome",

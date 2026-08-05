@@ -1,0 +1,682 @@
+{
+  "analystView": {
+    "reason": "Not produced by engine 0.3.0. Either no valuation was produced for this issuer, or this section's layer is not implemented; emitting an empty object here would be indistinguishable from a calculation that ran and returned nothing.",
+    "status": "NOT_PRODUCED"
+  },
+  "asOf": "2026-07-31",
+  "breakers": [],
+  "catalysts": [],
+  "company": {
+    "inIdx30": false,
+    "industryCode": "BANKS",
+    "industryName": "Banks",
+    "modelFamily": "BANK",
+    "name": "Synthetic Bank Tbk (ENGINE TEST FIXTURE)",
+    "reportingCurrency": "IDR",
+    "sectorCode": "FINANCIALS",
+    "sectorName": "Financials"
+  },
+  "contentHash": "7e84410617e44f3d418550a9e7deee7d8eb3d112e71341f7f32685bceecfbdec",
+  "counterThesis": {
+    "reason": "No valuation was produced for this issuer, so no thesis, counter-thesis, catalyst, risk or breaker is asserted. Research conclusions are derived from calculated records; with none to derive from, an empty section is the honest output and an inferred one would be invention.",
+    "status": "NOT_PRODUCED"
+  },
+  "coverage": {
+    "coverageStatus": "FINANCIALS",
+    "forbiddenMethods": [
+      "ENTERPRISE_DCF",
+      "EV_EBITDA",
+      "FCF_YIELD"
+    ],
+    "modelFamily": "BANK",
+    "modelImplemented": true,
+    "notApplicableMetrics": [
+      "interest_bearing_debt",
+      "net_debt"
+    ],
+    "permittedMethods": [
+      "DIVIDEND_DISCOUNT",
+      "JUSTIFIED_PB",
+      "RESIDUAL_INCOME"
+    ],
+    "researchStatus": "MODEL_UNDER_VALIDATION"
+  },
+  "derivedMetrics": {
+    "reason": "Not produced by engine 0.3.0. Either no valuation was produced for this issuer, or this section's layer is not implemented; emitting an empty object here would be indistinguishable from a calculation that ran and returned nothing.",
+    "status": "NOT_PRODUCED"
+  },
+  "disclaimers": [
+    "FIXTURE_TEST_ONLY. Every value in this document was calculated from committed development fixtures. It is not live, current or authoritative analysis of any real security, and no valuation has been produced from it.",
+    "SYNTHETIC. Every figure in this file was invented to exercise the engine's mathematics. It describes no real company and no real market.",
+    "This file must never be copied into the published data tree or published in any form.",
+    "Not investment advice."
+  ],
+  "drivers": {
+    "reason": "Not produced by engine 0.3.0. Either no valuation was produced for this issuer, or this section's layer is not implemented; emitting an empty object here would be indistinguishable from a calculation that ran and returned nothing.",
+    "status": "NOT_PRODUCED"
+  },
+  "engineVersion": "0.3.0",
+  "evidence": [
+    {
+      "kind": "FACT",
+      "publishedAt": "2022-03-15T09:00:00Z",
+      "ref": "SYNP|equity_attributable_to_parent|FY|2021-12-31|CONSOLIDATED",
+      "sourceRef": "SYNTH-2021"
+    },
+    {
+      "kind": "FACT",
+      "publishedAt": "2023-03-15T09:00:00Z",
+      "ref": "SYNP|equity_attributable_to_parent|FY|2022-12-31|CONSOLIDATED",
+      "sourceRef": "SYNTH-2022"
+    },
+    {
+      "kind": "FACT",
+      "publishedAt": "2024-03-15T09:00:00Z",
+      "ref": "SYNP|equity_attributable_to_parent|FY|2023-12-31|CONSOLIDATED",
+      "sourceRef": "SYNTH-2023"
+    },
+    {
+      "kind": "FACT",
+      "publishedAt": "2025-03-16T09:00:00Z",
+      "ref": "SYNP|equity_attributable_to_parent|FY|2024-12-31|CONSOLIDATED",
+      "sourceRef": "SYNTH-2024"
+    },
+    {
+      "kind": "FACT",
+      "publishedAt": "2026-03-16T09:00:00Z",
+      "ref": "SYNP|equity_attributable_to_parent|FY|2025-12-31|CONSOLIDATED",
+      "sourceRef": "SYNTH-2025"
+    },
+    {
+      "kind": "FACT",
+      "publishedAt": "2022-03-15T09:00:00Z",
+      "ref": "SYNP|net_profit_attributable_to_parent|FY|2021-12-31|CONSOLIDATED",
+      "sourceRef": "SYNTH-2021"
+    },
+    {
+      "kind": "FACT",
+      "publishedAt": "2023-03-15T09:00:00Z",
+      "ref": "SYNP|net_profit_attributable_to_parent|FY|2022-12-31|CONSOLIDATED",
+      "sourceRef": "SYNTH-2022"
+    },
+    {
+      "kind": "FACT",
+      "publishedAt": "2024-03-15T09:00:00Z",
+      "ref": "SYNP|net_profit_attributable_to_parent|FY|2023-12-31|CONSOLIDATED",
+      "sourceRef": "SYNTH-2023"
+    },
+    {
+      "kind": "FACT",
+      "publishedAt": "2025-03-16T09:00:00Z",
+      "ref": "SYNP|net_profit_attributable_to_parent|FY|2024-12-31|CONSOLIDATED",
+      "sourceRef": "SYNTH-2024"
+    },
+    {
+      "kind": "FACT",
+      "publishedAt": "2026-03-16T09:00:00Z",
+      "ref": "SYNP|net_profit_attributable_to_parent|FY|2025-12-31|CONSOLIDATED",
+      "sourceRef": "SYNTH-2025"
+    }
+  ],
+  "forecast": {
+    "reason": "Not produced by engine 0.3.0. Either no valuation was produced for this issuer, or this section's layer is not implemented; emitting an empty object here would be indistinguishable from a calculation that ran and returned nothing.",
+    "status": "NOT_PRODUCED"
+  },
+  "freshness": {
+    "ageDays": 137,
+    "asOf": "2026-07-31",
+    "newestPublishedAt": "2026-03-16T09:00:00Z",
+    "newestRetrievedAt": null,
+    "stale": false
+  },
+  "generatedAt": "2026-08-05T00:00:00Z",
+  "marketImplied": {
+    "available": false,
+    "cases": {},
+    "reason": "Engine test fixture. No price is supplied; tests that need one inject it explicitly so a price can never arrive by accident.",
+    "rightsStatus": "PRIVATE_RESEARCH_ONLY"
+  },
+  "methodComparison": {
+    "reason": "No valuation was produced for this issuer, so no thesis, counter-thesis, catalyst, risk or breaker is asserted. Research conclusions are derived from calculated records; with none to derive from, an empty section is the honest output and an inferred one would be invention.",
+    "status": "NOT_PRODUCED"
+  },
+  "mode": "FIXTURE_TEST_ONLY",
+  "modelAudit": {
+    "ambiguousFacts": [],
+    "asOf": "2026-07-31",
+    "engineVersion": "0.3.0",
+    "factSelection": {
+      "considered": 10,
+      "excludedPublishedAfterCutoff": 0,
+      "excludedUndated": 0,
+      "selected": 10,
+      "supersededByLaterRevision": 0
+    },
+    "factSource": "INPUT_SNAPSHOT",
+    "formulaCount": 26,
+    "formulaRegistryHash": "8dfb38e8519af59be48882d1dc29e71c14a5bca3f56c931239c45b13cfe92a62",
+    "gates": [
+      {
+        "detail": "coverageStatus=FINANCIALS",
+        "gate": "COVERAGE_ACTIVE",
+        "passed": true
+      },
+      {
+        "detail": "no duplicate metric/period/segment rows",
+        "gate": "FACTS_UNAMBIGUOUS",
+        "passed": true
+      },
+      {
+        "detail": "Engine test fixture. No price is supplied; tests that need one inject it explicitly so a price can never arrive by accident.",
+        "gate": "MARKET_DATA_AVAILABLE",
+        "passed": false
+      },
+      {
+        "detail": "5 annual period(s) available, 3 required to anchor an equation-driven forecast",
+        "gate": "MIN_HISTORY_PERIODS",
+        "passed": true
+      },
+      {
+        "detail": "models.yml declares BANK supported=True",
+        "gate": "MODEL_FAMILY_SUPPORTED",
+        "passed": true
+      },
+      {
+        "detail": "valuation mathematics is implemented",
+        "gate": "MODEL_IMPLEMENTED",
+        "passed": true
+      },
+      {
+        "detail": "modelFamily=BANK",
+        "gate": "MODEL_REGISTERED",
+        "passed": true
+      },
+      {
+        "detail": "a share count is required before any per-share figure can exist",
+        "gate": "PER_SHARE_INPUTS",
+        "passed": false
+      },
+      {
+        "detail": "absent: casa_deposits, deposits, dividends_paid, earning_assets, fee_income, interest_expense, interest_income, loan_loss_allowance, loans, non_performing_loans, operating_expense, provision_expense, risk_weighted_assets, shares_outstanding, tier1_capital",
+        "gate": "REQUIRED_INPUTS_PRESENT",
+        "passed": false
+      },
+      {
+        "detail": "no validated risk-free input is available; BI_7DRR is a policy rate, not a risk-free yield, and is contextual macro data only",
+        "gate": "VALIDATED_RISK_FREE_RATE",
+        "passed": false
+      }
+    ],
+    "inputProvenance": {
+      "inputFlags": [
+        "FIXTURE_DATA",
+        "FIXTURE_TEST_ONLY",
+        "SYNTHETIC"
+      ],
+      "mode": "FIXTURE_TEST_ONLY",
+      "providers": [
+        "fixture_financials",
+        "fixture_idx30_registry",
+        "fixture_macro"
+      ],
+      "reasons": [
+        "idx30.current.json declares authoritative=false \u2014 the IDX30 universe is a development fixture, not the published index",
+        "input snapshot carries the FIXTURE_DATA quality flag",
+        "input snapshot carries the FIXTURE_TEST_ONLY quality flag",
+        "input snapshot carries the SYNTHETIC quality flag",
+        "provider fixture_financials is fixture-backed",
+        "provider fixture_financials is not authoritative",
+        "provider fixture_idx30_registry has rights_status PUBLIC_METADATA_ONLY, which does not permit publishing derived output",
+        "provider fixture_idx30_registry is fixture-backed",
+        "provider fixture_idx30_registry is not authoritative",
+        "provider fixture_macro has rights_status PUBLIC_METADATA_ONLY, which does not permit publishing derived output",
+        "provider fixture_macro is fixture-backed",
+        "provider fixture_macro is not authoritative",
+        "universe provenance is FIXTURE"
+      ],
+      "universeAuthoritative": false,
+      "universeProvenance": "FIXTURE"
+    },
+    "inputQuality": {
+      "completeness": 1.0,
+      "flags": [
+        "SYNTHETIC",
+        "FIXTURE_TEST_ONLY",
+        "FIXTURE_DATA"
+      ],
+      "missingCriticalMetrics": [],
+      "status": "UNVALIDATED"
+    },
+    "macroContext": [],
+    "macroSelection": {
+      "considered": 0,
+      "excludedPublishedAfterCutoff": 0,
+      "excludedUndated": 0,
+      "selected": 0,
+      "supersededByLaterRevision": 0
+    },
+    "modelVersion": "0.3.0",
+    "ruleCount": 25,
+    "ruleRegistryHash": "f62ad7a39de1e57145b3a6ef4c346b10fc8e2a5a9204e2e4e39bb566932060ce",
+    "rulesFired": [
+      "package.evidence_ref",
+      "package.model_audit_ref"
+    ]
+  },
+  "modelVersion": "0.3.0",
+  "normalized": {
+    "reason": "Not produced by engine 0.3.0. Either no valuation was produced for this issuer, or this section's layer is not implemented; emitting an empty object here would be indistinguishable from a calculation that ran and returned nothing.",
+    "status": "NOT_PRODUCED"
+  },
+  "quality": {
+    "completeness": 0.1176,
+    "flags": [
+      "FIXTURE_DATA",
+      "FIXTURE_TEST_ONLY",
+      "NO_VALUATION_PRODUCED",
+      "SYNTHETIC"
+    ],
+    "inputQuality": {
+      "completeness": 1.0,
+      "flags": [
+        "SYNTHETIC",
+        "FIXTURE_TEST_ONLY",
+        "FIXTURE_DATA"
+      ],
+      "missingCriticalMetrics": [],
+      "status": "UNVALIDATED"
+    },
+    "missingCriticalMetrics": [
+      "casa_deposits",
+      "deposits",
+      "dividends_paid",
+      "earning_assets",
+      "fee_income",
+      "interest_expense",
+      "interest_income",
+      "loan_loss_allowance",
+      "loans",
+      "non_performing_loans",
+      "operating_expense",
+      "provision_expense",
+      "risk_weighted_assets",
+      "shares_outstanding",
+      "tier1_capital"
+    ],
+    "status": "UNVALIDATED"
+  },
+  "reported": {
+    "count": 10,
+    "values": [
+      {
+        "basis": "REPORTED",
+        "calculatedAt": "2026-08-05T00:00:00Z",
+        "currency": "IDR",
+        "fiscalYear": 2021,
+        "formulaId": "source.fact",
+        "inputRefs": [
+          {
+            "kind": "FACT",
+            "publishedAt": "2022-03-15T09:00:00Z",
+            "ref": "SYNP|equity_attributable_to_parent|FY|2021-12-31|CONSOLIDATED",
+            "sourceRef": "SYNTH-2021"
+          }
+        ],
+        "metric": "equity_attributable_to_parent",
+        "missingReason": null,
+        "modelVersion": "0.3.0",
+        "notes": null,
+        "periodEnd": "2021-12-31",
+        "periodStart": null,
+        "periodType": "FY",
+        "qualityStatus": "VALID",
+        "scenario": "ACTUAL",
+        "segment": null,
+        "unit": "IDR",
+        "value": 161581486584000.0
+      },
+      {
+        "basis": "REPORTED",
+        "calculatedAt": "2026-08-05T00:00:00Z",
+        "currency": "IDR",
+        "fiscalYear": 2021,
+        "formulaId": "source.fact",
+        "inputRefs": [
+          {
+            "kind": "FACT",
+            "publishedAt": "2022-03-15T09:00:00Z",
+            "ref": "SYNP|net_profit_attributable_to_parent|FY|2021-12-31|CONSOLIDATED",
+            "sourceRef": "SYNTH-2021"
+          }
+        ],
+        "metric": "net_profit_attributable_to_parent",
+        "missingReason": null,
+        "modelVersion": "0.3.0",
+        "notes": null,
+        "periodEnd": "2021-12-31",
+        "periodStart": "2021-01-01",
+        "periodType": "FY",
+        "qualityStatus": "VALID",
+        "scenario": "ACTUAL",
+        "segment": null,
+        "unit": "IDR",
+        "value": 23162973168000.0
+      },
+      {
+        "basis": "REPORTED",
+        "calculatedAt": "2026-08-05T00:00:00Z",
+        "currency": "IDR",
+        "fiscalYear": 2022,
+        "formulaId": "source.fact",
+        "inputRefs": [
+          {
+            "kind": "FACT",
+            "publishedAt": "2023-03-15T09:00:00Z",
+            "ref": "SYNP|equity_attributable_to_parent|FY|2022-12-31|CONSOLIDATED",
+            "sourceRef": "SYNTH-2022"
+          }
+        ],
+        "metric": "equity_attributable_to_parent",
+        "missingReason": null,
+        "modelVersion": "0.3.0",
+        "notes": null,
+        "periodEnd": "2022-12-31",
+        "periodStart": null,
+        "periodType": "FY",
+        "qualityStatus": "VALID",
+        "scenario": "ACTUAL",
+        "segment": null,
+        "unit": "IDR",
+        "value": 174089492094720.0
+      },
+      {
+        "basis": "REPORTED",
+        "calculatedAt": "2026-08-05T00:00:00Z",
+        "currency": "IDR",
+        "fiscalYear": 2022,
+        "formulaId": "source.fact",
+        "inputRefs": [
+          {
+            "kind": "FACT",
+            "publishedAt": "2023-03-15T09:00:00Z",
+            "ref": "SYNP|net_profit_attributable_to_parent|FY|2022-12-31|CONSOLIDATED",
+            "sourceRef": "SYNTH-2022"
+          }
+        ],
+        "metric": "net_profit_attributable_to_parent",
+        "missingReason": null,
+        "modelVersion": "0.3.0",
+        "notes": null,
+        "periodEnd": "2022-12-31",
+        "periodStart": "2022-01-01",
+        "periodType": "FY",
+        "qualityStatus": "VALID",
+        "scenario": "ACTUAL",
+        "segment": null,
+        "unit": "IDR",
+        "value": 25016011021440.0
+      },
+      {
+        "basis": "REPORTED",
+        "calculatedAt": "2026-08-05T00:00:00Z",
+        "currency": "IDR",
+        "fiscalYear": 2023,
+        "formulaId": "source.fact",
+        "inputRefs": [
+          {
+            "kind": "FACT",
+            "publishedAt": "2024-03-15T09:00:00Z",
+            "ref": "SYNP|equity_attributable_to_parent|FY|2023-12-31|CONSOLIDATED",
+            "sourceRef": "SYNTH-2023"
+          }
+        ],
+        "metric": "equity_attributable_to_parent",
+        "missingReason": null,
+        "modelVersion": "0.3.0",
+        "notes": null,
+        "periodEnd": "2023-12-31",
+        "periodStart": null,
+        "periodType": "FY",
+        "qualityStatus": "VALID",
+        "scenario": "ACTUAL",
+        "segment": null,
+        "unit": "IDR",
+        "value": 187598138046297.6
+      },
+      {
+        "basis": "REPORTED",
+        "calculatedAt": "2026-08-05T00:00:00Z",
+        "currency": "IDR",
+        "fiscalYear": 2023,
+        "formulaId": "source.fact",
+        "inputRefs": [
+          {
+            "kind": "FACT",
+            "publishedAt": "2024-03-15T09:00:00Z",
+            "ref": "SYNP|net_profit_attributable_to_parent|FY|2023-12-31|CONSOLIDATED",
+            "sourceRef": "SYNTH-2023"
+          }
+        ],
+        "metric": "net_profit_attributable_to_parent",
+        "missingReason": null,
+        "modelVersion": "0.3.0",
+        "notes": null,
+        "periodEnd": "2023-12-31",
+        "periodStart": "2023-01-01",
+        "periodType": "FY",
+        "qualityStatus": "VALID",
+        "scenario": "ACTUAL",
+        "segment": null,
+        "unit": "IDR",
+        "value": 27017291903155.2
+      },
+      {
+        "basis": "REPORTED",
+        "calculatedAt": "2026-08-05T00:00:00Z",
+        "currency": "IDR",
+        "fiscalYear": 2024,
+        "formulaId": "source.fact",
+        "inputRefs": [
+          {
+            "kind": "FACT",
+            "publishedAt": "2025-03-16T09:00:00Z",
+            "ref": "SYNP|equity_attributable_to_parent|FY|2024-12-31|CONSOLIDATED",
+            "sourceRef": "SYNTH-2024"
+          }
+        ],
+        "metric": "equity_attributable_to_parent",
+        "missingReason": null,
+        "modelVersion": "0.3.0",
+        "notes": null,
+        "periodEnd": "2024-12-31",
+        "periodStart": null,
+        "periodType": "FY",
+        "qualityStatus": "VALID",
+        "scenario": "ACTUAL",
+        "segment": null,
+        "unit": "IDR",
+        "value": 202187475674001.4
+      },
+      {
+        "basis": "REPORTED",
+        "calculatedAt": "2026-08-05T00:00:00Z",
+        "currency": "IDR",
+        "fiscalYear": 2024,
+        "formulaId": "source.fact",
+        "inputRefs": [
+          {
+            "kind": "FACT",
+            "publishedAt": "2025-03-16T09:00:00Z",
+            "ref": "SYNP|net_profit_attributable_to_parent|FY|2024-12-31|CONSOLIDATED",
+            "sourceRef": "SYNTH-2024"
+          }
+        ],
+        "metric": "net_profit_attributable_to_parent",
+        "missingReason": null,
+        "modelVersion": "0.3.0",
+        "notes": null,
+        "periodEnd": "2024-12-31",
+        "periodStart": "2024-01-01",
+        "periodType": "FY",
+        "qualityStatus": "VALID",
+        "scenario": "ACTUAL",
+        "segment": null,
+        "unit": "IDR",
+        "value": 29178675255407.63
+      },
+      {
+        "basis": "REPORTED",
+        "calculatedAt": "2026-08-05T00:00:00Z",
+        "currency": "IDR",
+        "fiscalYear": 2025,
+        "formulaId": "source.fact",
+        "inputRefs": [
+          {
+            "kind": "FACT",
+            "publishedAt": "2026-03-16T09:00:00Z",
+            "ref": "SYNP|equity_attributable_to_parent|FY|2025-12-31|CONSOLIDATED",
+            "sourceRef": "SYNTH-2025"
+          }
+        ],
+        "metric": "equity_attributable_to_parent",
+        "missingReason": null,
+        "modelVersion": "0.3.0",
+        "notes": null,
+        "periodEnd": "2025-12-31",
+        "periodStart": null,
+        "periodType": "FY",
+        "qualityStatus": "VALID",
+        "scenario": "ACTUAL",
+        "segment": null,
+        "unit": "IDR",
+        "value": 217943960311921.53
+      },
+      {
+        "basis": "REPORTED",
+        "calculatedAt": "2026-08-05T00:00:00Z",
+        "currency": "IDR",
+        "fiscalYear": 2025,
+        "formulaId": "source.fact",
+        "inputRefs": [
+          {
+            "kind": "FACT",
+            "publishedAt": "2026-03-16T09:00:00Z",
+            "ref": "SYNP|net_profit_attributable_to_parent|FY|2025-12-31|CONSOLIDATED",
+            "sourceRef": "SYNTH-2025"
+          }
+        ],
+        "metric": "net_profit_attributable_to_parent",
+        "missingReason": null,
+        "modelVersion": "0.3.0",
+        "notes": null,
+        "periodEnd": "2025-12-31",
+        "periodStart": "2025-01-01",
+        "periodType": "FY",
+        "qualityStatus": "VALID",
+        "scenario": "ACTUAL",
+        "segment": null,
+        "unit": "IDR",
+        "value": 31512969275840.24
+      }
+    ]
+  },
+  "researchRefs": {
+    "evidence": [
+      {
+        "id": "SYNP.EVIDENCE_REF.package.evidence_ref.equity_attributable_to_parent.ALL",
+        "importance": null,
+        "ruleId": "package.evidence_ref",
+        "scenario": null,
+        "severity": null,
+        "statement": "Source records behind the metric equity_attributable_to_parent.",
+        "supportingEvidence": [
+          "SYNP|equity_attributable_to_parent|FY|2021-12-31|CONSOLIDATED",
+          "SYNP|equity_attributable_to_parent|FY|2022-12-31|CONSOLIDATED",
+          "SYNP|equity_attributable_to_parent|FY|2023-12-31|CONSOLIDATED",
+          "SYNP|equity_attributable_to_parent|FY|2024-12-31|CONSOLIDATED",
+          "SYNP|equity_attributable_to_parent|FY|2025-12-31|CONSOLIDATED"
+        ],
+        "supportingRecords": [],
+        "type": "EVIDENCE_REF"
+      },
+      {
+        "id": "SYNP.EVIDENCE_REF.package.evidence_ref.net_profit_attributable_to_parent.ALL",
+        "importance": null,
+        "ruleId": "package.evidence_ref",
+        "scenario": null,
+        "severity": null,
+        "statement": "Source records behind the metric net_profit_attributable_to_parent.",
+        "supportingEvidence": [
+          "SYNP|net_profit_attributable_to_parent|FY|2021-12-31|CONSOLIDATED",
+          "SYNP|net_profit_attributable_to_parent|FY|2022-12-31|CONSOLIDATED",
+          "SYNP|net_profit_attributable_to_parent|FY|2023-12-31|CONSOLIDATED",
+          "SYNP|net_profit_attributable_to_parent|FY|2024-12-31|CONSOLIDATED",
+          "SYNP|net_profit_attributable_to_parent|FY|2025-12-31|CONSOLIDATED"
+        ],
+        "supportingRecords": [],
+        "type": "EVIDENCE_REF"
+      }
+    ],
+    "modelAudit": [
+      {
+        "id": "SYNP.MODEL_AUDIT_REF.package.model_audit_ref.ALL",
+        "importance": null,
+        "ruleId": "package.model_audit_ref",
+        "scenario": null,
+        "severity": null,
+        "statement": "Audit identifiers for this document: engine and model versions, the formula and research-rule registry hashes, and the basis of the discount rate.",
+        "supportingEvidence": [
+          "audit:engineVersion=0.3.0",
+          "audit:formulaRegistryHash=8dfb38e8519af59be48882d1dc29e71c14a5bca3f56c931239c45b13cfe92a62",
+          "audit:modelVersion=0.3.0",
+          "audit:ruleRegistryHash=f62ad7a39de1e57145b3a6ef4c346b10fc8e2a5a9204e2e4e39bb566932060ce"
+        ],
+        "supportingRecords": [],
+        "type": "MODEL_AUDIT_REF"
+      }
+    ],
+    "status": "PRODUCED"
+  },
+  "researchStatus": "MODEL_UNDER_VALIDATION",
+  "risks": [],
+  "schemaVersion": "1.0.0",
+  "thesis": {
+    "reason": "No valuation was produced for this issuer, so no thesis, counter-thesis, catalyst, risk or breaker is asserted. Research conclusions are derived from calculated records; with none to derive from, an empty section is the honest output and an inferred one would be invention.",
+    "status": "NOT_PRODUCED"
+  },
+  "ticker": "SYNP",
+  "uiState": "PARTIAL",
+  "uncleView": {
+    "reason": "Not produced by engine 0.3.0. Either no valuation was produced for this issuer, or this section's layer is not implemented; emitting an empty object here would be indistinguishable from a calculation that ran and returned nothing.",
+    "status": "NOT_PRODUCED"
+  },
+  "valuation": {
+    "failedGates": [
+      "MARKET_DATA_AVAILABLE",
+      "PER_SHARE_INPUTS",
+      "REQUIRED_INPUTS_PRESENT",
+      "VALIDATED_RISK_FREE_RATE"
+    ],
+    "method": null,
+    "missingInputs": [
+      "casa_deposits",
+      "deposits",
+      "dividends_paid",
+      "earning_assets",
+      "fee_income",
+      "interest_expense",
+      "interest_income",
+      "loan_loss_allowance",
+      "loans",
+      "non_performing_loans",
+      "operating_expense",
+      "provision_expense",
+      "risk_weighted_assets",
+      "shares_outstanding",
+      "tier1_capital"
+    ],
+    "note": "SYNP: the BANK model requires 17 reported metrics and a share count. 15 are absent from the inputs (casa_deposits, deposits, dividends_paid, earning_assets, fee_income, interest_expense, interest_income, loan_loss_allowance, loans, non_performing_loans, operating_expense, provision_expense, risk_weighted_assets, shares_outstanding, tier1_capital). No valuation is produced and no value is estimated in their place.",
+    "reason": "INSUFFICIENT_INPUTS",
+    "status": "REFUSED"
+  }
+}

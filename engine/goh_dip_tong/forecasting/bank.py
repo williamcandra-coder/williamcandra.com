@@ -248,6 +248,14 @@ class Projection:
     opening_book: Calculated
     shares: Calculated
     base_year: int
+    #: The first forecast year's driver assumptions, as calculated records.
+    #:
+    #: The assumptions themselves are floats on :class:`AssumptionSet`, which
+    #: is what the chain multiplies by. A research rule citing a driver needs
+    #: the record instead — the same object the chain consumed, so a claim
+    #: about the cost of credit points at the cost of credit that was used
+    #: rather than at a second copy of it.
+    assumption_records: Dict[str, Calculated] = field(default_factory=dict)
 
     @property
     def horizon(self) -> int:
@@ -314,6 +322,7 @@ def project(
     previous_ea = float(history[base_year]["earning_assets"])
     book = opening_book
     years: List[ProjectedYear] = []
+    assumption_records: Dict[str, Calculated] = {}
 
     for step in range(1, horizon + 1):
         fiscal_year = base_year + step
@@ -321,6 +330,8 @@ def project(
                         f"{fiscal_year}-01-01", fiscal_year)
         a = {driver: projector.assumption(driver, assumptions[driver], period)
              for driver in assumptions.assumptions}
+        if not assumption_records:
+            assumption_records = dict(a)
         year = ProjectedYear(fiscal_year=fiscal_year, period=period)
 
         prior_ea = projector.assumption(
@@ -401,6 +412,7 @@ def project(
     return Projection(
         scenario=assumptions.scenario, assumptions=assumptions, years=years,
         opening_book=opening_book, shares=shares, base_year=base_year,
+        assumption_records=assumption_records,
     )
 
 
