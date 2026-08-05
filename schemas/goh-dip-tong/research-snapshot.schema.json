@@ -26,25 +26,44 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "schemaVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
-
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
     "mode": {
       "description": "Derived from input provenance, never set by hand. FIXTURE_TEST_ONLY means nothing here describes real markets.",
       "type": "string",
-      "enum": ["FIXTURE_TEST_ONLY", "PRODUCTION"]
+      "enum": [
+        "FIXTURE_TEST_ONLY",
+        "PRODUCTION"
+      ]
     },
-
-    "ticker": { "type": "string", "pattern": "^[A-Z]{4}$" },
+    "ticker": {
+      "type": "string",
+      "pattern": "^[A-Z]{4}$"
+    },
     "asOf": {
       "description": "The point-in-time cutoff. Only information published on or before this date contributed.",
       "type": "string",
       "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
     },
-    "modelVersion": { "type": "string" },
-    "engineVersion": { "type": "string" },
-    "generatedAt": { "type": ["string", "null"], "format": "date-time" },
-    "contentHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-
+    "modelVersion": {
+      "type": "string"
+    },
+    "engineVersion": {
+      "type": "string"
+    },
+    "generatedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "contentHash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
     "researchStatus": {
       "description": "Spec section 2.8. The engine's own ladder, distinct from Stage 1's coverageStatus.",
       "type": "string",
@@ -57,255 +76,783 @@
         "STALE"
       ]
     },
-
     "company": {
       "type": "object",
-      "required": ["name", "sectorCode", "industryCode", "modelFamily"],
+      "required": [
+        "name",
+        "sectorCode",
+        "industryCode",
+        "modelFamily"
+      ],
       "properties": {
-        "name": { "type": "string" },
-        "sectorCode": { "type": "string" },
-        "sectorName": { "type": "string" },
-        "industryCode": { "type": "string" },
-        "industryName": { "type": "string" },
-        "modelFamily": { "type": ["string", "null"] },
-        "reportingCurrency": { "type": ["string", "null"] },
-        "inIdx30": { "type": "boolean" }
+        "name": {
+          "type": "string"
+        },
+        "sectorCode": {
+          "type": "string"
+        },
+        "sectorName": {
+          "type": "string"
+        },
+        "industryCode": {
+          "type": "string"
+        },
+        "industryName": {
+          "type": "string"
+        },
+        "modelFamily": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reportingCurrency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "inIdx30": {
+          "type": "boolean"
+        }
       }
     },
-
     "coverage": {
       "type": "object",
-      "required": ["coverageStatus", "researchStatus", "modelFamily", "modelImplemented"],
+      "required": [
+        "coverageStatus",
+        "researchStatus",
+        "modelFamily",
+        "modelImplemented"
+      ],
       "properties": {
         "coverageStatus": {
           "description": "Stage 1's value, carried through unchanged. The engine reads this and never writes it.",
           "type": "string",
-          "enum": ["FULL_RESEARCH", "FINANCIALS", "ONBOARDING", "SUSPENDED"]
+          "enum": [
+            "FULL_RESEARCH",
+            "FINANCIALS",
+            "ONBOARDING",
+            "SUSPENDED"
+          ]
         },
-        "researchStatus": { "type": "string" },
-        "modelFamily": { "type": ["string", "null"] },
-        "modelImplemented": { "type": "boolean" },
-        "permittedMethods": { "type": "array", "items": { "type": "string" } },
-        "forbiddenMethods": { "type": "array", "items": { "type": "string" } },
-        "notApplicableMetrics": { "type": "array", "items": { "type": "string" } }
+        "researchStatus": {
+          "type": "string"
+        },
+        "modelFamily": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "modelImplemented": {
+          "type": "boolean"
+        },
+        "permittedMethods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbiddenMethods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notApplicableMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
-
     "freshness": {
       "type": "object",
-      "required": ["asOf", "newestPublishedAt"],
+      "required": [
+        "asOf",
+        "newestPublishedAt"
+      ],
       "properties": {
-        "asOf": { "type": "string" },
-        "newestPublishedAt": { "type": ["string", "null"] },
-        "newestRetrievedAt": { "type": ["string", "null"] },
-        "ageDays": { "type": ["integer", "null"] },
-        "stale": { "type": "boolean" }
+        "asOf": {
+          "type": "string"
+        },
+        "newestPublishedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "newestRetrievedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ageDays": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "stale": {
+          "type": "boolean"
+        }
       }
     },
-
     "quality": {
       "type": "object",
-      "required": ["status", "completeness", "flags"],
+      "required": [
+        "status",
+        "completeness",
+        "flags"
+      ],
       "properties": {
         "status": {
           "type": "string",
-          "enum": ["VALID", "SUSPECT", "INVALID", "UNVALIDATED"]
+          "enum": [
+            "VALID",
+            "SUSPECT",
+            "INVALID",
+            "UNVALIDATED"
+          ]
         },
-        "completeness": { "type": "number", "minimum": 0, "maximum": 1 },
-        "flags": { "type": "array", "items": { "type": "string" } },
-        "missingCriticalMetrics": { "type": "array", "items": { "type": "string" } },
-        "inputQuality": { "type": "object" }
+        "completeness": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missingCriticalMetrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "inputQuality": {
+          "type": "object"
+        }
       }
     },
-
-    "reported": { "$ref": "#/$defs/valueSection" },
-    "normalized": { "$ref": "#/$defs/sectionOrNotProduced" },
-    "derivedMetrics": { "$ref": "#/$defs/sectionOrNotProduced" },
-    "drivers": { "$ref": "#/$defs/sectionOrNotProduced" },
-    "forecast": { "$ref": "#/$defs/sectionOrNotProduced" },
-    "thesis": { "$ref": "#/$defs/sectionOrNotProduced" },
-    "counterThesis": { "$ref": "#/$defs/sectionOrNotProduced" },
-    "uncleView": { "$ref": "#/$defs/sectionOrNotProduced" },
-    "analystView": { "$ref": "#/$defs/sectionOrNotProduced" },
-
+    "reported": {
+      "$ref": "#/$defs/valueSection"
+    },
+    "normalized": {
+      "$ref": "#/$defs/sectionOrNotProduced"
+    },
+    "derivedMetrics": {
+      "$ref": "#/$defs/sectionOrNotProduced"
+    },
+    "drivers": {
+      "$ref": "#/$defs/sectionOrNotProduced"
+    },
+    "forecast": {
+      "$ref": "#/$defs/sectionOrNotProduced"
+    },
+    "thesis": {
+      "$ref": "#/$defs/sectionOrNotProduced"
+    },
+    "counterThesis": {
+      "$ref": "#/$defs/sectionOrNotProduced"
+    },
+    "uncleView": {
+      "$ref": "#/$defs/viewOrNotProduced"
+    },
+    "analystView": {
+      "$ref": "#/$defs/viewOrNotProduced"
+    },
     "valuation": {
       "description": "Either a valuation or a structured refusal. A refusal is a result, not an omission.",
       "oneOf": [
-        { "$ref": "#/$defs/valuationRefusal" },
-        { "$ref": "#/$defs/valuationResult" }
+        {
+          "$ref": "#/$defs/valuationRefusal"
+        },
+        {
+          "$ref": "#/$defs/valuationResult"
+        }
       ]
     },
-
     "marketImplied": {
       "type": "object",
-      "required": ["available", "reason"],
+      "required": [
+        "available",
+        "reason"
+      ],
       "properties": {
-        "available": { "type": "boolean" },
-        "reason": { "type": ["string", "null"] },
-        "rightsStatus": { "type": ["string", "null"] },
-        "cases": { "type": "object" }
+        "available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rightsStatus": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cases": {
+          "type": "object"
+        }
       }
     },
-
-    "catalysts": { "type": "array", "items": { "type": "object" } },
-    "risks": { "type": "array", "items": { "type": "object" } },
-    "breakers": { "type": "array", "items": { "type": "object" } },
-
+    "catalysts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "breakers": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
     "evidence": {
       "description": "Every source record that contributed, so a published number can be walked back to reported facts.",
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["ref", "kind"],
+        "required": [
+          "ref",
+          "kind"
+        ],
         "properties": {
-          "ref": { "type": "string" },
-          "kind": { "type": "string" },
-          "sourceRef": { "type": ["string", "null"] },
-          "publishedAt": { "type": ["string", "null"] }
+          "ref": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "sourceRef": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "publishedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       }
     },
-
     "modelAudit": {
       "type": "object",
-      "required": ["engineVersion", "modelVersion", "formulaRegistryHash", "inputProvenance"],
+      "required": [
+        "engineVersion",
+        "modelVersion",
+        "formulaRegistryHash",
+        "inputProvenance"
+      ],
       "properties": {
-        "engineVersion": { "type": "string" },
-        "modelVersion": { "type": "string" },
-        "formulaRegistryHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-        "formulaCount": { "type": "integer", "minimum": 0 },
-        "asOf": { "type": "string" },
-        "factSource": { "type": "string", "enum": ["FACT_STORE", "INPUT_SNAPSHOT"] },
-        "factSelection": { "type": "object" },
-        "macroSelection": { "type": "object" },
-        "ambiguousFacts": { "type": "array", "items": { "type": "string" } },
-        "inputProvenance": {
-          "type": "object",
-          "required": ["mode", "reasons"],
-          "properties": {
-            "mode": { "type": "string" },
-            "reasons": { "type": "array", "items": { "type": "string" } },
-            "providers": { "type": "array", "items": { "type": "string" } },
-            "universeAuthoritative": { "type": "boolean" },
-            "universeProvenance": { "type": ["string", "null"] },
-            "inputFlags": { "type": "array", "items": { "type": "string" } }
+        "engineVersion": {
+          "type": "string"
+        },
+        "modelVersion": {
+          "type": "string"
+        },
+        "formulaRegistryHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "formulaCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "asOf": {
+          "type": "string"
+        },
+        "factSource": {
+          "type": "string",
+          "enum": [
+            "FACT_STORE",
+            "INPUT_SNAPSHOT"
+          ]
+        },
+        "factSelection": {
+          "type": "object"
+        },
+        "macroSelection": {
+          "type": "object"
+        },
+        "ambiguousFacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         },
-        "inputQuality": { "type": "object" },
-        "gates": { "type": "array", "items": { "type": "object" } },
-        "macroContext": { "type": "array", "items": { "type": "object" } }
+        "inputProvenance": {
+          "type": "object",
+          "required": [
+            "mode",
+            "reasons"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string"
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "providers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "universeAuthoritative": {
+              "type": "boolean"
+            },
+            "universeProvenance": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "inputFlags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "inputQuality": {
+          "type": "object"
+        },
+        "gates": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "macroContext": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
       }
     },
-
     "disclaimers": {
       "description": "Must travel with the data all the way to the UI. The first entry states the mode.",
       "type": "array",
       "minItems": 1,
-      "items": { "type": "string", "minLength": 1 }
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     }
   },
-
   "$defs": {
     "calculatedValue": {
       "description": "One value the engine produced or lifted from a fact, with its full derivation. Spec section 2.4.",
       "type": "object",
       "required": [
-        "metric", "value", "missingReason", "unit", "basis",
-        "qualityStatus", "scenario", "formulaId", "modelVersion",
-        "periodType", "periodEnd"
+        "metric",
+        "value",
+        "missingReason",
+        "unit",
+        "basis",
+        "qualityStatus",
+        "scenario",
+        "formulaId",
+        "modelVersion",
+        "periodType",
+        "periodEnd"
       ],
       "additionalProperties": false,
       "properties": {
-        "metric": { "type": "string" },
-        "segment": { "type": ["string", "null"] },
-        "value": { "type": ["number", "null"] },
-        "missingReason": { "type": ["string", "null"] },
-        "unit": { "type": "string" },
-        "currency": { "type": ["string", "null"] },
+        "metric": {
+          "type": "string"
+        },
+        "segment": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "missingReason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unit": {
+          "type": "string"
+        },
+        "currency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "basis": {
           "type": "string",
-          "enum": ["REPORTED", "RESTATED", "NORMALIZED", "DERIVED", "FORECAST", "MARKET_IMPLIED"]
+          "enum": [
+            "REPORTED",
+            "RESTATED",
+            "NORMALIZED",
+            "DERIVED",
+            "FORECAST",
+            "MARKET_IMPLIED"
+          ]
         },
         "qualityStatus": {
           "type": "string",
-          "enum": ["VALID", "SUSPECT", "INVALID", "UNVALIDATED"]
+          "enum": [
+            "VALID",
+            "SUSPECT",
+            "INVALID",
+            "UNVALIDATED"
+          ]
         },
-        "scenario": { "type": "string", "enum": ["BEAR", "BASE", "BULL", "ACTUAL"] },
-        "formulaId": { "type": "string", "minLength": 1 },
-        "inputRefs": { "type": "array", "items": { "type": "object" } },
-        "modelVersion": { "type": "string" },
-        "calculatedAt": { "type": ["string", "null"] },
-        "notes": { "type": ["string", "null"] },
-        "periodType": { "type": "string" },
-        "periodStart": { "type": ["string", "null"] },
-        "periodEnd": { "type": "string" },
-        "fiscalYear": { "type": ["integer", "null"] }
+        "scenario": {
+          "type": "string",
+          "enum": [
+            "BEAR",
+            "BASE",
+            "BULL",
+            "ACTUAL"
+          ]
+        },
+        "formulaId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inputRefs": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "modelVersion": {
+          "type": "string"
+        },
+        "calculatedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "periodType": {
+          "type": "string"
+        },
+        "periodStart": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "periodEnd": {
+          "type": "string"
+        },
+        "fiscalYear": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
       },
       "allOf": [
         {
-          "if": { "properties": { "value": { "type": "null" } }, "required": ["value"] },
+          "if": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "value"
+            ]
+          },
           "then": {
             "description": "A null value always states why. Never a zero, never a blank.",
-            "properties": { "missingReason": { "type": "string", "minLength": 1 } },
-            "required": ["missingReason"]
+            "properties": {
+              "missingReason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "missingReason"
+            ]
           }
         }
       ]
     },
-
     "valueSection": {
       "type": "object",
-      "required": ["values", "count"],
+      "required": [
+        "values",
+        "count"
+      ],
       "additionalProperties": false,
       "properties": {
-        "values": { "type": "array", "items": { "$ref": "#/$defs/calculatedValue" } },
-        "count": { "type": "integer", "minimum": 0 }
+        "values": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/calculatedValue"
+          }
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
-
     "notProduced": {
       "description": "A section the engine did not produce, and why. An explicit absence, not an empty object a reader has to interpret.",
       "type": "object",
-      "required": ["status", "reason"],
+      "required": [
+        "status",
+        "reason"
+      ],
       "additionalProperties": false,
       "properties": {
-        "status": { "type": "string", "const": "NOT_PRODUCED" },
-        "reason": { "type": "string", "minLength": 1 }
+        "status": {
+          "type": "string",
+          "const": "NOT_PRODUCED"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
-
     "sectionOrNotProduced": {
       "oneOf": [
-        { "$ref": "#/$defs/notProduced" },
-        { "$ref": "#/$defs/valueSection" }
+        {
+          "$ref": "#/$defs/notProduced"
+        },
+        {
+          "$ref": "#/$defs/valueSection"
+        },
+        {
+          "$ref": "#/$defs/producedSection"
+        }
       ]
     },
-
     "valuationRefusal": {
       "type": "object",
-      "required": ["status", "reason", "note", "failedGates", "missingInputs"],
+      "required": [
+        "status",
+        "reason",
+        "note",
+        "failedGates",
+        "missingInputs"
+      ],
       "additionalProperties": false,
       "properties": {
-        "status": { "type": "string", "const": "REFUSED" },
-        "reason": { "type": "string", "minLength": 1 },
-        "method": { "type": ["string", "null"] },
-        "failedGates": { "type": "array", "items": { "type": "string" } },
-        "missingInputs": { "type": "array", "items": { "type": "string" } },
-        "note": { "type": "string", "minLength": 1 }
+        "status": {
+          "type": "string",
+          "const": "REFUSED"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "method": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "failedGates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missingInputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
-
     "valuationResult": {
-      "description": "Reserved for the slice that implements valuation mathematics. Nothing emits this shape yet.",
+      "description": "A produced valuation. Scenarios are keyed by name and ordered by scenarioOrder, which is pinned in scenarios.yml so output ordering cannot drift.",
       "type": "object",
-      "required": ["status", "method", "scenarios"],
+      "required": [
+        "status",
+        "method",
+        "scenarios",
+        "scenarioOrder"
+      ],
+      "additionalProperties": false,
       "properties": {
-        "status": { "type": "string", "const": "VALUED" },
-        "method": { "type": "string" },
-        "crossChecks": { "type": "array", "items": { "type": "object" } },
-        "scenarios": { "type": "object" },
-        "bridge": { "type": ["object", "null"] }
+        "status": {
+          "type": "string",
+          "const": "VALUED"
+        },
+        "method": {
+          "type": "string"
+        },
+        "scenarioOrder": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scenarios": {
+          "type": "object"
+        },
+        "crossChecks": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "bridge": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "guards": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
       }
+    },
+    "producedSection": {
+      "description": "A section the engine produced. Shape varies by section; the status discriminator is what distinguishes it from an explicit absence.",
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "PRODUCED"
+        }
+      }
+    },
+    "viewSection": {
+      "description": "A rendered view. Contains no arithmetic: every item names the calculated record it was selected from, so the two views cannot drift apart.",
+      "type": "object",
+      "required": [
+        "status",
+        "kind",
+        "items"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "PRODUCED"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "UNCLE",
+            "ANALYST"
+          ]
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "label",
+              "value",
+              "ref",
+              "formulaId",
+              "scenario"
+            ],
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "value": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "unit": {
+                "type": "string"
+              },
+              "ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "formulaId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scenario": {
+                "type": "string"
+              },
+              "missingReason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "plain": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "viewOrNotProduced": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/notProduced"
+        },
+        {
+          "$ref": "#/$defs/viewSection"
+        }
+      ]
     }
   }
 }
