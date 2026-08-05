@@ -38,7 +38,9 @@ from ..contracts.refusal import ValuationRefusal
 from ..contracts.registry import REGISTRY
 from ..inputs.loader import EngineInput
 from ..inputs.provenance import disclaimers_for
+from ..research import package as research_mod
 from ..settings import EngineSettings
+from . import ui_states
 
 SCHEMA_VERSION = "1.0.0"
 
@@ -62,9 +64,10 @@ ENGINE_VOLATILE_FIELDS: Tuple[str, ...] = tuple(VOLATILE_FIELDS) + (
 #: Sections this engine version does not produce, and why. Explicit absences —
 #: an empty object would leave a reader guessing whether the engine tried.
 _NOT_PRODUCED_REASON = (
-    "Not produced by engine {version}. Forecast, valuation and narration "
-    "mathematics are implemented in a later slice; emitting an empty section "
-    "here would be indistinguishable from a calculation that returned nothing."
+    "Not produced by engine {version}. Either no valuation was produced for "
+    "this issuer, or this section's layer is not implemented; emitting an "
+    "empty object here would be indistinguishable from a calculation that ran "
+    "and returned nothing."
 )
 
 
@@ -116,6 +119,8 @@ def build(
     uncle = (outcome.views["uncle"].to_json() if valued else dict(not_produced))
     analyst = (outcome.views["analyst"].to_json() if valued else dict(not_produced))
 
+    research = _research_package(engine_input, model, outcome, valued)
+
     document = {
         "schemaVersion": SCHEMA_VERSION,
         "mode": str(engine_input.provenance.mode),
@@ -158,8 +163,9 @@ def build(
         "derivedMetrics": dict(not_produced),
         "drivers": drivers,
         "forecast": forecast,
-        "thesis": dict(not_produced),
-        "counterThesis": dict(not_produced),
+        "thesis": research.section(research.thesis),
+        "counterThesis": research.section(research.counter_thesis),
+        "methodComparison": research.section(research.method_comparison),
         "uncleView": uncle,
         "analystView": analyst,
 
@@ -167,11 +173,14 @@ def build(
 
         "marketImplied": _market_implied(engine_input, outcome if valued else None),
 
-        "catalysts": [],
-        "risks": [],
-        "breakers": [],
+        # Arrays rather than sections, because a UI iterates them. Empty on a
+        # refusal, which is the same statement `thesis` makes at greater length.
+        "catalysts": [r.to_json() for r in research.catalysts],
+        "risks": [r.to_json() for r in research.risks],
+        "breakers": [r.to_json() for r in research.breakers],
 
         "evidence": _evidence(engine_input),
+        "researchRefs": research.refs_section(),
 
         "modelAudit": {
             "engineVersion": ENGINE_VERSION,
@@ -180,6 +189,7 @@ def build(
             "formulaCount": len(REGISTRY),
             "gates": gates.to_json(),
             "macroContext": _macro_context(engine_input),
+            **research.audit_json(),
             **engine_input.to_audit_json(),
         },
 
@@ -187,6 +197,11 @@ def build(
             engine_input.provenance, engine_input.base_disclaimers
         ),
     }
+
+    # Derived last, from the finished document, so the state a UI renders is a
+    # function of what was actually published rather than of an intermediate
+    # nobody can see afterwards.
+    document["uiState"] = str(ui_states.derive_for(document))
 
     document["contentHash"] = stable_content_hash(
         {k: v for k, v in document.items() if k != "generatedAt"},
@@ -207,6 +222,10 @@ def validate(settings: EngineSettings, document: dict) -> ValidationReport:
 # ---------------------------------------------------------------------------
 
 
+class InvalidSnapshot(ValueError):
+    """A document that does not satisfy the output schema reached the writer."""
+
+
 def write(
     settings: EngineSettings, document: dict
 ) -> Tuple[Optional[Path], Optional[Path], bool]:
@@ -216,10 +235,27 @@ def write(
     matches the newest stored snapshot, nothing is written and the existing
     pointer is left exactly as it is — including its date, which stays truthful
     as "when this research was produced" rather than "when we last rebuilt".
+
+    **An invalid document never replaces a valid one.** Validation happens here
+    rather than only in the caller, because the failure mode is specific and
+    silent: a build that validates, then mutates, then writes would leave the
+    last good snapshot overwritten by something no reader can trust, and the
+    pointer aimed at it. Refusing at the writer means the worst case is a
+    stale-but-valid snapshot, which is recoverable, instead of a fresh invalid
+    one, which is not.
     """
     ticker = document["ticker"]
     as_of = document["asOf"]
     model_version = document["modelVersion"]
+
+    report = validate(settings, document)
+    if not report.ok:
+        raise InvalidSnapshot(
+            f"{ticker}: refusing to write a snapshot that fails the output "
+            f"schema; the last valid snapshot and its pointer are left in "
+            f"place — "
+            + "; ".join(i.message for i in report.critical_failures[:3])
+        )
 
     newest = _newest_stored(settings, ticker)
     if newest is not None and newest.get("contentHash") == document["contentHash"]:
@@ -248,6 +284,7 @@ def _pointer(settings: EngineSettings, document: dict, path: Path) -> dict:
         "modelVersion": document["modelVersion"],
         "engineVersion": document["engineVersion"],
         "researchStatus": document["researchStatus"],
+        "uiState": document["uiState"],
         "valuationStatus": document["valuation"].get("status"),
         "contentHash": document["contentHash"],
         "snapshot": settings.rel(path),
@@ -361,6 +398,30 @@ def _quality(engine_input: EngineInput, model: SectorModel) -> dict:
     }
 
 
+def _research_package(engine_input: EngineInput, model: SectorModel, outcome,
+                      valued: bool) -> research_mod.ResearchPackage:
+    """The research package for this issuer.
+
+    A valued outcome already carries one — the model built it from the same
+    records the views select from, and rebuilding it here would risk two
+    packages that disagree. A refusal carries none, so one is built with
+    ``valued=False``: the claim rules never run, and what comes back is the
+    citation index and nothing else.
+    """
+    existing = getattr(outcome, "research", None)
+    if valued and existing is not None:
+        return existing
+    return research_mod.build(
+        ticker=engine_input.ticker,
+        family=getattr(model, "family", "") or "",
+        valued=False,
+        comparison_records={},
+        fact_keys=research_mod.fact_keys_for(engine_input),
+        audit_refs=research_mod.audit_refs_for(
+            ENGINE_VERSION, MODEL_VERSION, FORMULA_REGISTRY_HASH),
+    )
+
+
 def _driver_section(valuation) -> dict:
     """The assumption set behind each scenario, with its historical anchor.
 
@@ -467,6 +528,7 @@ def _macro_context(engine_input: EngineInput) -> List[dict]:
 
 __all__ = [
     "BuildResult",
+    "InvalidSnapshot",
     "SCHEMA_VERSION",
     "ENGINE_VOLATILE_FIELDS",
     "build",
