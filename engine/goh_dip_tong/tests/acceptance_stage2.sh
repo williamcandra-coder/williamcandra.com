@@ -937,8 +937,17 @@ live = [k for k, v in p.items() if v.get('kind') != 'fixture' and v.get('enabled
 raise SystemExit(0 if not live else 1)"
 chk $? "no live provider is enabled"
 
-[ ! -f "$REPO/goh-dip-tong.html" ]
-chk $? "no UI was built (Stage 3 scope)"
+# Stage 3 has now built goh-dip-tong.html. What must remain true is that the
+# ENGINE does not build it: the engine produces JSON the UI reads, and a
+# calculation stage that emitted markup would have crossed a boundary that
+# keeps the two independently testable.
+py "
+import pathlib
+bad = [str(p.relative_to('$REPO')) for p in sorted(pathlib.Path('$REPO/engine').rglob('*.py'))
+       if 'tests' not in p.parts and 'goh-dip-tong.html' in p.read_text(encoding='utf-8')]
+if bad: print(bad)
+raise SystemExit(0 if not bad else 1)"
+chk $? "the engine does not build or write the Stage 3 UI page"
 
 py "
 import ast, pathlib
