@@ -21,6 +21,8 @@
 #   - the Stage 1 acceptance script (all 17 requirements)
 #   - the Stage 2 engine unit-test suite
 #   - the Stage 2 acceptance script
+#   - the Stage 3 UI test suite, browser layer included (Node's built-in
+#     runner and the runner's own Chrome; no package manager, no download)
 name: gdt-data-quality
 
 on:
@@ -50,6 +52,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The Stage 3 UI suite proves the protected files (index.html,
+          # goh-pok-tong.html, _config.yml, CNAME) are untouched by diffing
+          # the working tree against origin/main. The default shallow checkout
+          # fetches only the tested commit and creates no origin/main ref, so
+          # that diff has no base to resolve. Fetching the full history brings
+          # the remote branches with it. This is a checkout depth only — the
+          # job still has `contents: read` and still cannot write.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -80,6 +91,39 @@ jobs:
         # Same isolation contract as Stage 1's: sandboxed writes, a closing
         # self-check on the repository tree, non-zero exit on any failure.
         run: ./engine/goh_dip_tong/tests/acceptance_stage2.sh
+
+      - name: Locate a browser for the Stage 3 UI tests
+        # Nothing is downloaded or installed: ubuntu-latest already ships a
+        # Chrome build, and Node's test runner needs no package manager. The
+        # lookup happens here, in its own step, so that a runner image without
+        # a browser fails with one clear message instead of surfacing as a
+        # green run that quietly skipped half the UI suite — which is exactly
+        # what the first wiring of this step did.
+        run: |
+          for candidate in chromium chromium-browser google-chrome google-chrome-stable; do
+            resolved="$(command -v "$candidate" 2>/dev/null || true)"
+            if [ -n "$resolved" ]; then
+              echo "GDT_CHROMIUM_PATH=$resolved" >> "$GITHUB_ENV"
+              echo "Stage 3 UI tests will use $candidate at $resolved"
+              exit 0
+            fi
+          done
+          for resolved in /usr/bin/chromium /usr/bin/chromium-browser \
+                          /usr/bin/google-chrome /usr/bin/google-chrome-stable \
+                          /opt/google/chrome/chrome /snap/bin/chromium; do
+            if [ -x "$resolved" ]; then
+              echo "GDT_CHROMIUM_PATH=$resolved" >> "$GITHUB_ENV"
+              echo "Stage 3 UI tests will use $resolved"
+              exit 0
+            fi
+          done
+          echo "::error::no Chromium or Chrome binary found on this runner. The Stage 3 browser tests must run in CI, so this is a failure rather than a skip."
+          exit 1
+
+      - name: Stage 3 UI test suite
+        # CI=true is set by Actions. The suite refuses to skip its browser
+        # layer when it sees it, so a missing browser fails here too.
+        run: node --test tests/goh-dip-tong-ui.test.js
 
       - name: Data-quality audit
         run: python -m pipeline.goh_dip_tong.cli quality --verbose

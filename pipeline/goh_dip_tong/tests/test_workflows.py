@@ -326,6 +326,284 @@ def test_the_stage_2_acceptance_script_is_repo_relative_and_sandboxed(repo_root)
     assert "REPO_DATA_BEFORE" in text and "REPO_DATA_AFTER" in text
 
 
+# --- Stage 3: the UI suite runs in the same gate ----------------------------
+#
+# The UI is the first thing in this repository a visitor sees, and until now it
+# was the only stage whose tests nobody ran automatically. These assertions pin
+# the step in place — that it exists, that it sits between the Stage 2
+# acceptance script and the audit, and that wiring it in did not quietly turn a
+# read-only auditor into something that installs packages or writes to the
+# repository.
+
+STAGE_3_UI_COMMAND = "node --test tests/goh-dip-tong-ui.test.js"
+
+
+@pytest.fixture(scope="module")
+def quality_text(repo_root):
+    return (repo_root / ".github/workflows/gdt-data-quality.yml").read_text(encoding="utf-8")
+
+
+def test_the_stage_3_ui_test_suite_exists(repo_root):
+    path = repo_root / "tests/goh-dip-tong-ui.test.js"
+    assert path.exists(), "tests/goh-dip-tong-ui.test.js is missing"
+    assert path.stat().st_size > 0
+
+
+def test_data_quality_runs_the_stage_3_ui_suite(quality_text):
+    """Sixth gate. The UI tests live outside pipeline/ and engine/, so neither
+    pytest path collects them — without this step a UI regression would never
+    fail CI."""
+    assert STAGE_3_UI_COMMAND in quality_text
+    assert "Stage 3 UI test suite" in quality_text
+
+
+def test_the_stage_3_ui_step_runs_after_stage_2_acceptance(quality_text):
+    """Order is the contract: the cheap data gates run first, so a broken
+    engine fails before anything spends time in a browser."""
+    stage_2 = quality_text.index("./engine/goh_dip_tong/tests/acceptance_stage2.sh")
+    stage_3 = quality_text.index(STAGE_3_UI_COMMAND)
+    assert stage_2 < stage_3, "the Stage 3 UI step runs before Stage 2 acceptance"
+
+
+def test_the_stage_3_ui_step_runs_before_the_data_quality_audit(quality_text):
+    stage_3 = quality_text.index(STAGE_3_UI_COMMAND)
+    audit = quality_text.index("cli quality --verbose")
+    assert stage_3 < audit, "the Stage 3 UI step runs after the data-quality audit"
+
+
+def test_the_quality_checkout_fetches_enough_history_for_the_ui_suite(workflows):
+    """The UI suite proves the protected files are untouched by diffing against
+    origin/main. A default shallow checkout fetches only the commit under test
+    and creates no origin/main ref, so that check cannot resolve a base and
+    fails for a reason that has nothing to do with the UI. Depth 0 brings the
+    remote branches with it."""
+    steps = workflows["gdt-data-quality"]["jobs"]["quality"]["steps"]
+    checkout = next(s for s in steps if str(s.get("uses", "")).startswith("actions/checkout"))
+    assert checkout.get("with", {}).get("fetch-depth") == 0, (
+        "the quality checkout is shallow; the UI suite's protected-file diff "
+        "has no origin/main to compare against"
+    )
+
+
+def test_a_deeper_checkout_did_not_grant_the_quality_job_any_write_access(workflows):
+    """Fetching more history is a read. It must not have come with anything
+    else: no explicit token and no deploy key handed to the checkout, and no
+    repository the job was not already reading. What the checkout can do is
+    still bounded by the job's `contents: read` permission, asserted above."""
+    steps = workflows["gdt-data-quality"]["jobs"]["quality"]["steps"]
+    checkout = next(s for s in steps if str(s.get("uses", "")).startswith("actions/checkout"))
+    options = checkout.get("with", {})
+    assert "token" not in options, "the checkout was handed an explicit token"
+    assert "ssh-key" not in options, "the checkout was handed a deploy key"
+    assert "repository" not in options, "the checkout reaches outside this repository"
+    assert set(options) == {"fetch-depth"}, f"unexpected checkout options: {sorted(options)}"
+
+
+# --- the browser layer must actually run on the clean runner -----------------
+#
+# The first CI run of the UI suite reported success while skipping 29 of its 55
+# tests, because no browser was found and the suite treated that as a reason to
+# skip rather than a reason to fail. A green tick that means "half the suite did
+# not run" is worse than a red one. These assertions close that hole from both
+# ends: the workflow must hand the suite a browser, and the suite must refuse to
+# skip when it is running in CI.
+
+UI_TEST_RELPATH = "tests/goh-dip-tong-ui.test.js"
+
+#: A pattern no test name contains, so node loads the file — running the
+#: module-level browser resolution under test — without spending six minutes
+#: driving a browser.
+NO_TESTS = "zzz-no-such-test-name-zzz"
+
+
+@pytest.fixture(scope="module")
+def ui_test_source(repo_root):
+    return (repo_root / UI_TEST_RELPATH).read_text(encoding="utf-8")
+
+
+def _run_ui_suite(repo_root, env_overrides):
+    """Load the UI suite with no test selected and return (exit code, output).
+
+    Only the module-level browser resolution runs, which is the behaviour under
+    test here. node --test runs the file in a child process and folds its
+    stderr into the TAP stream as `#` diagnostics, so the two streams are
+    merged rather than inspected separately."""
+    import os
+    import subprocess
+
+    env = dict(os.environ)
+    env.pop("CI", None)
+    env.pop("GDT_CHROMIUM_PATH", None)
+    env.update({k: v for k, v in env_overrides.items() if v is not None})
+    done = subprocess.run(
+        ["node", "--test", "--test-name-pattern", NO_TESTS, UI_TEST_RELPATH],
+        cwd=repo_root, env=env, capture_output=True, text=True, timeout=120,
+    )
+    return done.returncode, done.stdout + done.stderr
+
+
+def test_the_quality_workflow_exports_gdt_chromium_path(quality_text):
+    """The workflow, not the test file, decides which of the runner's browsers
+    is used, and publishes that decision through the environment."""
+    assert 'echo "GDT_CHROMIUM_PATH=$resolved" >> "$GITHUB_ENV"' in quality_text
+    locate = quality_text.index("Locate a browser for the Stage 3 UI tests")
+    suite = quality_text.index(STAGE_3_UI_COMMAND)
+    assert locate < suite, "the browser is located after the suite that needs it"
+
+
+def test_the_workflow_looks_for_every_supported_browser_command(quality_text):
+    for candidate in ("chromium", "chromium-browser", "google-chrome", "google-chrome-stable"):
+        assert candidate in quality_text, f"the workflow never looks for {candidate}"
+
+
+def test_the_workflow_fails_rather_than_continuing_without_a_browser(quality_text):
+    """`exit 1` under an ::error:: annotation, not a warning and not a skip."""
+    locate = quality_text.index("Locate a browser for the Stage 3 UI tests")
+    step = quality_text[locate:quality_text.index(STAGE_3_UI_COMMAND)]
+    assert "::error::" in step, "a missing browser is not reported as an error"
+    assert "exit 1" in step, "the workflow continues when no browser is found"
+    assert "::warning::" not in step
+    assert "continue-on-error" not in step
+
+
+def test_no_browser_or_package_installation_was_introduced(quality_text):
+    """Requirement 4 and 5: use what the runner already has. Downloading a
+    browser would make this workflow depend on a third-party endpoint being up
+    in order to report on data that is already committed."""
+    forbidden = (
+        "npm install", "npm ci", "npx ", "yarn", "pnpm", "bun install", "corepack",
+        "playwright", "puppeteer", "browser-actions/setup-chrome",
+        "apt-get install", "apt install", "snap install", "wget ", "curl ",
+        "setup-node", "actions/setup-node",
+    )
+    for command in forbidden:
+        assert command.lower() not in quality_text.lower(), \
+            f"the workflow installs or downloads something: {command!r}"
+
+
+def test_the_ui_suite_prefers_gdt_chromium_path_over_anything_it_could_detect(repo_root):
+    """Behavioural, not a source grep: point the variable at a real file that is
+    not a browser and check the suite reports that file. If detection won, it
+    would report this container's Playwright build instead."""
+    import sys
+
+    code, output = _run_ui_suite(repo_root, {"GDT_CHROMIUM_PATH": sys.executable})
+    assert code == 0, output
+    assert f"Stage 3 browser: {sys.executable}" in output, output
+
+
+def test_the_ui_suite_fails_when_gdt_chromium_path_cannot_be_resolved(repo_root):
+    """A variable pointing at nothing is a broken CI configuration, not a
+    licence to fall back to detection and quietly test something else."""
+    code, output = _run_ui_suite(
+        repo_root, {"CI": "true", "GDT_CHROMIUM_PATH": "/nonexistent/chrome"})
+    assert code != 0, "an unresolvable GDT_CHROMIUM_PATH was tolerated"
+    assert "/nonexistent/chrome" in output
+    assert "does not exist" in output
+
+
+def test_the_browser_layer_cannot_silently_skip_when_ci_is_true(repo_root, ui_test_source):
+    """Two halves of the same guarantee. The skip flag is gated on CI in the
+    source, and the one unresolvable case that can be constructed on a machine
+    that does have a browser exits non-zero under CI=true instead of skipping."""
+    assert "const BROWSER_ENFORCED = Boolean(CHROME) || IN_CI;" in ui_test_source
+    assert "skip: !BROWSER_ENFORCED" in ui_test_source
+    assert 'IN_CI = process.env.CI === "true"' in ui_test_source \
+        or "IN_CI = process.env.CI === 'true'" in ui_test_source
+
+    code, output = _run_ui_suite(
+        repo_root, {"CI": "true", "GDT_CHROMIUM_PATH": "/nonexistent/chrome"})
+    assert code != 0
+    assert "# skipped 0" in output, "the suite skipped something instead of failing"
+
+
+def test_the_ui_suite_may_still_skip_locally_when_no_browser_exists(ui_test_source):
+    """Requirement 8. A contributor with no Chrome installed still gets the
+    static and pure-logic layers rather than a wall of red."""
+    assert "because CI is not set" in ui_test_source
+    assert "console.error(`WARNING: no Chromium or Chrome found" in ui_test_source
+
+
+def test_the_ui_suite_reports_which_browser_it_used(repo_root):
+    """So the CI log records the binary instead of leaving it to be inferred."""
+    code, output = _run_ui_suite(repo_root, {})
+    assert code == 0, output
+    assert re.search(r"Stage 3 browser: \S+ \| layer: (enforced|skipped)", output), output
+
+
+def test_the_ui_suite_downloads_no_browser_and_imports_no_package(ui_test_source):
+    """Checked against what the file *does*, not what its prose mentions: every
+    require() is a Node builtin, and nothing reaches the network."""
+    required = set(re.findall(r"require\(['\"]([^'\"]+)['\"]\)", ui_test_source))
+    external = {name for name in required
+                if not name.startswith("node:") and not name.startswith(".")}
+    assert external == set(), f"the UI suite imports non-builtin modules: {sorted(external)}"
+
+    for forbidden in ("https.get", "http.get", "XMLHttpRequest",
+                      "npm install", "npx ", "curl ", "wget "):
+        assert forbidden not in ui_test_source, f"the UI suite uses {forbidden!r}"
+
+    # child_process is a builtin, and it is used to launch a browser that is
+    # already installed. Every launch is accounted for: CHROME is the resolved
+    # binary, `run`/`git` is the protected-file diff, and `sh` exists only to
+    # give `command -v` the shell builtin it needs. Nothing fetches anything.
+    # `run` is the file's local alias for execFileSync, so both spellings count.
+    launched = {name for _, name in
+                re.findall(r"\b(?:execFileSync|run)\(\s*(['\"]?)([\w.:/-]+)\1",
+                           ui_test_source)}
+    assert launched == {"CHROME", "sh", "git"}, \
+        f"unexpected subprocess targets: {sorted(launched)}"
+
+
+def test_the_quality_workflow_installs_no_javascript_packages(quality_text):
+    """Node's built-in test runner needs nothing installed. A package manager
+    appearing here would add a network dependency and a lockfile-shaped supply
+    chain to a workflow whose whole job is to audit what is already committed."""
+    for command in ("npm install", "npm ci", "npm i ", "yarn", "pnpm",
+                    "npx ", "bun install", "corepack"):
+        assert command not in quality_text, f"the workflow runs {command!r}"
+    assert "package.json" not in quality_text
+
+
+def test_the_repository_still_has_no_package_manifest(repo_root):
+    for manifest in ("package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml"):
+        assert not (repo_root / manifest).exists(), f"{manifest} was introduced"
+
+
+def test_the_quality_workflow_remains_read_only(workflows, quality_text):
+    document = workflows["gdt-data-quality"]
+    assert document["permissions"] == {"contents": "read"}
+    for job in document["jobs"].values():
+        assert "permissions" not in job or job["permissions"] == {"contents": "read"}
+    assert "GITHUB_TOKEN" not in quality_text
+
+
+def test_the_quality_workflow_cannot_commit_push_merge_or_open_a_pr(quality_text):
+    forbidden = ("git commit", "git push", "git merge", "git tag",
+                 "gh pr create", "gh pr merge", "peter-evans/create-pull-request",
+                 "stefanzweifel/git-auto-commit-action", "actions/github-script")
+    for command in forbidden:
+        assert command not in quality_text, f"the read-only workflow runs {command!r}"
+
+
+def test_wiring_the_ui_suite_changed_no_trigger_or_schedule(workflows):
+    """The step was added inside the existing job. Nothing about when this
+    workflow runs may have moved."""
+    triggers = workflows["gdt-data-quality"]["on"]
+    assert set(triggers) == {"workflow_dispatch", "pull_request", "schedule"}
+    assert triggers["schedule"] == [{"cron": "5 6 * * *"}]
+    assert triggers["workflow_dispatch"] is None
+    assert triggers["pull_request"]["paths"] == [
+        "pipeline/**", "engine/**", "config/goh-dip-tong/**",
+        "data/goh-dip-tong/**", "schemas/goh-dip-tong/**", ".github/workflows/gdt-*.yml",
+    ]
+
+
+def test_no_new_workflow_file_was_introduced(repo_root):
+    present = sorted(p.stem for p in (repo_root / ".github/workflows").glob("*.yml"))
+    assert present == sorted(WORKFLOW_NAMES)
+
+
 def test_acceptance_script_exists_and_is_executable(repo_root):
     import os
 

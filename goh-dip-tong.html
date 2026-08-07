@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOH DIP TONG — After Hours</title>
+<meta name="description" content="Pick a company. The machine reads what the engine published — or tells you plainly that it published nothing. No target prices. No advice.">
+<meta name="theme-color" content="#0d0c10">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="After Hours">
+<meta property="og:title" content="GOH DIP TONG — the market is loud. numbers are louder">
+<meta property="og:description" content="Pick a company. The machine reads what the engine published — or tells you plainly that it published nothing.">
+<meta name="twitter:card" content="summary">
+<link rel="stylesheet" href="assets/goh-dip-tong.css">
+</head>
+<body>
+
+<div class="cabinet">
+  <div class="screen">
+    <div class="view">
+
+      <div class="topbar">
+        <a href="index.html" class="back-link" id="gdt-back">BACK TO ARCADE</a>
+      </div>
+
+      <header class="header">
+        <div class="uncle-wrap">
+          <!-- LARGER CHARACTER TREATMENT.
+               Byte-for-byte the same 18 rects as the 16x16 menu icon, drawn at
+               56px with the identity glow. Scaled, never redrawn: a header
+               figure that drifted from the menu icon would be a second
+               character wearing the same name. -->
+          <svg class="uncle-head" viewBox="0 0 16 16" width="56" height="56"
+               shape-rendering="crispEdges" role="img" aria-labelledby="gdt-uncle-title">
+            <title id="gdt-uncle-title">Goh Dip Tong, the businessman uncle</title>
+            <rect x="4" y="2" width="8" height="1" fill="#3a3440"/>
+            <rect x="3" y="3" width="1" height="4" fill="#3a3440"/>
+            <rect x="12" y="3" width="1" height="4" fill="#3a3440"/>
+            <rect x="4" y="3" width="8" height="6" fill="#e8b98a"/>
+            <rect x="4" y="3" width="8" height="1" fill="#3a3440"/>
+            <rect x="9" y="3" width="2" height="1" fill="#4a4550"/>
+            <rect x="4" y="6" width="3" height="1" fill="#3a3440"/>
+            <rect x="9" y="6" width="3" height="1" fill="#3a3440"/>
+            <rect x="4" y="7" width="3" height="2" fill="#f2ede3"/>
+            <rect x="9" y="7" width="3" height="2" fill="#f2ede3"/>
+            <rect x="7" y="7" width="2" height="1" fill="#3a3440"/>
+            <rect x="5" y="8" width="1" height="1" fill="#141414"/>
+            <rect x="10" y="8" width="1" height="1" fill="#141414"/>
+            <rect x="3" y="9" width="10" height="1" fill="#f2ede3"/>
+            <rect x="3" y="10" width="10" height="3" fill="#2f3550"/>
+            <rect x="6" y="10" width="1" height="1" fill="#f2ede3"/>
+            <rect x="9" y="10" width="1" height="1" fill="#f2ede3"/>
+            <rect x="7" y="10" width="2" height="3" fill="#5f9a8a"/>
+          </svg>
+        </div>
+        <p class="eyebrow">BUSINESSMAN UNCLE</p>
+        <h1 class="logotype">GOH DIP TONG</h1>
+        <p class="tagline">the market is loud. numbers are louder.</p>
+      </header>
+
+      <!-- The fixture banner lives outside the page states so it stays on
+           screen whichever state is showing. It is populated only when a
+           snapshot declares a non-production mode. -->
+      <div class="fixture-banner" id="gdt-fixture-banner" role="alert" aria-live="polite"></div>
+
+      <p class="sr-only" id="gdt-page-announce" role="status" aria-live="polite"></p>
+
+      <!-- ================= PAGE STATE 1 — TARGET SELECTION ================= -->
+      <div data-page="select" class="on">
+
+        <p class="select-label">&mdash; SELECT YOUR TARGET &mdash;<span class="cur" aria-hidden="true">_</span></p>
+
+        <div id="gdt-picker-host">
+          <section class="panel" aria-labelledby="gdt-picker-title">
+            <h2 class="panel-title pixel" id="gdt-picker-title">IDX30 COMPANIES</h2>
+
+            <label class="field" for="gdt-search">
+              <span class="field-label">SEARCH TICKER OR COMPANY</span>
+              <input class="search-input" id="gdt-search" type="search"
+                     autocomplete="off" autocorrect="off" spellcheck="false"
+                     placeholder="ticker or company name"
+                     aria-describedby="gdt-search-help gdt-results-count">
+            </label>
+            <p class="sr-only" id="gdt-search-help">
+              Type to filter. Press the down arrow to move into the results list.
+            </p>
+            <p class="sr-only" id="gdt-results-count" role="status" aria-live="polite"></p>
+
+            <p class="picker-meta" id="gdt-picker-meta"></p>
+
+            <ul class="results" id="gdt-results" role="listbox" aria-label="IDX30 companies"></ul>
+          </section>
+        </div>
+
+        <button class="cta pixel" id="gdt-run" type="button" disabled>
+          <svg class="ic" viewBox="0 0 16 16" width="16" height="16"
+               shape-rendering="crispEdges" aria-hidden="true" focusable="false">
+            <rect x="4" y="2" width="8" height="1" fill="#3a3440"/>
+            <rect x="3" y="3" width="1" height="4" fill="#3a3440"/>
+            <rect x="12" y="3" width="1" height="4" fill="#3a3440"/>
+            <rect x="4" y="3" width="8" height="6" fill="#e8b98a"/>
+            <rect x="4" y="3" width="8" height="1" fill="#3a3440"/>
+            <rect x="9" y="3" width="2" height="1" fill="#4a4550"/>
+            <rect x="4" y="6" width="3" height="1" fill="#3a3440"/>
+            <rect x="9" y="6" width="3" height="1" fill="#3a3440"/>
+            <rect x="4" y="7" width="3" height="2" fill="#f2ede3"/>
+            <rect x="9" y="7" width="3" height="2" fill="#f2ede3"/>
+            <rect x="7" y="7" width="2" height="1" fill="#3a3440"/>
+            <rect x="5" y="8" width="1" height="1" fill="#141414"/>
+            <rect x="10" y="8" width="1" height="1" fill="#141414"/>
+            <rect x="3" y="9" width="10" height="1" fill="#f2ede3"/>
+            <rect x="3" y="10" width="10" height="3" fill="#2f3550"/>
+            <rect x="6" y="10" width="1" height="1" fill="#f2ede3"/>
+            <rect x="9" y="10" width="1" height="1" fill="#f2ede3"/>
+            <rect x="7" y="10" width="2" height="3" fill="#5f9a8a"/>
+          </svg>
+          <span id="gdt-run-label">RUN THE NUMBERS</span>
+        </button>
+
+        <!-- Development demonstration. Real issuers have no published snapshot
+             yet, so the six engine UI-state fixtures are the only way to see
+             every rendering path. Fixture tickers are deliberately absent from
+             the IDX30 picker above. -->
+        <section class="panel" aria-labelledby="gdt-fixture-title" style="margin-top:14px">
+          <h2 class="panel-title pixel" id="gdt-fixture-title">DEVELOPMENT — UI STATE FIXTURES</h2>
+          <p class="picker-meta">
+            <span class="tag warn">FIXTURE TEST ONLY</span>
+            Synthetic engine output. Not a company, not a market, not analysis.
+            These exist so every rendering path can be seen before real research exists.
+          </p>
+          <label class="field" for="gdt-fixture-select">
+            <span class="field-label">RENDER A UI STATE</span>
+            <select class="search-input" id="gdt-fixture-select"></select>
+          </label>
+          <button class="cta pixel" id="gdt-fixture-run" type="button"
+                  style="background:transparent;color:var(--accent);border:2px solid var(--accent);box-shadow:none">
+            <span>LOAD FIXTURE</span>
+          </button>
+        </section>
+
+        <section class="disclosure" aria-labelledby="gdt-disclosure-title">
+          <h2 class="pixel" id="gdt-disclosure-title">DISCLOSURE</h2>
+          <p>This page displays research the Goh Dip Tong engine published. It performs no
+             valuation of its own: every figure shown is read from a snapshot and carries the
+             identity of the record it came from.</p>
+          <p>No target prices. No buy or sell recommendation. Not investment advice.</p>
+          <p>Where a value is absent it is shown as NOT PUBLISHED. It is never shown as zero.</p>
+        </section>
+      </div>
+
+      <!-- ================= PAGE STATE 2 — LOADING ================= -->
+      <div data-page="loading">
+        <p class="select-label">&mdash; READING THE FILE &mdash;<span class="cur" aria-hidden="true">_</span></p>
+        <section class="panel" aria-labelledby="gdt-loading-title">
+          <h2 class="panel-title pixel" id="gdt-loading-title">PROCESSING</h2>
+          <ul class="loading-list" id="gdt-loading-steps"></ul>
+          <p class="loading-note">
+            Nothing is being calculated here. The engine already did the arithmetic and wrote it
+            down; this page is reading it, checking it against the published schema, and laying
+            it out.
+          </p>
+        </section>
+      </div>
+
+      <!-- ================= PAGE STATE 3 — RESEARCH RESULT ================= -->
+      <div data-page="result">
+        <div class="topbar">
+          <button class="back-link" id="gdt-back-to-select" type="button">CHANGE TARGET</button>
+        </div>
+        <div id="gdt-result-host"></div>
+      </div>
+
+      <div class="hud">
+        <span>GOH DIP TONG</span>
+        <span>STAGE 3 UI</span>
+        <span>WILLIAMCANDRA.COM</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="assets/goh-dip-tong.js"></script>
+<script>
+(function () {
+  'use strict';
+  var app = window.GohDipTong.create({});
+  app.mount();
+  window.GDT_APP = app;   /* test hook; carries no state of its own */
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges" role="img" aria-labelledby="gdt-icon-title">
+  <title id="gdt-icon-title">Goh Dip Tong, the businessman uncle</title>
+  <!-- CANONICAL GOH DIP TONG ICON — 18 rects, 16x16 grid.
+       Same face geometry as Goh Pok Tong (face 8x6 at 4,3; brows y=6; eyes y=7).
+       Different job: spectacles, white shirt, navy suit, terminal-green tie.
+       Documented byte-for-byte in docs/goh-dip-tong/HANDOFF_STAGE_3.md.
+       Do not redraw. Do not fork. -->
+  <rect x="4" y="2" width="8" height="1" fill="#3a3440"/>
+  <rect x="3" y="3" width="1" height="4" fill="#3a3440"/>
+  <rect x="12" y="3" width="1" height="4" fill="#3a3440"/>
+  <rect x="4" y="3" width="8" height="6" fill="#e8b98a"/>
+  <rect x="4" y="3" width="8" height="1" fill="#3a3440"/>
+  <rect x="9" y="3" width="2" height="1" fill="#4a4550"/>
+  <rect x="4" y="6" width="3" height="1" fill="#3a3440"/>
+  <rect x="9" y="6" width="3" height="1" fill="#3a3440"/>
+  <rect x="4" y="7" width="3" height="2" fill="#f2ede3"/>
+  <rect x="9" y="7" width="3" height="2" fill="#f2ede3"/>
+  <rect x="7" y="7" width="2" height="1" fill="#3a3440"/>
+  <rect x="5" y="8" width="1" height="1" fill="#141414"/>
+  <rect x="10" y="8" width="1" height="1" fill="#141414"/>
+  <rect x="3" y="9" width="10" height="1" fill="#f2ede3"/>
+  <rect x="3" y="10" width="10" height="3" fill="#2f3550"/>
+  <rect x="6" y="10" width="1" height="1" fill="#f2ede3"/>
+  <rect x="9" y="10" width="1" height="1" fill="#f2ede3"/>
+  <rect x="7" y="10" width="2" height="3" fill="#5f9a8a"/>
+</svg>
