@@ -371,6 +371,34 @@ def test_the_stage_3_ui_step_runs_before_the_data_quality_audit(quality_text):
     assert stage_3 < audit, "the Stage 3 UI step runs after the data-quality audit"
 
 
+def test_the_quality_checkout_fetches_enough_history_for_the_ui_suite(workflows):
+    """The UI suite proves the protected files are untouched by diffing against
+    origin/main. A default shallow checkout fetches only the commit under test
+    and creates no origin/main ref, so that check cannot resolve a base and
+    fails for a reason that has nothing to do with the UI. Depth 0 brings the
+    remote branches with it."""
+    steps = workflows["gdt-data-quality"]["jobs"]["quality"]["steps"]
+    checkout = next(s for s in steps if str(s.get("uses", "")).startswith("actions/checkout"))
+    assert checkout.get("with", {}).get("fetch-depth") == 0, (
+        "the quality checkout is shallow; the UI suite's protected-file diff "
+        "has no origin/main to compare against"
+    )
+
+
+def test_a_deeper_checkout_did_not_grant_the_quality_job_any_write_access(workflows):
+    """Fetching more history is a read. It must not have come with anything
+    else: no explicit token and no deploy key handed to the checkout, and no
+    repository the job was not already reading. What the checkout can do is
+    still bounded by the job's `contents: read` permission, asserted above."""
+    steps = workflows["gdt-data-quality"]["jobs"]["quality"]["steps"]
+    checkout = next(s for s in steps if str(s.get("uses", "")).startswith("actions/checkout"))
+    options = checkout.get("with", {})
+    assert "token" not in options, "the checkout was handed an explicit token"
+    assert "ssh-key" not in options, "the checkout was handed a deploy key"
+    assert "repository" not in options, "the checkout reaches outside this repository"
+    assert set(options) == {"fetch-depth"}, f"unexpected checkout options: {sorted(options)}"
+
+
 def test_the_quality_workflow_installs_no_javascript_packages(quality_text):
     """Node's built-in test runner needs nothing installed. A package manager
     appearing here would add a network dependency and a lockfile-shaped supply

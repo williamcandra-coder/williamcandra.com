@@ -51,6 +51,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The Stage 3 UI suite proves the protected files (index.html,
+          # goh-pok-tong.html, _config.yml, CNAME) are untouched by diffing
+          # the working tree against origin/main. The default shallow checkout
+          # fetches only the tested commit and creates no origin/main ref, so
+          # that diff has no base to resolve. Fetching the full history brings
+          # the remote branches with it. This is a checkout depth only — the
+          # job still has `contents: read` and still cannot write.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
