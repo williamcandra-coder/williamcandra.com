@@ -326,6 +326,100 @@ def test_the_stage_2_acceptance_script_is_repo_relative_and_sandboxed(repo_root)
     assert "REPO_DATA_BEFORE" in text and "REPO_DATA_AFTER" in text
 
 
+# --- Stage 3: the UI suite runs in the same gate ----------------------------
+#
+# The UI is the first thing in this repository a visitor sees, and until now it
+# was the only stage whose tests nobody ran automatically. These assertions pin
+# the step in place — that it exists, that it sits between the Stage 2
+# acceptance script and the audit, and that wiring it in did not quietly turn a
+# read-only auditor into something that installs packages or writes to the
+# repository.
+
+STAGE_3_UI_COMMAND = "node --test tests/goh-dip-tong-ui.test.js"
+
+
+@pytest.fixture(scope="module")
+def quality_text(repo_root):
+    return (repo_root / ".github/workflows/gdt-data-quality.yml").read_text(encoding="utf-8")
+
+
+def test_the_stage_3_ui_test_suite_exists(repo_root):
+    path = repo_root / "tests/goh-dip-tong-ui.test.js"
+    assert path.exists(), "tests/goh-dip-tong-ui.test.js is missing"
+    assert path.stat().st_size > 0
+
+
+def test_data_quality_runs_the_stage_3_ui_suite(quality_text):
+    """Sixth gate. The UI tests live outside pipeline/ and engine/, so neither
+    pytest path collects them — without this step a UI regression would never
+    fail CI."""
+    assert STAGE_3_UI_COMMAND in quality_text
+    assert "Stage 3 UI test suite" in quality_text
+
+
+def test_the_stage_3_ui_step_runs_after_stage_2_acceptance(quality_text):
+    """Order is the contract: the cheap data gates run first, so a broken
+    engine fails before anything spends time in a browser."""
+    stage_2 = quality_text.index("./engine/goh_dip_tong/tests/acceptance_stage2.sh")
+    stage_3 = quality_text.index(STAGE_3_UI_COMMAND)
+    assert stage_2 < stage_3, "the Stage 3 UI step runs before Stage 2 acceptance"
+
+
+def test_the_stage_3_ui_step_runs_before_the_data_quality_audit(quality_text):
+    stage_3 = quality_text.index(STAGE_3_UI_COMMAND)
+    audit = quality_text.index("cli quality --verbose")
+    assert stage_3 < audit, "the Stage 3 UI step runs after the data-quality audit"
+
+
+def test_the_quality_workflow_installs_no_javascript_packages(quality_text):
+    """Node's built-in test runner needs nothing installed. A package manager
+    appearing here would add a network dependency and a lockfile-shaped supply
+    chain to a workflow whose whole job is to audit what is already committed."""
+    for command in ("npm install", "npm ci", "npm i ", "yarn", "pnpm",
+                    "npx ", "bun install", "corepack"):
+        assert command not in quality_text, f"the workflow runs {command!r}"
+    assert "package.json" not in quality_text
+
+
+def test_the_repository_still_has_no_package_manifest(repo_root):
+    for manifest in ("package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml"):
+        assert not (repo_root / manifest).exists(), f"{manifest} was introduced"
+
+
+def test_the_quality_workflow_remains_read_only(workflows, quality_text):
+    document = workflows["gdt-data-quality"]
+    assert document["permissions"] == {"contents": "read"}
+    for job in document["jobs"].values():
+        assert "permissions" not in job or job["permissions"] == {"contents": "read"}
+    assert "GITHUB_TOKEN" not in quality_text
+
+
+def test_the_quality_workflow_cannot_commit_push_merge_or_open_a_pr(quality_text):
+    forbidden = ("git commit", "git push", "git merge", "git tag",
+                 "gh pr create", "gh pr merge", "peter-evans/create-pull-request",
+                 "stefanzweifel/git-auto-commit-action", "actions/github-script")
+    for command in forbidden:
+        assert command not in quality_text, f"the read-only workflow runs {command!r}"
+
+
+def test_wiring_the_ui_suite_changed_no_trigger_or_schedule(workflows):
+    """The step was added inside the existing job. Nothing about when this
+    workflow runs may have moved."""
+    triggers = workflows["gdt-data-quality"]["on"]
+    assert set(triggers) == {"workflow_dispatch", "pull_request", "schedule"}
+    assert triggers["schedule"] == [{"cron": "5 6 * * *"}]
+    assert triggers["workflow_dispatch"] is None
+    assert triggers["pull_request"]["paths"] == [
+        "pipeline/**", "engine/**", "config/goh-dip-tong/**",
+        "data/goh-dip-tong/**", "schemas/goh-dip-tong/**", ".github/workflows/gdt-*.yml",
+    ]
+
+
+def test_no_new_workflow_file_was_introduced(repo_root):
+    present = sorted(p.stem for p in (repo_root / ".github/workflows").glob("*.yml"))
+    assert present == sorted(WORKFLOW_NAMES)
+
+
 def test_acceptance_script_exists_and_is_executable(repo_root):
     import os
 

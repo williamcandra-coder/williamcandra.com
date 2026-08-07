@@ -21,6 +21,7 @@
 #   - the Stage 1 acceptance script (all 17 requirements)
 #   - the Stage 2 engine unit-test suite
 #   - the Stage 2 acceptance script
+#   - the Stage 3 UI test suite (Node's built-in runner; no package manager)
 name: gdt-data-quality
 
 on:
@@ -80,6 +81,9 @@ jobs:
         # Same isolation contract as Stage 1's: sandboxed writes, a closing
         # self-check on the repository tree, non-zero exit on any failure.
         run: ./engine/goh_dip_tong/tests/acceptance_stage2.sh
+
+      - name: Stage 3 UI test suite
+        run: node --test tests/goh-dip-tong-ui.test.js
 
       - name: Data-quality audit
         run: python -m pipeline.goh_dip_tong.cli quality --verbose
