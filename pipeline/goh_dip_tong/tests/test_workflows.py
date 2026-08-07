@@ -399,6 +399,162 @@ def test_a_deeper_checkout_did_not_grant_the_quality_job_any_write_access(workfl
     assert set(options) == {"fetch-depth"}, f"unexpected checkout options: {sorted(options)}"
 
 
+# --- the browser layer must actually run on the clean runner -----------------
+#
+# The first CI run of the UI suite reported success while skipping 29 of its 55
+# tests, because no browser was found and the suite treated that as a reason to
+# skip rather than a reason to fail. A green tick that means "half the suite did
+# not run" is worse than a red one. These assertions close that hole from both
+# ends: the workflow must hand the suite a browser, and the suite must refuse to
+# skip when it is running in CI.
+
+UI_TEST_RELPATH = "tests/goh-dip-tong-ui.test.js"
+
+#: A pattern no test name contains, so node loads the file — running the
+#: module-level browser resolution under test — without spending six minutes
+#: driving a browser.
+NO_TESTS = "zzz-no-such-test-name-zzz"
+
+
+@pytest.fixture(scope="module")
+def ui_test_source(repo_root):
+    return (repo_root / UI_TEST_RELPATH).read_text(encoding="utf-8")
+
+
+def _run_ui_suite(repo_root, env_overrides):
+    """Load the UI suite with no test selected and return (exit code, output).
+
+    Only the module-level browser resolution runs, which is the behaviour under
+    test here. node --test runs the file in a child process and folds its
+    stderr into the TAP stream as `#` diagnostics, so the two streams are
+    merged rather than inspected separately."""
+    import os
+    import subprocess
+
+    env = dict(os.environ)
+    env.pop("CI", None)
+    env.pop("GDT_CHROMIUM_PATH", None)
+    env.update({k: v for k, v in env_overrides.items() if v is not None})
+    done = subprocess.run(
+        ["node", "--test", "--test-name-pattern", NO_TESTS, UI_TEST_RELPATH],
+        cwd=repo_root, env=env, capture_output=True, text=True, timeout=120,
+    )
+    return done.returncode, done.stdout + done.stderr
+
+
+def test_the_quality_workflow_exports_gdt_chromium_path(quality_text):
+    """The workflow, not the test file, decides which of the runner's browsers
+    is used, and publishes that decision through the environment."""
+    assert 'echo "GDT_CHROMIUM_PATH=$resolved" >> "$GITHUB_ENV"' in quality_text
+    locate = quality_text.index("Locate a browser for the Stage 3 UI tests")
+    suite = quality_text.index(STAGE_3_UI_COMMAND)
+    assert locate < suite, "the browser is located after the suite that needs it"
+
+
+def test_the_workflow_looks_for_every_supported_browser_command(quality_text):
+    for candidate in ("chromium", "chromium-browser", "google-chrome", "google-chrome-stable"):
+        assert candidate in quality_text, f"the workflow never looks for {candidate}"
+
+
+def test_the_workflow_fails_rather_than_continuing_without_a_browser(quality_text):
+    """`exit 1` under an ::error:: annotation, not a warning and not a skip."""
+    locate = quality_text.index("Locate a browser for the Stage 3 UI tests")
+    step = quality_text[locate:quality_text.index(STAGE_3_UI_COMMAND)]
+    assert "::error::" in step, "a missing browser is not reported as an error"
+    assert "exit 1" in step, "the workflow continues when no browser is found"
+    assert "::warning::" not in step
+    assert "continue-on-error" not in step
+
+
+def test_no_browser_or_package_installation_was_introduced(quality_text):
+    """Requirement 4 and 5: use what the runner already has. Downloading a
+    browser would make this workflow depend on a third-party endpoint being up
+    in order to report on data that is already committed."""
+    forbidden = (
+        "npm install", "npm ci", "npx ", "yarn", "pnpm", "bun install", "corepack",
+        "playwright", "puppeteer", "browser-actions/setup-chrome",
+        "apt-get install", "apt install", "snap install", "wget ", "curl ",
+        "setup-node", "actions/setup-node",
+    )
+    for command in forbidden:
+        assert command.lower() not in quality_text.lower(), \
+            f"the workflow installs or downloads something: {command!r}"
+
+
+def test_the_ui_suite_prefers_gdt_chromium_path_over_anything_it_could_detect(repo_root):
+    """Behavioural, not a source grep: point the variable at a real file that is
+    not a browser and check the suite reports that file. If detection won, it
+    would report this container's Playwright build instead."""
+    import sys
+
+    code, output = _run_ui_suite(repo_root, {"GDT_CHROMIUM_PATH": sys.executable})
+    assert code == 0, output
+    assert f"Stage 3 browser: {sys.executable}" in output, output
+
+
+def test_the_ui_suite_fails_when_gdt_chromium_path_cannot_be_resolved(repo_root):
+    """A variable pointing at nothing is a broken CI configuration, not a
+    licence to fall back to detection and quietly test something else."""
+    code, output = _run_ui_suite(
+        repo_root, {"CI": "true", "GDT_CHROMIUM_PATH": "/nonexistent/chrome"})
+    assert code != 0, "an unresolvable GDT_CHROMIUM_PATH was tolerated"
+    assert "/nonexistent/chrome" in output
+    assert "does not exist" in output
+
+
+def test_the_browser_layer_cannot_silently_skip_when_ci_is_true(repo_root, ui_test_source):
+    """Two halves of the same guarantee. The skip flag is gated on CI in the
+    source, and the one unresolvable case that can be constructed on a machine
+    that does have a browser exits non-zero under CI=true instead of skipping."""
+    assert "const BROWSER_ENFORCED = Boolean(CHROME) || IN_CI;" in ui_test_source
+    assert "skip: !BROWSER_ENFORCED" in ui_test_source
+    assert 'IN_CI = process.env.CI === "true"' in ui_test_source \
+        or "IN_CI = process.env.CI === 'true'" in ui_test_source
+
+    code, output = _run_ui_suite(
+        repo_root, {"CI": "true", "GDT_CHROMIUM_PATH": "/nonexistent/chrome"})
+    assert code != 0
+    assert "# skipped 0" in output, "the suite skipped something instead of failing"
+
+
+def test_the_ui_suite_may_still_skip_locally_when_no_browser_exists(ui_test_source):
+    """Requirement 8. A contributor with no Chrome installed still gets the
+    static and pure-logic layers rather than a wall of red."""
+    assert "because CI is not set" in ui_test_source
+    assert "console.error(`WARNING: no Chromium or Chrome found" in ui_test_source
+
+
+def test_the_ui_suite_reports_which_browser_it_used(repo_root):
+    """So the CI log records the binary instead of leaving it to be inferred."""
+    code, output = _run_ui_suite(repo_root, {})
+    assert code == 0, output
+    assert re.search(r"Stage 3 browser: \S+ \| layer: (enforced|skipped)", output), output
+
+
+def test_the_ui_suite_downloads_no_browser_and_imports_no_package(ui_test_source):
+    """Checked against what the file *does*, not what its prose mentions: every
+    require() is a Node builtin, and nothing reaches the network."""
+    required = set(re.findall(r"require\(['\"]([^'\"]+)['\"]\)", ui_test_source))
+    external = {name for name in required
+                if not name.startswith("node:") and not name.startswith(".")}
+    assert external == set(), f"the UI suite imports non-builtin modules: {sorted(external)}"
+
+    for forbidden in ("https.get", "http.get", "XMLHttpRequest",
+                      "npm install", "npx ", "curl ", "wget "):
+        assert forbidden not in ui_test_source, f"the UI suite uses {forbidden!r}"
+
+    # child_process is a builtin, and it is used to launch a browser that is
+    # already installed. Every launch is accounted for: CHROME is the resolved
+    # binary, `run`/`git` is the protected-file diff, and `sh` exists only to
+    # give `command -v` the shell builtin it needs. Nothing fetches anything.
+    # `run` is the file's local alias for execFileSync, so both spellings count.
+    launched = {name for _, name in
+                re.findall(r"\b(?:execFileSync|run)\(\s*(['\"]?)([\w.:/-]+)\1",
+                           ui_test_source)}
+    assert launched == {"CHROME", "sh", "git"}, \
+        f"unexpected subprocess targets: {sorted(launched)}"
+
+
 def test_the_quality_workflow_installs_no_javascript_packages(quality_text):
     """Node's built-in test runner needs nothing installed. A package manager
     appearing here would add a network dependency and a lockfile-shaped supply

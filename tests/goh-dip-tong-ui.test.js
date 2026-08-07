@@ -396,10 +396,84 @@ test('loading steps are named work, not a fake percentage', () => {
    3. REAL BROWSER CHECKS
    ========================================================================== */
 
-const CHROME = [
+/* --------------------------------------------------------------------------
+   Finding a browser.
+
+   Nothing here downloads anything. The clean GitHub runner already ships a
+   Chrome build and this development container ships Playwright's; both are
+   used where they are found. GDT_CHROMIUM_PATH wins over both so CI can pin
+   exactly what it detected, and so a mistake in that detection surfaces as a
+   loud failure instead of a browser the suite silently disagrees with.
+   -------------------------------------------------------------------------- */
+
+const CHROME_COMMANDS = ['chromium', 'chromium-browser', 'google-chrome', 'google-chrome-stable'];
+
+const CHROME_LOCATIONS = [
+  /* this container */
   '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell',
-  '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
-].find((p) => fs.existsSync(p));
+  '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  /* standard package locations, including the GitHub runner's */
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/google-chrome',
+  '/usr/bin/google-chrome-stable',
+  '/opt/google/chrome/chrome',
+  '/snap/bin/chromium'
+];
+
+function onPath(name) {
+  try {
+    /* `command -v` is a shell builtin, so it needs a shell. The names come
+       from the fixed list above and never from input. */
+    const found = execFileSync('sh', ['-c', `command -v ${name}`],
+                               { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    return found && fs.existsSync(found) ? found : null;
+  } catch {
+    return null;   /* not installed */
+  }
+}
+
+function resolveChrome() {
+  const pinned = process.env.GDT_CHROMIUM_PATH;
+  if (pinned) {
+    if (!fs.existsSync(pinned)) {
+      throw new Error(
+        `GDT_CHROMIUM_PATH points at ${pinned}, which does not exist. ` +
+        'Unset it to fall back to detection, or point it at a real Chrome or Chromium binary.');
+    }
+    return pinned;
+  }
+  return CHROME_LOCATIONS.find((p) => fs.existsSync(p))
+      || CHROME_COMMANDS.map(onPath).find(Boolean)
+      || null;
+}
+
+const IN_CI = process.env.CI === 'true';
+const CHROME = resolveChrome();
+
+/* The skip is conditional on CI, and that condition is the whole point. A
+   browser layer that quietly skips on the machine that gates merges is not a
+   browser layer — the first run of this suite on a clean runner skipped 29 of
+   55 tests and still reported success. Locally, where a contributor may
+   genuinely have no Chrome, skipping is the right call. */
+const BROWSER_ENFORCED = Boolean(CHROME) || IN_CI;
+
+if (!CHROME) {
+  const detail = 'looked at GDT_CHROMIUM_PATH, then ' + CHROME_LOCATIONS.join(', ') +
+                 ', then PATH for: ' + CHROME_COMMANDS.join(', ');
+  if (IN_CI) {
+    throw new Error(
+      `no Chromium or Chrome binary found, and CI=true means the browser tests ` +
+      `must not be skipped (${detail}).`);
+  }
+  console.error(`WARNING: no Chromium or Chrome found — browser layer skipped ` +
+                `because CI is not set (${detail})`);
+}
+
+/* One diagnostic line, so the CI log records which binary actually ran the
+   browser layer rather than leaving it to be inferred. */
+console.error(`Stage 3 browser: ${CHROME || 'none'} | layer: ` +
+              `${BROWSER_ENFORCED ? 'enforced' : 'skipped'} | CI=${IN_CI}`);
 
 /** Build a self-contained copy of the real page with fetch stubbed, load it in
  *  Chromium at a given width, run a scenario, and return the rendered DOM plus
@@ -487,23 +561,73 @@ window.addEventListener('load', function () {
     page = page.replace('</body>', probe + '\n</body>');
     fs.writeFileSync(path.join(dir, 'page.html'), page);
 
-    const args = ['--headless', '--no-sandbox', '--disable-gpu', '--hide-scrollbars',
-                  `--window-size=${width},${height}`, '--virtual-time-budget=4000',
-                  '--dump-dom', `file://${path.join(dir, 'page.html')}`];
+    /* The page is framed rather than loaded directly, because --window-size
+       cannot produce a 320px viewport in a full Chrome build: the browser
+       window has a 500px floor, so a 320px run silently measures 500px
+       instead. An iframe has no such floor — the framed document gets a real
+       320px viewport and its media queries evaluate against it — so the same
+       measurements hold on Playwright's headless_shell and on the runner's
+       google-chrome alike. The wrapper lifts the probe and the rendered markup
+       out of the frame, base64 so no HTML escaping can corrupt them. */
+    fs.writeFileSync(path.join(dir, 'harness.html'), `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>gdt harness</title>
+<style>html,body{margin:0;padding:0}
+#gdt-frame{width:${width}px;height:${height}px;border:0;display:block}</style></head>
+<body>
+<iframe id="gdt-frame" src="page.html"></iframe>
+<pre id="gdt-out"></pre>
+<script>
+(function () {
+  function encode(value) {
+    var bytes = new TextEncoder().encode(JSON.stringify(value));
+    var binary = '';
+    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+    return btoa(binary);
+  }
+  function emit(value) { document.getElementById('gdt-out').textContent = encode(value); }
+  var waited = 0;
+  function poll() {
+    var doc = document.getElementById('gdt-frame').contentDocument;
+    var probe = doc && doc.getElementById('gdt-probe');
+    var text = probe && probe.textContent;
+    if (text) {
+      return emit({ probe: text, html: doc.documentElement.outerHTML,
+                    frameWidth: doc.documentElement.clientWidth });
+    }
+    waited = waited + 25;
+    if (waited > 15000) {
+      return emit({ probe: '', html: doc ? doc.documentElement.outerHTML : '',
+                    error: 'the framed page never produced a probe' });
+    }
+    setTimeout(poll, 25);
+  }
+  window.addEventListener('load', function () { setTimeout(poll, 25); });
+})();
+</script>
+</body></html>`);
+
+    const args = ['--headless', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage',
+                  '--hide-scrollbars', '--allow-file-access-from-files',
+                  `--window-size=${Math.max(width, 800)},${Math.max(height, 900)}`,
+                  '--virtual-time-budget=30000',
+                  '--dump-dom', `file://${path.join(dir, 'harness.html')}`];
     if (reducedMotion) args.splice(1, 0, '--force-prefers-reduced-motion');
 
-    const dom = execFileSync(CHROME, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
-                                             stdio: ['ignore', 'pipe', 'ignore'] });
-    const m = dom.match(/<pre id="gdt-probe"[^>]*>([\s\S]*?)<\/pre>/);
-    const result = m && m[1].trim() ? JSON.parse(decodeEntities(m[1])) : { ok: false, error: 'probe never ran' };
-    return { dom, result };
+    const dumped = execFileSync(CHROME, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+                                                stdio: ['ignore', 'pipe', 'ignore'] });
+    const m = dumped.match(/<pre id="gdt-out"[^>]*>([\s\S]*?)<\/pre>/);
+    if (!m || !m[1].trim()) {
+      return { dom: dumped, result: { ok: false, error: 'the browser harness produced no output' } };
+    }
+    const lifted = JSON.parse(Buffer.from(m[1].trim(), 'base64').toString('utf8'));
+    const dom = lifted.html || '';
+    const result = lifted.probe
+      ? JSON.parse(lifted.probe)
+      : { ok: false, error: lifted.error || 'probe never ran' };
+    return { dom, result, frameWidth: lifted.frameWidth };
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
-}
-
-function decodeEntities(s) {
-  return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
 }
 
 const routesFor = (state) => ({
@@ -518,8 +642,7 @@ const loadFixture = (state) => `
   document.getElementById('gdt-fixture-run').click();
 `;
 
-const browser = { skip: !CHROME, concurrency: 1 };
-if (!CHROME) console.error('WARNING: Chromium not found — browser layer skipped');
+const browser = { skip: !BROWSER_ENFORCED, concurrency: 1 };
 
 for (const state of FIXTURE_STATES) {
   test(`8-13 — the ${state} fixture renders`, browser, () => {
