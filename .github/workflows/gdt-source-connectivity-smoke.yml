@@ -29,6 +29,34 @@
 # Outcomes: REACHABLE_UNVALIDATED · UNREACHABLE_FROM_GITHUB_ACTIONS ·
 #           AUTHENTICATION_REQUIRED · ACCESS_CONTROLLED ·
 #           CONTENT_TYPE_UNEXPECTED · NETWORK_ERROR · NOT_TESTED
+#
+# ---------------------------------------------------------------------------
+# CANDIDATE PROBE (recovery step 1)
+#
+# A second, independent step measures official URLs that are NOT in
+# sources.yml. This exists so a candidate source can be evaluated before anyone
+# declares a provider for it — the audit's finding was that every live provider
+# was written against a response nobody had ever seen, and this is how that
+# stops being true. Candidates come from a workflow input; sources.yml is
+# neither read for them nor written by them.
+#
+# The default candidates are BCA's two official Investor Relations pages.
+#
+# ONE PAGE IS SCANNED FOR LINKS, AND ONLY ONE.
+# The financial-report page's HTML is fetched into memory, scanned for anchors,
+# and dropped. Only a resolved URL, the anchor's visible label, the file
+# extension and response header metadata survive. The markup is never written
+# to the report, never printed, never uploaded. `fetch_html` is the only
+# function that reads a response body and its read is bounded.
+#
+# NO REPORT FILE IS EVER DOWNLOADED.
+# Discovered links are probed with HEAD only. A PDF, ZIP, XLS or XLSX is
+# measured by its headers and never fetched. Discovered links are also
+# untrusted input, so only HTTPS URLs on bca.co.id are probed at all;
+# everything else is counted and discarded.
+#
+# REACHABILITY IS NOT PERMISSION. A 200 here does not enable anything, does not
+# change a rights status, and does not make a provider runnable.
 name: gdt-source-connectivity-smoke
 
 # Manual only. There is deliberately no `schedule:` key — this workflow must
@@ -44,6 +72,28 @@ on:
         description: "Pause between providers; keep this conservative"
         type: string
         default: "2"
+      candidate_urls:
+        description: >-
+          Newline- or comma-separated official URLs to probe that are NOT in
+          sources.yml (blank = BCA Investor Relations + Financial Reports)
+        type: string
+        required: false
+        default: ""
+      link_page:
+        description: >-
+          The one page whose HTML is scanned in memory for official report
+          links (blank = BCA Financial Reports). Set to "none" to skip.
+        type: string
+        required: false
+        default: ""
+      max_redirects:
+        description: "Maximum redirect hops followed per candidate"
+        type: string
+        default: "5"
+      max_links:
+        description: "Maximum discovered report links to probe by HEAD"
+        type: string
+        default: "25"
 
 # Read-only. This workflow has no write access and no commit step, so it cannot
 # alter the repository even if something went wrong.
@@ -80,6 +130,470 @@ jobs:
             --timeout "${{ inputs.timeout_seconds || '15' }}" \
             --delay "${{ inputs.delay_seconds || '2' }}"
 
+      - name: Probe candidate official URLs not declared in sources.yml
+        env:
+          GDT_CANDIDATES: ${{ inputs.candidate_urls }}
+          GDT_LINK_PAGE: ${{ inputs.link_page }}
+          GDT_TIMEOUT: ${{ inputs.timeout_seconds || '15' }}
+          GDT_DELAY: ${{ inputs.delay_seconds || '2' }}
+          GDT_MAX_REDIRECTS: ${{ inputs.max_redirects || '5' }}
+          GDT_MAX_LINKS: ${{ inputs.max_links || '25' }}
+          GDT_OUTPUT: ${{ runner.temp }}/candidate-access-report.json
+        run: |
+          set -euo pipefail
+          cat > "${RUNNER_TEMP}/candidate_probe.py" <<'PY'
+          """Candidate source access measurement — metadata only.
+
+          Standard library only, so this step needs no dependency install and
+          cannot be affected by a package resolution changing under it.
+
+          Importable on purpose: everything below is definitions and the run
+          happens under `if __name__ == "__main__"`. The tests import this file
+          and exercise the extractor against a fixture page, which is the only
+          way to prove the HTML never escapes memory.
+          """
+          import html as html_mod
+          import json, os, re, ssl, sys, time
+          import urllib.error, urllib.parse, urllib.request
+
+          # Official BCA Investor Relations pages. Candidates, not providers:
+          # nothing here is declared in sources.yml and nothing here becomes a
+          # source by being reachable.
+          DEFAULT_CANDIDATES = [
+              "https://www.bca.co.id/en/Tentang-BCA/Hubungan-Investor",
+              "https://www.bca.co.id/en/tentang-bca/Hubungan-Investor/"
+              "laporan-presentasi/Laporan-Keuangan",
+          ]
+
+          # The ONE page whose markup is scanned. The landing page is probed
+          # but never read.
+          DEFAULT_LINK_PAGE = (
+              "https://www.bca.co.id/en/tentang-bca/Hubungan-Investor/"
+              "laporan-presentasi/Laporan-Keuangan"
+          )
+
+          UA = "goh-dip-tong-discovery/1.0 (+https://williamcandra.com)"
+          TIMEOUT = float(os.environ.get("GDT_TIMEOUT") or 15)
+          DELAY = float(os.environ.get("GDT_DELAY") or 2)
+          MAX_HOPS = int(os.environ.get("GDT_MAX_REDIRECTS") or 5)
+          MAX_LINKS = int(os.environ.get("GDT_MAX_LINKS") or 25)
+
+          # Bound the read so a huge or hostile response cannot exhaust memory.
+          MAX_HTML_BYTES = 5 * 1024 * 1024
+          LABEL_MAX = 200
+
+          # Report formats. Probed by HEAD, never fetched.
+          REPORT_EXTENSIONS = (
+              ".pdf", ".zip", ".xls", ".xlsx", ".xlsm", ".csv", ".xml", ".json",
+          )
+          # Discovered links are untrusted. Only official BCA hosts are probed.
+          ALLOWED_HOSTS = ("bca.co.id",)
+
+          ANCHOR_RE = re.compile(r"<a\b([^>]*)>(.*?)</a>", re.IGNORECASE | re.DOTALL)
+          HREF_RE = re.compile(
+              r"""\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""", re.IGNORECASE)
+          TAG_RE = re.compile(r"<[^>]+>")
+          # Stripping tags alone is not enough: it would leave the text inside a
+          # <script> or <style> behind, and script source is not a visible
+          # label. Comments go too. These are dropped element-and-all first.
+          NON_VISIBLE_RE = re.compile(
+              r"<!--.*?-->|<(script|style)\b[^>]*>.*?</\1\s*>",
+              re.IGNORECASE | re.DOTALL)
+          FILENAME_RE = re.compile(
+              r"""filename\*?\s*=\s*(?:UTF-8''|)(?:"([^"]*)"|'([^']*)'|([^;]+))""",
+              re.IGNORECASE)
+
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              """Disable automatic redirects so every hop is recorded."""
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+
+          OPENER = urllib.request.build_opener(
+              NoRedirect, urllib.request.HTTPSHandler(context=ssl.create_default_context())
+          )
+
+
+          def head(url, method="HEAD"):
+              """One request. Returns (status, headers) — never a body."""
+              req = urllib.request.Request(
+                  url, method=method, headers={"User-Agent": UA, "Accept": "*/*"})
+              try:
+                  resp = OPENER.open(req, timeout=TIMEOUT)
+                  try:
+                      # Deliberately no resp.read(): the payload is never touched.
+                      return resp.status, {k.lower(): v for k, v in resp.headers.items()}
+                  finally:
+                      resp.close()
+              except urllib.error.HTTPError as exc:
+                  headers = {k.lower(): v for k, v in (exc.headers or {}).items()}
+                  try:
+                      exc.close()
+                  except Exception:
+                      pass
+                  return exc.code, headers
+
+
+          def classify(status, headers):
+              ctype = (headers.get("content-type") or "").split(";")[0].strip().lower()
+              if status == 401:
+                  return "AUTHENTICATION_REQUIRED"
+              if status in (403, 429, 451):
+                  return "ACCESS_CONTROLLED"
+              if 500 <= status <= 599:
+                  return "NETWORK_ERROR"
+              if 200 <= status <= 299:
+                  if ctype in ("application/pdf", "application/zip",
+                               "application/x-zip-compressed", "application/json",
+                               "text/csv", "application/xml", "text/xml",
+                               "application/vnd.ms-excel", "application/octet-stream",
+                               "application/vnd.openxmlformats-officedocument."
+                               "spreadsheetml.sheet"):
+                      return "REPORT_FILE_CANDIDATE"
+                  if ctype in ("text/html", "application/xhtml+xml"):
+                      return "HTML_DOCUMENT_NOT_A_DATASET"
+                  return "CONTENT_TYPE_UNEXPECTED"
+              return "NETWORK_ERROR"
+
+
+          def extension_of(url):
+              path = urllib.parse.urlsplit(url).path.lower()
+              name = path.rsplit("/", 1)[-1]
+              return ("." + name.rsplit(".", 1)[-1]) if "." in name else None
+
+
+          def filename_for(url, headers):
+              """Filename from Content-Disposition, else from the URL path."""
+              disposition = headers.get("content-disposition") or ""
+              match = FILENAME_RE.search(disposition)
+              if match:
+                  name = (match.group(1) or match.group(2) or match.group(3) or "").strip()
+                  if name:
+                      return urllib.parse.unquote(name)
+              path = urllib.parse.urlsplit(url).path
+              return urllib.parse.unquote(path.rsplit("/", 1)[-1]) or None
+
+
+          def probe(url):
+              """Resolve one URL by HEAD, recording every hop. No body is read."""
+              record = {
+                  "requestedUrl": url,
+                  "checkedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                  "hops": [], "finalUrl": None, "httpStatus": None,
+                  "contentType": None, "contentLength": None,
+                  "lastModified": None, "etag": None,
+                  "contentDisposition": None, "filename": None, "extension": None,
+                  "headMethodUsed": None, "redirectChainTruncated": False,
+                  "outcome": "NOT_TESTED", "detail": None,
+                  # Restated per record so it cannot be read out of context.
+                  "enablesProvider": False, "bodyRetained": False, "downloaded": False,
+              }
+              current, method = url, "HEAD"
+              try:
+                  for hop in range(MAX_HOPS + 1):
+                      status, headers = head(current, method)
+                      if status in (405, 501) and method == "HEAD":
+                          # Server refuses HEAD. Retry once with GET; the body is
+                          # still never read.
+                          method = "GET"
+                          status, headers = head(current, method)
+                      record["hops"].append({
+                          "url": current, "method": method, "status": status,
+                          "location": headers.get("location"),
+                          "contentType": headers.get("content-type"),
+                      })
+                      if 300 <= status <= 399 and headers.get("location"):
+                          if hop == MAX_HOPS:
+                              record["redirectChainTruncated"] = True
+                              record["detail"] = f"more than {MAX_HOPS} redirects"
+                              break
+                          current = urllib.parse.urljoin(current, headers["location"])
+                          method = "HEAD"
+                          continue
+                      record["finalUrl"] = current
+                      record["httpStatus"] = status
+                      record["headMethodUsed"] = method
+                      record["contentType"] = headers.get("content-type")
+                      record["lastModified"] = headers.get("last-modified")
+                      record["etag"] = headers.get("etag")
+                      record["contentDisposition"] = headers.get("content-disposition")
+                      record["filename"] = filename_for(current, headers)
+                      record["extension"] = extension_of(current)
+                      length = headers.get("content-length")
+                      if length is not None:
+                          try:
+                              record["contentLength"] = int(length)
+                          except (TypeError, ValueError):
+                              record["contentLength"] = None
+                      record["outcome"] = classify(status, headers)
+                      record["detail"] = record["detail"] or f"responded {status}"
+                      break
+              except Exception as exc:  # noqa: BLE001 - every failure is a finding
+                  name = type(exc).__name__
+                  unreachable = ("URLError", "timeout", "TimeoutError", "socket.timeout",
+                                 "ConnectionResetError", "ConnectionRefusedError")
+                  record["outcome"] = ("UNREACHABLE_FROM_GITHUB_ACTIONS"
+                                       if name in unreachable else "NETWORK_ERROR")
+                  record["detail"] = name
+              return record
+
+
+          # --- link discovery ---------------------------------------------------
+          #
+          # The three functions below are the whole of the HTML handling.
+          # `fetch_html` is the only place in this file that reads a response
+          # body; `extract_report_links` consumes that text and returns nothing
+          # but resolved URLs, visible labels and extensions. Nothing else ever
+          # sees the markup.
+
+          def host_allowed(url):
+              host = (urllib.parse.urlsplit(url).hostname or "").lower()
+              return any(host == h or host.endswith("." + h) for h in ALLOWED_HOSTS)
+
+
+          def anchor_label(inner_html):
+              """Visible text of an anchor: tags stripped, entities resolved.
+
+              Non-visible elements are removed whole before tags are stripped —
+              otherwise a <script> inside the anchor would contribute its source
+              to the "visible label", which is both wrong and a way for page
+              content to reach the report through a field meant for a caption.
+              """
+              visible = NON_VISIBLE_RE.sub(" ", inner_html or "")
+              text = html_mod.unescape(TAG_RE.sub(" ", visible))
+              return re.sub(r"\s+", " ", text).strip()[:LABEL_MAX]
+
+
+          def extract_report_links(html_text, base_url):
+              """Resolved report URLs, labels and extensions — and nothing else.
+
+              The return value is the only thing that outlives the HTML. It holds
+              three short strings per link, so no markup can leak into the report
+              through this path even if the page is hostile.
+              """
+              found, seen = [], set()
+              skipped = {"nonReport": 0, "offHost": 0, "notHttps": 0, "unusable": 0}
+              for match in ANCHOR_RE.finditer(html_text or ""):
+                  attributes, inner = match.group(1), match.group(2)
+                  href_match = HREF_RE.search(attributes)
+                  if not href_match:
+                      skipped["unusable"] += 1
+                      continue
+                  href = (href_match.group(1) or href_match.group(2)
+                          or href_match.group(3) or "").strip()
+                  if not href or href.startswith(("#", "javascript:", "mailto:", "tel:")):
+                      skipped["unusable"] += 1
+                      continue
+                  absolute = urllib.parse.urljoin(base_url, html_mod.unescape(href))
+                  path = urllib.parse.urlsplit(absolute).path.lower()
+                  if not path.endswith(REPORT_EXTENSIONS):
+                      skipped["nonReport"] += 1
+                      continue
+                  if not absolute.lower().startswith("https://"):
+                      skipped["notHttps"] += 1
+                      continue
+                  if not host_allowed(absolute):
+                      skipped["offHost"] += 1
+                      continue
+                  if absolute in seen:
+                      continue
+                  seen.add(absolute)
+                  found.append({"url": absolute, "label": anchor_label(inner),
+                                "extension": extension_of(absolute)})
+              # Spreadsheets first: a structured file is worth more to a future
+              # parser than a PDF of the same statements.
+              found.sort(key=lambda link: (
+                  link["extension"] not in (".xlsx", ".xls", ".xlsm", ".csv"),
+                  link["url"]))
+              return found, skipped
+
+
+          def fetch_html(url):
+              """GET a page and return its text for in-memory scanning.
+
+              THE ONLY `.read()` IN THIS FILE. The text is handed to
+              `extract_report_links`, scanned, and dropped when this frame and
+              the caller's local go out of scope. It is never written to the
+              report, printed, or uploaded — only its byte count is reported.
+              """
+              req = urllib.request.Request(
+                  url, method="GET",
+                  headers={"User-Agent": UA, "Accept": "text/html,application/xhtml+xml"})
+              resp = OPENER.open(req, timeout=TIMEOUT)
+              try:
+                  status = resp.status
+                  headers = {k.lower(): v for k, v in resp.headers.items()}
+                  if not (200 <= status <= 299):
+                      return status, headers, ""
+                  if "html" not in (headers.get("content-type") or "").lower():
+                      return status, headers, ""
+                  raw = resp.read(MAX_HTML_BYTES)
+                  charset = resp.headers.get_content_charset() or "utf-8"
+                  return status, headers, raw.decode(charset, "replace")
+              finally:
+                  resp.close()
+
+
+          def discover_reports(page_url):
+              """Resolve the page, scan it for report links, probe each by HEAD."""
+              section = {
+                  "pageUrl": page_url, "pageFinalUrl": None, "pageStatus": None,
+                  "pageHops": [], "pageOutcome": "NOT_TESTED",
+                  "htmlFetchedForLinkExtraction": False,
+                  "htmlRetained": False, "htmlBytesScanned": 0,
+                  "linksFound": 0, "linksProbed": 0, "skipped": {},
+                  "links": [], "filesDownloaded": 0, "detail": None,
+              }
+              page = probe(page_url)
+              section["pageFinalUrl"] = page["finalUrl"]
+              section["pageStatus"] = page["httpStatus"]
+              section["pageHops"] = page["hops"]
+              section["pageOutcome"] = page["outcome"]
+              if page["outcome"] != "HTML_DOCUMENT_NOT_A_DATASET":
+                  section["detail"] = (
+                      f"page did not answer as HTML ({page['outcome']}); nothing to scan")
+                  return section
+
+              time.sleep(DELAY)
+              try:
+                  status, _headers, html_text = fetch_html(page["finalUrl"])
+              except Exception as exc:  # noqa: BLE001
+                  section["detail"] = f"link fetch failed: {type(exc).__name__}"
+                  return section
+
+              section["htmlFetchedForLinkExtraction"] = True
+              section["htmlBytesScanned"] = len(html_text)
+              if not html_text:
+                  section["detail"] = f"no HTML body to scan (status {status})"
+                  return section
+
+              links, skipped = extract_report_links(html_text, page["finalUrl"])
+              # The markup has served its only purpose. Drop the reference now so
+              # nothing downstream can reach it even by accident.
+              html_text = None
+              del html_text
+
+              section["linksFound"] = len(links)
+              section["skipped"] = skipped
+              for index, link in enumerate(links[:MAX_LINKS]):
+                  if index:
+                      time.sleep(DELAY)
+                  record = probe(link["url"])       # HEAD only: never downloaded
+                  record["label"] = link["label"]
+                  record["extension"] = link["extension"]
+                  record["downloaded"] = False
+                  section["links"].append(record)
+              section["linksProbed"] = len(section["links"])
+              if len(links) > MAX_LINKS:
+                  section["detail"] = (
+                      f"{len(links)} links found; probed the first {MAX_LINKS}")
+              return section
+
+
+          def build_report(results, link_section):
+              return {
+                  "schemaVersion": "1.0.0",
+                  "report": "candidate-source-access",
+                  "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                  "candidateOf": "recovery step 1 — official issuer IR access",
+                  "notice": (
+                      "DIAGNOSTIC ONLY. Reachability is not permission and a "
+                      "documented page is not a dataset. No provider was enabled or "
+                      "declared, no rights status was changed, no parser was "
+                      "implemented, and no report file was downloaded. One page's "
+                      "HTML was read in memory to extract anchor hrefs and labels; "
+                      "it was not retained, printed or uploaded. Declaring a "
+                      "provider for any URL here requires a dated rights review in "
+                      "docs/goh-dip-tong/SOURCE_REGISTER.md."
+                  ),
+                  "bodiesRetained": False,
+                  "filesDownloaded": 0,
+                  "providersEnabledByThisRun": 0,
+                  "rightsStatusChangedByThisRun": False,
+                  "maxRedirects": MAX_HOPS,
+                  "allowedHosts": list(ALLOWED_HOSTS),
+                  "counts": {
+                      "probed": len(results),
+                      "reachable": sum(1 for r in results
+                                       if r["outcome"] in ("HTML_DOCUMENT_NOT_A_DATASET",
+                                                           "REPORT_FILE_CANDIDATE")),
+                      "accessControlled": sum(1 for r in results
+                                              if r["outcome"] == "ACCESS_CONTROLLED"),
+                      "unreachable": sum(
+                          1 for r in results
+                          if r["outcome"] == "UNREACHABLE_FROM_GITHUB_ACTIONS"),
+                      "linksFound": link_section["linksFound"],
+                      "linksProbed": link_section["linksProbed"],
+                      "reportFileCandidates": sum(
+                          1 for link in link_section["links"]
+                          if link["outcome"] == "REPORT_FILE_CANDIDATE"),
+                  },
+                  "results": results,
+                  "linkDiscovery": link_section,
+              }
+
+
+          def render(record, indent="      "):
+              for hop in record["hops"]:
+                  location = f"  -> {hop['location']}" if hop.get("location") else ""
+                  print(f"{indent}hop {hop['method']:<4} {hop['status']}{location}")
+              print(f"{indent}final:    {record['finalUrl']}")
+              print(f"{indent}status:   {record['httpStatus']}   type: {record['contentType']}")
+              print(f"{indent}length:   {record['contentLength']}   "
+                    f"last-modified: {record['lastModified']}")
+              print(f"{indent}etag:     {record['etag']}")
+              if record.get("filename"):
+                  print(f"{indent}filename: {record['filename']}")
+              print(f"{indent}OUTCOME:  {record['outcome']}  ({record['detail']})")
+
+
+          def main():
+              raw = (os.environ.get("GDT_CANDIDATES") or "").replace(",", "\n")
+              candidates = [u.strip() for u in raw.splitlines() if u.strip()] or DEFAULT_CANDIDATES
+              requested_page = (os.environ.get("GDT_LINK_PAGE") or "").strip()
+              link_page = requested_page or DEFAULT_LINK_PAGE
+
+              results = []
+              for index, url in enumerate(candidates):
+                  if index:
+                      time.sleep(DELAY)   # one request at a time, never a burst
+                  print(f"  {url}")
+                  record = probe(url)
+                  render(record)
+                  results.append(record)
+
+              if requested_page.lower() == "none":
+                  section = {
+                      "pageUrl": None, "pageFinalUrl": None, "pageStatus": None,
+                      "pageHops": [], "pageOutcome": "NOT_TESTED",
+                      "htmlFetchedForLinkExtraction": False, "htmlRetained": False,
+                      "htmlBytesScanned": 0, "linksFound": 0, "linksProbed": 0,
+                      "skipped": {}, "links": [], "filesDownloaded": 0,
+                      "detail": "link discovery skipped by request",
+                  }
+              else:
+                  time.sleep(DELAY)
+                  print(f"  link discovery on {link_page}")
+                  section = discover_reports(link_page)
+                  for link in section["links"]:
+                      print(f"    {link['label'][:60]!r} {link['extension']}")
+                      render(link, indent="        ")
+
+              report = build_report(results, section)
+              with open(os.environ["GDT_OUTPUT"], "w", encoding="utf-8") as handle:
+                  json.dump(report, handle, indent=2, sort_keys=True)
+              print(f"  report: {os.environ['GDT_OUTPUT']}")
+              print(f"  counts: {json.dumps(report['counts'], sort_keys=True)}")
+              # A probe that finds nothing is a finding, not a build failure.
+              return 0
+
+
+          if __name__ == "__main__":
+              sys.exit(main())
+          PY
+          python "${RUNNER_TEMP}/candidate_probe.py"
+
       - name: Assert nothing was enabled or modified
         run: |
           set -euo pipefail
@@ -114,5 +628,17 @@ jobs:
         with:
           name: gdt-source-connectivity-report
           path: ${{ runner.temp }}/connectivity-report.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload candidate access report
+        # JSON metadata only. The path is a single file written to RUNNER_TEMP;
+        # no HTML, no PDF and no spreadsheet exists on disk to be uploaded,
+        # because none was ever fetched to disk.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdt-candidate-access-report
+          path: ${{ runner.temp }}/candidate-access-report.json
           if-no-files-found: warn
           retention-days: 30
