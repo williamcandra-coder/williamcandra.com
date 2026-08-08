@@ -1,1 +1,0 @@
-No IDX30 membership or classification changes detected.
