@@ -119,25 +119,6 @@ workflows:
     commit_policy: never
     branch_prefix: null
 
-  gdt-bi-discovery:
-    file: .github/workflows/gdt-bi-discovery.yml
-    purpose: >
-      Phase A of the Bank Indonesia vertical slice. Records what documented
-      official BI URLs actually return — final URL after redirects, status,
-      content type, size, cache validators. Retains no response body, enables
-      no provider and implements no parser.
-    dispatch: true
-    cron: null
-    local_time: null
-    rationale: >
-      Manual only, and there is no case for ever scheduling it. This is a
-      one-off investigation whose output is evidence for a human rights review,
-      not an input to any automated decision. bank_indonesia stays
-      enabled: false / MANUAL_REVIEW_REQUIRED whatever the probe returns.
-    write_mode_on_schedule: null
-    commit_policy: never
-    branch_prefix: null
-
   gdt-data-quality:
     file: .github/workflows/gdt-data-quality.yml
     purpose: "Schema validation, quality gates, repository guard and the Stage 1 test suite."

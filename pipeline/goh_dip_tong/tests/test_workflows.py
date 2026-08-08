@@ -23,7 +23,6 @@ COMMITTING_WORKFLOWS = [
 READ_ONLY_WORKFLOWS = [
     "gdt-data-quality",
     "gdt-source-connectivity-smoke",
-    "gdt-bi-discovery",
 ]
 
 WORKFLOW_NAMES = COMMITTING_WORKFLOWS + READ_ONLY_WORKFLOWS
@@ -261,21 +260,10 @@ def test_no_secret_shaped_strings_in_config_or_workflows(repo_root):
 # --- workflows install what they need --------------------------------------
 
 
-INSTALL = "pip install --quiet -r pipeline/goh_dip_tong/requirements.txt"
-
-
 def test_every_workflow_installs_the_pipeline_requirements(repo_root):
-    """A workflow that runs pipeline code must install the pipeline's
-    dependencies. Stated both ways, so the guard cannot be satisfied by simply
-    dropping the install: a workflow without it must also not import the
-    pipeline, and is therefore restricted to the standard library."""
     for name in WORKFLOW_NAMES:
         text = (repo_root / ".github" / "workflows" / f"{name}.yml").read_text(encoding="utf-8")
-        runs_pipeline = "pipeline.goh_dip_tong" in text
-        if runs_pipeline:
-            assert INSTALL in text, f"{name} runs pipeline code without installing it"
-        else:
-            assert INSTALL not in text, f"{name} installs dependencies it never uses"
+        assert "pip install --quiet -r pipeline/goh_dip_tong/requirements.txt" in text, name
 
 
 def test_committing_workflows_run_the_repo_guard(repo_root):
