@@ -7,17 +7,10 @@
 # status, content type, size, and cache validators? That is the evidence needed
 # before anyone writes a parser or claims a publication frequency.
 #
-# Phase A found that all four candidates are .aspx documents, not datasets, so
-# a second stage was added: on ONE documented release page, find the attachment
-# links the page offers and report their shape. A ZIP whose Content-Length and
-# Last-Modified are real is a different kind of finding from an HTML page whose
-# Last-Modified is the current clock.
-#
 # WHAT THIS WORKFLOW DOES NOT DO
 #   - it does not enable any provider, whatever the results say;
 #   - it does not implement or run a parser;
 #   - it does not collect, normalize or store any series data;
-#   - it does not download any attachment — the ZIP is probed, never fetched;
 #   - it does not read or write config/goh-dip-tong/ or data/goh-dip-tong/;
 #   - it does not commit, push, open a pull request or merge;
 #   - it has no schedule and cannot fire on its own;
@@ -25,30 +18,15 @@
 #   - it never bypasses authentication, rate limiting or bot protection —
 #     a 401 or 403 is recorded as the answer and the probe moves on.
 #
-# RESPONSE BODIES
-# Every probe is a HEAD; if a server rejects HEAD (405/501) the fallback GET is
-# opened and closed without reading a byte. Size comes from Content-Length,
-# never from measuring content.
-#
-# There is exactly ONE exception, and it is deliberate: the link-discovery step
-# GETs a single documented release page and reads its HTML **in memory** so the
-# anchors can be extracted. That text is scanned and dropped. It is never
-# written to the report, never printed to the log, never uploaded as an
-# artifact, and never touches the working tree. Only two things survive the
-# scan — the resolved href and the anchor's visible label. `fetch_html` is the
-# only function in this file that calls `.read()`, its read is bounded, and
-# tests assert both of those facts.
+# NO RESPONSE BODY IS EVER READ, STORED OR PRINTED.
+# Every request is a HEAD. If a server rejects HEAD (405/501) the fallback GET
+# is opened and closed without reading a single byte of the payload. Size comes
+# from the Content-Length header, never from measuring content.
 #
 # REDIRECTS ARE FOLLOWED MANUALLY AND BOUNDED.
 # Automatic redirect handling is disabled so that *every hop* is recorded —
 # BI serves .aspx landing pages behind redirects, and which URL finally answers
 # is the whole point. Maximum 5 hops, then the chain is reported as truncated.
-#
-# DISCOVERED LINKS ARE NOT TRUSTED.
-# A link found in a page is attacker-influenceable in principle, so discovery
-# will only probe URLs on bi.go.id, only over HTTPS, only ones whose path ends
-# in a known attachment extension, and at most `max_attachments` of them.
-# Anything else is counted and discarded rather than requested.
 #
 # A DOCUMENTED PAGE IS NOT A DATASET, AND REACHABILITY IS NOT PERMISSION.
 # The best outcome here is "an official URL responded and here is its shape".
@@ -65,11 +43,6 @@ on:
         type: string
         required: false
         default: ""
-      link_page:
-        description: "Documented release page to scan for attachment links (blank = SEKI June 2026)"
-        type: string
-        required: false
-        default: ""
       timeout_seconds:
         description: "Per-request timeout"
         type: string
@@ -82,10 +55,6 @@ on:
         description: "Maximum redirect hops to follow per candidate"
         type: string
         default: "5"
-      max_attachments:
-        description: "Maximum discovered attachments to probe"
-        type: string
-        default: "25"
 
 # Read-only. No write access and no commit step, so it cannot alter the
 # repository even if something went wrong.
@@ -99,7 +68,7 @@ concurrency:
 jobs:
   discover:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -110,28 +79,19 @@ jobs:
       - name: Probe documented Bank Indonesia URLs
         env:
           GDT_CANDIDATES: ${{ inputs.candidates }}
-          GDT_LINK_PAGE: ${{ inputs.link_page }}
           GDT_TIMEOUT: ${{ inputs.timeout_seconds || '20' }}
           GDT_DELAY: ${{ inputs.delay_seconds || '3' }}
           GDT_MAX_REDIRECTS: ${{ inputs.max_redirects || '5' }}
-          GDT_MAX_ATTACHMENTS: ${{ inputs.max_attachments || '25' }}
           GDT_OUTPUT: ${{ runner.temp }}/bi-discovery-report.json
         run: |
           set -euo pipefail
           cat > "${RUNNER_TEMP}/probe.py" <<'PY'
-          """Bank Indonesia endpoint discovery — metadata only.
+          """Bank Indonesia endpoint discovery — metadata only, no bodies.
 
           Standard library only, so this workflow needs no dependency install
           and cannot be affected by a package resolution changing under it.
-
-          Importable on purpose: everything below is definitions, and the run
-          happens under `if __name__ == "__main__"`. The tests import this file
-          and exercise the link extractor against a fixture, which is the only
-          way to prove the HTML never escapes memory.
           """
-          import html as html_mod
-          import json, os, re, ssl, sys, time
-          import urllib.error, urllib.parse, urllib.request
+          import json, os, ssl, sys, time, urllib.error, urllib.request
 
           # Documented official candidates. Landing/index pages are included
           # only to record where they redirect to; none of them is scraped.
@@ -142,42 +102,17 @@ jobs:
               "https://www.bi.go.id/id/statistik/Metadata/SEKI/default.aspx",
           ]
 
-          # The single page scanned for attachment links.
-          DEFAULT_LINK_PAGE = (
-              "https://www.bi.go.id/en/statistik/ekonomi-keuangan/seki/"
-              "Pages/SEKI-JUNI-2026.aspx"
-          )
-
           UA = "goh-dip-tong-discovery/1.0 (+https://williamcandra.com)"
           TIMEOUT = float(os.environ.get("GDT_TIMEOUT") or 20)
           DELAY = float(os.environ.get("GDT_DELAY") or 3)
           MAX_HOPS = int(os.environ.get("GDT_MAX_REDIRECTS") or 5)
-          MAX_ATTACHMENTS = int(os.environ.get("GDT_MAX_ATTACHMENTS") or 25)
 
-          # Bound the read so a huge or hostile response cannot exhaust memory.
-          MAX_HTML_BYTES = 5 * 1024 * 1024
-          LABEL_MAX = 200
+          raw = (os.environ.get("GDT_CANDIDATES") or "").replace(",", "\n")
+          CANDIDATES = [u.strip() for u in raw.splitlines() if u.strip()] or DEFAULT_CANDIDATES
 
-          # Only these are ever requested from a discovered link.
-          ATTACHMENT_EXTENSIONS = (
-              ".zip", ".xls", ".xlsx", ".xlsm", ".csv", ".pdf",
-              ".xml", ".json", ".txt", ".rar", ".7z",
-          )
-          ALLOWED_HOSTS = ("bi.go.id",)
-
-          ANCHOR_RE = re.compile(r"<a\b([^>]*)>(.*?)</a>", re.IGNORECASE | re.DOTALL)
-          HREF_RE = re.compile(
-              r"""\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""", re.IGNORECASE)
-          TAG_RE = re.compile(r"<[^>]+>")
-          # Removing tags alone is not enough: it would leave the *text inside*
-          # a <script> or <style> behind, and script source is not a visible
-          # label. Comments go too. These are dropped element-and-all first.
-          NON_VISIBLE_RE = re.compile(
-              r"<!--.*?-->|<(script|style)\b[^>]*>.*?</\1\s*>",
-              re.IGNORECASE | re.DOTALL)
-          FILENAME_RE = re.compile(
-              r"""filename\*?\s*=\s*(?:UTF-8''|)(?:"([^"]*)"|'([^']*)'|([^;]+))""",
-              re.IGNORECASE)
+          # Captured header fields. Nothing else is retained from a response.
+          KEEP = ("content-type", "content-length", "last-modified", "etag",
+                  "content-disposition")
 
 
           class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -223,8 +158,6 @@ jobs:
                   # A .aspx page is a document, not a dataset. Recorded honestly.
                   if ctype in ("application/json", "text/csv", "application/xml",
                                "text/xml", "application/vnd.ms-excel",
-                               "application/zip", "application/x-zip-compressed",
-                               "application/octet-stream",
                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"):
                       return "MACHINE_CONSUMABLE_CANDIDATE"
                   if ctype in ("text/html", "application/xhtml+xml"):
@@ -238,8 +171,7 @@ jobs:
                   "requestedUrl": url, "checkedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                   "hops": [], "finalUrl": None, "httpStatus": None, "contentType": None,
                   "contentLength": None, "lastModified": None, "etag": None,
-                  "contentDisposition": None, "filename": None,
-                  "redirectChainTruncated": False,
+                  "contentDisposition": None, "redirectChainTruncated": False,
                   "outcome": "NOT_TESTED", "detail": None,
                   # Restated per record so it cannot be read out of context.
                   "enablesProvider": False, "bodyRetained": False,
@@ -263,7 +195,7 @@ jobs:
                               record["redirectChainTruncated"] = True
                               record["detail"] = f"more than {MAX_HOPS} redirects"
                               break
-                          current = urllib.parse.urljoin(current, headers["location"])
+                          current = urllib.request.urljoin(current, headers["location"])
                           method = "HEAD"
                           continue
                       record["finalUrl"] = current
@@ -272,7 +204,6 @@ jobs:
                       record["lastModified"] = headers.get("last-modified")
                       record["etag"] = headers.get("etag")
                       record["contentDisposition"] = headers.get("content-disposition")
-                      record["filename"] = filename_for(current, headers)
                       length = headers.get("content-length")
                       if length is not None:
                           try:
@@ -292,281 +223,65 @@ jobs:
               return record
 
 
-          def filename_for(url, headers):
-              """Attachment filename from Content-Disposition, else the URL path."""
-              disposition = headers.get("content-disposition") or ""
-              match = FILENAME_RE.search(disposition)
-              if match:
-                  name = (match.group(1) or match.group(2) or match.group(3) or "").strip()
-                  if name:
-                      return urllib.parse.unquote(name)
-              path = urllib.parse.urlsplit(url).path
-              return urllib.parse.unquote(path.rsplit("/", 1)[-1]) or None
+          results = []
+          for i, url in enumerate(CANDIDATES):
+              if i:
+                  time.sleep(DELAY)      # one request at a time, never a burst
+              results.append(probe(url))
 
+          report = {
+              "schemaVersion": "1.0.0",
+              "report": "bank-indonesia-endpoint-discovery",
+              "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+              "provider": "bank_indonesia",
+              "notice": (
+                  "PHASE A DIAGNOSTIC ONLY. Reachability is not permission and a "
+                  "documented page is not a dataset. No provider is enabled by this "
+                  "report, no parser was implemented, and no response body was read "
+                  "or stored. Enabling bank_indonesia requires a dated rights review "
+                  "in docs/goh-dip-tong/SOURCE_REGISTER.md."
+              ),
+              "bodiesRetained": False,
+              "providersEnabledByThisRun": 0,
+              "maxRedirects": MAX_HOPS,
+              "counts": {
+                  "probed": len(results),
+                  "machineConsumableCandidates": sum(
+                      1 for r in results if r["outcome"] == "MACHINE_CONSUMABLE_CANDIDATE"),
+                  "htmlDocuments": sum(
+                      1 for r in results if r["outcome"] == "HTML_DOCUMENT_NOT_A_DATASET"),
+                  "accessControlled": sum(
+                      1 for r in results if r["outcome"] == "ACCESS_CONTROLLED"),
+              },
+              "results": results,
+          }
 
-          # --- link discovery ----------------------------------------------------
-          #
-          # The two functions below are the whole of the HTML handling. `fetch_html`
-          # is the only place in this file that reads a response body;
-          # `extract_attachment_links` consumes that text and returns nothing but
-          # resolved URLs and visible labels. Nothing else ever sees the markup.
+          out = os.environ["GDT_OUTPUT"]
+          with open(out, "w", encoding="utf-8") as fh:
+              json.dump(report, fh, indent=2, sort_keys=True, ensure_ascii=False)
+              fh.write("\n")
 
-          def host_allowed(url):
-              host = (urllib.parse.urlsplit(url).hostname or "").lower()
-              return any(host == h or host.endswith("." + h) for h in ALLOWED_HOSTS)
-
-
-          def anchor_label(inner_html):
-              """Visible text of an anchor: tags stripped, entities resolved.
-
-              Non-visible elements are removed whole before tags are stripped —
-              otherwise a `<script>` inside the anchor would contribute its
-              source to the "visible label", which is both wrong and a way for
-              page content to reach the report through a field that is supposed
-              to hold a caption.
-              """
-              visible = NON_VISIBLE_RE.sub(" ", inner_html or "")
-              text = html_mod.unescape(TAG_RE.sub(" ", visible))
-              return re.sub(r"\s+", " ", text).strip()[:LABEL_MAX]
-
-
-          def extract_attachment_links(html_text, base_url):
-              """Resolved attachment URLs and their labels — and nothing else.
-
-              The return value is the only thing that outlives the HTML. It holds
-              two strings per link, so no markup can leak into the report through
-              this path even if the page is hostile.
-              """
-              found, seen, skipped = [], set(), {"nonAttachment": 0, "offHost": 0,
-                                                 "notHttps": 0, "unusable": 0}
-              for match in ANCHOR_RE.finditer(html_text or ""):
-                  attributes, inner = match.group(1), match.group(2)
-                  href_match = HREF_RE.search(attributes)
-                  if not href_match:
-                      skipped["unusable"] += 1
-                      continue
-                  href = (href_match.group(1) or href_match.group(2)
-                          or href_match.group(3) or "").strip()
-                  if not href or href.startswith(("#", "javascript:", "mailto:", "tel:")):
-                      skipped["unusable"] += 1
-                      continue
-                  absolute = urllib.parse.urljoin(base_url, html_mod.unescape(href))
-                  path = urllib.parse.urlsplit(absolute).path.lower()
-                  if not path.endswith(ATTACHMENT_EXTENSIONS):
-                      skipped["nonAttachment"] += 1
-                      continue
-                  if not absolute.lower().startswith("https://"):
-                      skipped["notHttps"] += 1
-                      continue
-                  if not host_allowed(absolute):
-                      skipped["offHost"] += 1
-                      continue
-                  if absolute in seen:
-                      continue
-                  seen.add(absolute)
-                  found.append({"url": absolute, "label": anchor_label(inner)})
-              # ZIP archives first: the SEKI release bundle is the point of this.
-              found.sort(key=lambda link: (not link["url"].lower().endswith(".zip"),
-                                           link["url"]))
-              return found, skipped
-
-
-          def fetch_html(url):
-              """GET a page and return its text for in-memory scanning.
-
-              THE ONLY `.read()` IN THIS FILE. The text is handed to
-              `extract_attachment_links`, scanned, and dropped when this frame and
-              the caller's local go out of scope. It is never written to the
-              report, printed, or uploaded — only its byte count is reported.
-              """
-              req = urllib.request.Request(
-                  url, method="GET",
-                  headers={"User-Agent": UA, "Accept": "text/html,application/xhtml+xml"})
-              resp = OPENER.open(req, timeout=TIMEOUT)
-              try:
-                  status = resp.status
-                  headers = {k.lower(): v for k, v in resp.headers.items()}
-                  if not (200 <= status <= 299):
-                      return status, headers, ""
-                  if "html" not in (headers.get("content-type") or "").lower():
-                      return status, headers, ""
-                  raw = resp.read(MAX_HTML_BYTES)
-                  charset = resp.headers.get_content_charset() or "utf-8"
-                  return status, headers, raw.decode(charset, "replace")
-              finally:
-                  resp.close()
-
-
-          def discover_attachments(page_url):
-              """Resolve the page, scan it for attachments, probe each by HEAD."""
-              section = {
-                  "pageUrl": page_url, "pageFinalUrl": None, "pageStatus": None,
-                  "pageHops": [], "pageOutcome": "NOT_TESTED",
-                  "htmlFetchedForLinkExtraction": False,
-                  "htmlRetained": False,
-                  "htmlBytesScanned": 0,
-                  "linksFound": 0, "attachmentsProbed": 0, "skipped": {},
-                  "attachments": [], "detail": None,
-              }
-              page = probe(page_url)
-              section["pageFinalUrl"] = page["finalUrl"]
-              section["pageStatus"] = page["httpStatus"]
-              section["pageHops"] = page["hops"]
-              section["pageOutcome"] = page["outcome"]
-              if page["outcome"] not in ("HTML_DOCUMENT_NOT_A_DATASET",):
-                  section["detail"] = (
-                      f"page did not answer as HTML ({page['outcome']}); "
-                      "nothing to scan")
-                  return section
-
-              time.sleep(DELAY)
-              try:
-                  status, _headers, html_text = fetch_html(page["finalUrl"])
-              except Exception as exc:  # noqa: BLE001
-                  section["detail"] = f"link fetch failed: {type(exc).__name__}"
-                  return section
-
-              section["htmlFetchedForLinkExtraction"] = True
-              section["htmlBytesScanned"] = len(html_text)
-              if not html_text:
-                  section["detail"] = f"no HTML body to scan (status {status})"
-                  return section
-
-              links, skipped = extract_attachment_links(html_text, page["finalUrl"])
-              # The markup has served its only purpose. Drop the reference now so
-              # nothing downstream can reach it even by accident.
-              html_text = None
-              del html_text
-
-              section["linksFound"] = len(links)
-              section["skipped"] = skipped
-              for index, link in enumerate(links[:MAX_ATTACHMENTS]):
-                  if index:
-                      time.sleep(DELAY)
-                  record = probe(link["url"])       # HEAD only: never downloaded
-                  record["label"] = link["label"]
-                  record["downloaded"] = False
-                  section["attachments"].append(record)
-              section["attachmentsProbed"] = len(section["attachments"])
-              if len(links) > MAX_ATTACHMENTS:
-                  section["detail"] = (
-                      f"{len(links)} links found; probed the first {MAX_ATTACHMENTS}")
-              return section
-
-
-          def build_report(results, link_section):
-              return {
-                  "schemaVersion": "1.1.0",
-                  "report": "bank-indonesia-endpoint-discovery",
-                  "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                  "provider": "bank_indonesia",
-                  "notice": (
-                      "PHASE A DIAGNOSTIC ONLY. Reachability is not permission and a "
-                      "documented page is not a dataset. No provider is enabled by this "
-                      "report, no parser was implemented, and no attachment was "
-                      "downloaded. One page's HTML was read in memory to extract "
-                      "anchor hrefs and labels; it was not retained, printed or "
-                      "uploaded. Enabling bank_indonesia requires a dated rights "
-                      "review in docs/goh-dip-tong/SOURCE_REGISTER.md."
-                  ),
-                  "bodiesRetained": False,
-                  "attachmentsDownloaded": 0,
-                  "providersEnabledByThisRun": 0,
-                  "maxRedirects": MAX_HOPS,
-                  "counts": {
-                      "probed": len(results),
-                      "machineConsumableCandidates": sum(
-                          1 for r in results if r["outcome"] == "MACHINE_CONSUMABLE_CANDIDATE"),
-                      "htmlDocuments": sum(
-                          1 for r in results if r["outcome"] == "HTML_DOCUMENT_NOT_A_DATASET"),
-                      "accessControlled": sum(
-                          1 for r in results if r["outcome"] == "ACCESS_CONTROLLED"),
-                      "attachmentsFound": link_section["linksFound"],
-                      "attachmentsProbed": link_section["attachmentsProbed"],
-                      "attachmentsMachineConsumable": sum(
-                          1 for a in link_section["attachments"]
-                          if a["outcome"] == "MACHINE_CONSUMABLE_CANDIDATE"),
-                  },
-                  "results": results,
-                  "linkDiscovery": link_section,
-              }
-
-
-          def render(record, indent="      "):
-              for hop in record["hops"]:
-                  location = f"  -> {hop['location']}" if hop.get("location") else ""
-                  print(f"{indent}hop {hop['method']:<4} {hop['status']}{location}")
-              print(f"{indent}final:    {record['finalUrl']}")
-              print(f"{indent}status:   {record['httpStatus']}   type: {record['contentType']}")
-              print(f"{indent}length:   {record['contentLength']}   "
-                    f"last-modified: {record['lastModified']}")
-              print(f"{indent}etag:     {record['etag']}")
-              if record.get("filename"):
-                  print(f"{indent}filename: {record['filename']}")
-              print(f"{indent}OUTCOME:  {record['outcome']}  ({record['detail']})")
-
-
-          def main():
-              raw = (os.environ.get("GDT_CANDIDATES") or "").replace(",", "\n")
-              candidates = [u.strip() for u in raw.splitlines() if u.strip()] or DEFAULT_CANDIDATES
-              link_page = (os.environ.get("GDT_LINK_PAGE") or "").strip() or DEFAULT_LINK_PAGE
-
-              results = []
-              for index, url in enumerate(candidates):
-                  if index:
-                      time.sleep(DELAY)   # one request at a time, never a burst
-                  results.append(probe(url))
-
-              time.sleep(DELAY)
-              link_section = discover_attachments(link_page)
-              report = build_report(results, link_section)
-
-              out = os.environ["GDT_OUTPUT"]
-              with open(out, "w", encoding="utf-8") as fh:
-                  json.dump(report, fh, indent=2, sort_keys=True, ensure_ascii=False)
-                  fh.write("\n")
-
-              print("[gdt-bi-discovery]  PHASE A DIAGNOSTIC ONLY")
-              print("  Reachability is not permission. A documented page is not a dataset.")
-              print("  No provider enabled. No parser implemented. No attachment downloaded.")
-              print("  One page's HTML was scanned in memory and dropped; it is not in")
-              print("  this log and not in the artifact.")
+          print("[gdt-bi-discovery]  PHASE A DIAGNOSTIC ONLY")
+          print("  Reachability is not permission. A documented page is not a dataset.")
+          print("  No provider enabled. No parser implemented. No body retained.")
+          print()
+          for r in results:
+              print(f"  {r['requestedUrl']}")
+              for h in r["hops"]:
+                  loc = f"  -> {h['location']}" if h.get("location") else ""
+                  print(f"      hop {h['method']:<4} {h['status']}{loc}")
+              print(f"      final:    {r['finalUrl']}")
+              print(f"      status:   {r['httpStatus']}   type: {r['contentType']}")
+              print(f"      length:   {r['contentLength']}   last-modified: {r['lastModified']}")
+              print(f"      etag:     {r['etag']}")
+              if r["contentDisposition"]:
+                  print(f"      filename: {r['contentDisposition']}")
+              print(f"      OUTCOME:  {r['outcome']}  ({r['detail']})")
               print()
-              for record in results:
-                  print(f"  {record['requestedUrl']}")
-                  render(record)
-                  print()
-
-              print("  --- link discovery ---")
-              print(f"  page:     {link_section['pageUrl']}")
-              print(f"  final:    {link_section['pageFinalUrl']}  "
-                    f"status {link_section['pageStatus']}  ({link_section['pageOutcome']})")
-              print(f"  html read in memory: {link_section['htmlFetchedForLinkExtraction']}  "
-                    f"bytes scanned: {link_section['htmlBytesScanned']}  "
-                    f"retained: {link_section['htmlRetained']}")
-              print(f"  attachment links found: {link_section['linksFound']}  "
-                    f"probed: {link_section['attachmentsProbed']}  "
-                    f"skipped: {link_section['skipped']}")
-              if link_section["detail"]:
-                  print(f"  note: {link_section['detail']}")
-              print()
-              for attachment in link_section["attachments"]:
-                  print(f"  {attachment['label'] or '(no label)'}")
-                  print(f"      url:      {attachment['requestedUrl']}")
-                  render(attachment)
-                  print(f"      downloaded: {attachment['downloaded']}")
-                  print()
-
-              print(f"  counts: {report['counts']}")
-              print(f"  providers enabled by this run: {report['providersEnabledByThisRun']}")
-              print(f"  response bodies retained: {report['bodiesRetained']}")
-              print(f"  attachments downloaded: {report['attachmentsDownloaded']}")
-              print(f"  report written: {out}")
-              return 0
-
-
-          if __name__ == "__main__":
-              sys.exit(main())
+          print(f"  counts: {report['counts']}")
+          print(f"  providers enabled by this run: {report['providersEnabledByThisRun']}")
+          print(f"  response bodies retained: {report['bodiesRetained']}")
+          print(f"  report written: {out}")
           PY
           python "${RUNNER_TEMP}/probe.py"
 
@@ -583,13 +298,6 @@ jobs:
           if [ -n "$(git status --porcelain --untracked-files=all)" ]; then
             echo "::error::the discovery probe left files behind"
             git status --porcelain --untracked-files=all
-            exit 1
-          fi
-          # No HTML may have reached the artifact. The report is JSON metadata;
-          # markup in it would mean the in-memory-only rule was broken.
-          REPORT="${RUNNER_TEMP}/bi-discovery-report.json"
-          if [ -f "$REPORT" ] && grep -qiE '</(a|div|span|body|html|table)>|<!doctype' "$REPORT"; then
-            echo "::error::the discovery report contains HTML markup"
             exit 1
           fi
           # bank_indonesia must still be disabled. Checked without a YAML parser
