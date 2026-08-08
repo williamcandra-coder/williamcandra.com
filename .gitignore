@@ -4,24 +4,3 @@ Thumbs.db
 *.log
 .vscode/
 .idea/
-
-# --- Goh Dip Tong data pipeline -------------------------------------------
-# Rights-restricted collector output. Anything a source's rights do not permit
-# committing is routed here by the rights gate. Never remove this rule without
-# first documenting the corresponding right in
-# docs/goh-dip-tong/SOURCE_REGISTER.md.
-data/goh-dip-tong/_private/
-
-# Temporary downloads. Large or restricted documents are represented in the
-# repository by a manifest row, never by the document itself.
-data/goh-dip-tong/**/_tmp/
-*.pdf
-*.xlsx
-*.xls
-
-# Python
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.venv/
-venv/

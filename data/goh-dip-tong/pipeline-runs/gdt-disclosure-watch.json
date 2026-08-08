@@ -1,9 +1,0 @@
-{
-  "disclosures": 5,
-  "flaggedForFinancialUpdate": 2,
-  "generatedAt": "2026-07-30T09:22:53Z",
-  "provider": "fixture_disclosures",
-  "runId": "gdt-disclosure-watch-20260730T092253Z",
-  "workflow": "gdt-disclosure-watch",
-  "writeMode": "commit"
-}
