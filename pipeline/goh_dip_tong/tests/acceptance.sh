@@ -143,14 +143,10 @@ done
 [ "$UI_HITS" = "0" ]
 chk $? "no IDX30 ticker appears in any shipped UI page (6 files scanned)"
 
-# Stage 3 has now built goh-dip-tong.html, so its mere existence is no longer a
-# defect. The invariant that survives — and is the one this check was really
-# protecting — is that a DATA stage never emits a website page. Stage 1
-# collects and validates; it does not write HTML.
-if grep -rl "goh-dip-tong\.html" pipeline --include="*.py" 2>/dev/null | grep -qv tests/; then
-  no "Stage 1 source writes or generates the Stage 3 UI page"
+if [ -f goh-dip-tong.html ]; then
+  no "goh-dip-tong.html exists (Stage 3 scope)"
 else
-  ok "Stage 1 does not build or write the Stage 3 UI page"
+  ok "goh-dip-tong.html not created (correctly deferred to Stage 3)"
 fi
 
 SRC_HITS=$(grep -rlw "BBCA" pipeline --include="*.py" | grep -cv tests/)
