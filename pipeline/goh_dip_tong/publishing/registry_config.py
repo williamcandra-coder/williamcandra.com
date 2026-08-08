@@ -205,10 +205,7 @@ def build_companies_document(
         "generatedAt": utc_now_iso(),
         "companies": companies,
     }
-    # Stable, not raw: every company row carries a lastSeenAt that moves with the
-    # run date, so a raw hash would change daily and reintroduce the churn the
-    # volatile-field strip exists to remove.
-    document["contentHash"] = stable_content_hash({"companies": companies})
+    document["contentHash"] = content_hash({"companies": companies})
     return document
 
 

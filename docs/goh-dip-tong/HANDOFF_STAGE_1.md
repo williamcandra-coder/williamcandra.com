@@ -13,8 +13,8 @@ response headers and nothing else.
 
 | | |
 |---|---|
-| Unit tests | **237 passed**, 0 failed |
-| Acceptance checks | **71/71 passed** (70 requirement checks + 1 isolation self-check) |
+| Unit tests | **218 passed**, 0 failed |
+| Acceptance checks | **63/63 passed** (62 requirement checks + 1 isolation self-check) |
 | Fixture collectors | **Implemented and tested** — five providers run end to end |
 | Live provider interfaces | **Scaffolded only** — registered, disabled, never exercised |
 | Live `parse()` methods | **Not implemented** — they raise `NotImplementedError` by design |
@@ -108,7 +108,7 @@ williamcandra.com/
 │   ├── normalization/ periods.py units.py values.py
 │   ├── validation/    schema.py quality.py repo_guard.py rights.py
 │   ├── publishing/    writers.py registry_config.py change_detection.py history.py
-│   └── tests/         7 test modules + conftest + clock hook + 10 fixtures
+│   └── tests/         6 test modules + conftest + 10 fixtures
 │
 ├── schemas/goh-dip-tong/                         # 8 JSON Schema Draft 2020-12
 │   ├── idx30  company  financial-fact  market-price
@@ -426,17 +426,16 @@ permitted-use path. Retrying the probe will not produce a different answer.
 
 ## 7. Tests
 
-`python3 -m pytest pipeline/goh_dip_tong/tests -q` → **237 passed, 0 failed, ~25s**
+`python3 -m pytest pipeline/goh_dip_tong/tests -q` → **218 passed, 0 failed, ~1.9s**
 
 | Module | Tests | Covers |
 |---|---|---|
 | `test_normalization.py` | 54 | periods, units/currency, missing-vs-zero, sign conventions |
-| `test_guards.py` | 40 | HTML-as-data, timeout/retry, disabled providers, rights gate, repo guard |
-| `test_workflows.py` | 37 | schedule/YAML agreement, least privilege, commit policy, no secrets |
-| `test_change_detection.py` | 24 | ADDED/REMOVED/RENAMED/RECLASSIFIED, no-change silence, append-only history |
+| `test_guards.py` | 35 | HTML-as-data, timeout/retry, disabled providers, rights gate, repo guard |
+| `test_workflows.py` | 27 | schedule/YAML agreement, least privilege, commit policy, no secrets |
 | `test_backfill.py` | 22 | idempotency, duplicates, restatements, fail-soft, fail-closed |
+| `test_change_detection.py` | 21 | ADDED/REMOVED/RENAMED/RECLASSIFIED/UNCHANGED, append-only history |
 | `test_universe.py` | 21 | schemas, uniqueness, dates, model mapping, ordering, UI contract |
-| `test_no_change_churn.py` | 11 | date-swept idempotency: no-change runs write nothing and stage nothing on any date; membership and category changes still recorded |
 
 ### Every required Stage 1 test area (spec §1.11)
 
@@ -480,31 +479,8 @@ PASS 2 (rerun)  registry=2  daily=0  disclosure=0  financial=0  macro=0
 PASS 3 (rerun)  registry=0  daily=0  disclosure=0  financial=0  macro=0   ← fully idempotent
 ```
 
-Pass 1→2 differs legitimately: the seed run records 30 `ADDED` history events,
-and pass 2 settles the derived documents. From pass 2 onward every collector is
-byte-stable — including across calendar dates, which pass 3 alone did not prove
-until the date sweep was added (see *Membership history churn* below).
-
-#### Membership history churn (fixed)
-
-Two per-day stamps made a no-change run non-idempotent on any date after the
-seed date: an `UNCHANGED` heartbeat row appended to `idx30.history.jsonl`, and
-`companies.json`'s `lastSeenAt` restamped on all thirty constituents. Because
-every run happened on the date the fixtures were generated, both always matched
-what was committed and the suite passed. On the first run of the next day both
-moved, `filesChanged` was 2 instead of 0, and the scheduled workflows would have
-opened a pull request containing no facts.
-
-The heartbeat is no longer emitted — `detect_changes` has no `emit_unchanged`
-switch — and `lastSeenAt` is a volatile field, with the volatile strip now
-recursing into lists so it can see stamps on array elements. Legacy `UNCHANGED`
-rows already committed are preserved untouched and treated as immaterial.
-
-Verified across 2026-08-01, 2026-12-31, 2027-03-14 and 2031-06-30: `filesChanged=0`
-with a byte-identical config tree at every date, and — asserted against git rather
-than against our own counter — nothing staged by the workflow's
-`git add config/goh-dip-tong data/goh-dip-tong`, so no pull request can open.
-Genuine membership *and* category changes are still recorded, once each.
+Pass 1→2 differs legitimately: 30 `ADDED` history events become one `UNCHANGED`
+snapshot. From pass 2 onward every collector is byte-stable.
 
 ```
 cli sources     → rights and SOURCE_REGISTER.md are consistent
@@ -587,7 +563,7 @@ Contract notes for Stage 2:
 | 8 | Rerunning does not duplicate rows | ✅ three-pass idempotency verified |
 | 9 | Invalid data does not replace last validated data | ✅ fail-closed + atomic writes |
 | 10 | Stage 1 handoff file exists | ✅ this document |
-| 11 | Tests pass | ✅ 237/237 unit + 71/71 acceptance checks |
+| 11 | Tests pass | ✅ 218/218 unit + 63/63 acceptance checks |
 | 12 | No secret or restricted raw document committed | ✅ guard passes; price data git-ignored |
 
 ---

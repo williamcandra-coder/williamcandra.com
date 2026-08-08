@@ -110,7 +110,7 @@
     }
   ],
   "counts": {
-    "filesChanged": 2,
+    "filesChanged": 0,
     "recordsIn": 30,
     "recordsInvalid": 0,
     "recordsMissing": 0,
@@ -120,10 +120,10 @@
     "tickersSucceeded": 30
   },
   "failedTickers": [],
-  "generatedAt": "2026-07-31T07:28:37Z",
+  "generatedAt": "2026-07-30T09:48:53Z",
   "notPromotedReason": null,
   "promoted": true,
-  "runId": "gdt-registry-update-20260731T072837Z",
+  "runId": "gdt-registry-update-20260730T094853Z",
   "schemaVersion": "1.0.0",
   "sources": [
     {
