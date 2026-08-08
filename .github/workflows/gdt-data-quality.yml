@@ -19,8 +19,6 @@
 #   - the repository-data guard
 #   - the full Stage 1 unit-test suite
 #   - the Stage 1 acceptance script (all 17 requirements)
-#   - the Stage 2 engine unit-test suite
-#   - the Stage 2 acceptance script
 name: gdt-data-quality
 
 on:
@@ -28,7 +26,6 @@ on:
   pull_request:
     paths:
       - "pipeline/**"
-      - "engine/**"
       - "config/goh-dip-tong/**"
       - "data/goh-dip-tong/**"
       - "schemas/goh-dip-tong/**"
@@ -70,16 +67,6 @@ jobs:
         # closing self-check fails the build if the repository tree moved.
         # Exits non-zero if any single check fails.
         run: ./pipeline/goh_dip_tong/tests/acceptance.sh
-
-      - name: Stage 2 engine unit-test suite
-        # The engine imports the pipeline and needs no extra dependencies, so
-        # the install step above already covers it.
-        run: python -m pytest engine/goh_dip_tong/tests -q
-
-      - name: Stage 2 acceptance test
-        # Same isolation contract as Stage 1's: sandboxed writes, a closing
-        # self-check on the repository tree, non-zero exit on any failure.
-        run: ./engine/goh_dip_tong/tests/acceptance_stage2.sh
 
       - name: Data-quality audit
         run: python -m pipeline.goh_dip_tong.cli quality --verbose

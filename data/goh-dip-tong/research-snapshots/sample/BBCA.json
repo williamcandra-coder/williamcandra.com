@@ -1,5 +1,5 @@
 {
-  "contentHash": "7523fa81ee7441210b311ea7e0b9b2be03043788bbebd567f9ad0206fd55beb8",
+  "contentHash": "98f9377c85359b1e820fca82bdedfa323131b1b329239b888d56e63c28123f48",
   "disclaimers": [
     "Development data. Generated from committed fixtures, not from a live or authoritative market data source.",
     "Not investment advice. No buy or sell recommendation, no guaranteed return, and no personalised investment recommendation is expressed or implied.",
@@ -20,7 +20,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 88400000000000.0
@@ -38,7 +37,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 2,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0004",
       "unit": "IDR",
       "value": 53950000000000.0
@@ -56,7 +54,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 54120000000000.0
@@ -74,7 +71,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 112500000000000.0
@@ -92,7 +88,6 @@
       "qualityStatus": "VALID",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": "WHOLESALE_BANKING",
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": null
@@ -110,7 +105,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 1485000000000000.0
@@ -128,7 +122,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 275000000000000.0
@@ -146,7 +139,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 1210000000000000.0
@@ -164,7 +156,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 28900000000000.0
@@ -182,7 +173,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 59800000000000.0
@@ -209,15 +199,17 @@
     "rightsStatus": "PRIVATE_RESEARCH_ONLY"
   },
   "quality": {
-    "completeness": 1.0,
+    "completeness": 0.9,
     "flags": [
       "FIXTURE_DATA"
     ],
-    "missingCriticalMetrics": [],
+    "missingCriticalMetrics": [
+      "revenue"
+    ],
     "status": "UNVALIDATED"
   },
   "recentEvents": [],
   "schemaVersion": "1.0.0",
-  "snapshotAt": "2026-08-04T06:18:30Z",
+  "snapshotAt": "2026-07-30T09:23:06Z",
   "ticker": "BBCA"
 }

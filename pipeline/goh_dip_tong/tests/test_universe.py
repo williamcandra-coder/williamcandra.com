@@ -26,8 +26,7 @@ from pipeline.goh_dip_tong.validation.schema import (
 def test_every_declared_schema_exists_and_is_valid(real_settings):
     report = validate_all_schemas(real_settings)
     assert report.ok, [i.message for i in report.critical_failures]
-    # 8 Stage 1 contracts + the Stage 2 engine's output contract.
-    assert len(SCHEMA_FILES) == 9
+    assert len(SCHEMA_FILES) == 8
 
 
 def test_committed_idx30_config_matches_schema(real_settings):

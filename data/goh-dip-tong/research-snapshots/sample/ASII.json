@@ -1,5 +1,5 @@
 {
-  "contentHash": "0dabdcf136aa3fdaf319c2379e2dea09e57b9b26ecbb51a84cb5f22d331ba30a",
+  "contentHash": "f3757b40b261d3ba3011939be412b821544ca8063e092dc98b19b9c87f838860",
   "disclaimers": [
     "Development data. Generated from committed fixtures, not from a live or authoritative market data source.",
     "Not investment advice. No buy or sell recommendation, no guaranteed return, and no personalised investment recommendation is expressed or implied.",
@@ -20,7 +20,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 34100000000000.0
@@ -38,7 +37,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 316400000000000.0
@@ -74,6 +72,6 @@
   },
   "recentEvents": [],
   "schemaVersion": "1.0.0",
-  "snapshotAt": "2026-08-04T06:18:30Z",
+  "snapshotAt": "2026-07-30T09:23:07Z",
   "ticker": "ASII"
 }

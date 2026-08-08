@@ -1,5 +1,5 @@
 {
-  "contentHash": "0554ed0b97fee15285d777c7c7feeee818256b131100a65b88b25014b2622c75",
+  "contentHash": "9bc7c1e5d821dccddd7a3a5fd3151ffa47c1995d1fceae18db6bf04415f3b8f5",
   "disclaimers": [
     "Development data. Generated from committed fixtures, not from a live or authoritative market data source.",
     "Not investment advice. No buy or sell recommendation, no guaranteed return, and no personalised investment recommendation is expressed or implied.",
@@ -20,7 +20,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": -31200000000000.0
@@ -38,7 +37,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 28900000000000.0
@@ -56,7 +54,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 72400000000000.0
@@ -74,7 +71,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 52300000000000.0
@@ -92,7 +88,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 23100000000000.0
@@ -110,7 +105,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 149800000000000.0
@@ -128,7 +122,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 14800000000000.0
@@ -146,7 +139,6 @@
       "qualityStatus": "UNVALIDATED",
       "retrievedAt": "2026-07-30T09:22:53Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "IDR",
       "value": 301500000000000.0
@@ -164,7 +156,6 @@
       "qualityStatus": "VALID",
       "retrievedAt": "2026-07-30T09:33:14Z",
       "revision": 1,
-      "segment": null,
       "sourceRef": "FIX-DISC-2026-0001",
       "unit": "SHARES",
       "value": null
@@ -202,6 +193,6 @@
   },
   "recentEvents": [],
   "schemaVersion": "1.0.0",
-  "snapshotAt": "2026-08-04T06:18:30Z",
+  "snapshotAt": "2026-07-30T09:33:15Z",
   "ticker": "TLKM"
 }
