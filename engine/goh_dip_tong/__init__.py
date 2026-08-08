@@ -25,17 +25,17 @@ reverse, so Stage 1 stays independently runnable.
 from __future__ import annotations
 
 #: Engine package version. Bump on any change to the engine's own behaviour.
-ENGINE_VERSION = "0.2.0"
+ENGINE_VERSION = "0.1.0"
 
 #: Version stamped onto every value the engine calculates. Bump whenever a
 #: registered formula changes, or a golden fixture stops being reproducible.
 #: ``test_registry.py`` fails the build if this and
 #: :data:`FORMULA_REGISTRY_HASH` do not move together.
-MODEL_VERSION = "0.2.0"
+MODEL_VERSION = "0.1.0"
 
 #: Fingerprint of every registered formula's identity and logic. Regenerate
 #: with ``python3 -m engine.goh_dip_tong.cli registry-hash`` after a deliberate
 #: formula change, and bump :data:`MODEL_VERSION` in the same commit.
-FORMULA_REGISTRY_HASH = "8dfb38e8519af59be48882d1dc29e71c14a5bca3f56c931239c45b13cfe92a62"
+FORMULA_REGISTRY_HASH = "a1ecff05d14d4f352832b798c02f9f4a64759fb77a3db847fcf1246ec3c4398a"
 
 __all__ = ["ENGINE_VERSION", "MODEL_VERSION", "FORMULA_REGISTRY_HASH"]

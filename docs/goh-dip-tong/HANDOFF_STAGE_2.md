@@ -2,20 +2,14 @@
 
 **Stage:** 2 — deterministic calculation and research engine
 **Repository:** `williamcandra-coder/williamcandra.com`
-**Slices:** 1 (contracts, registry, propagation, inputs, output contract,
-labelling, refusal framework) and 2 (BANK forecast and valuation mathematics)
+**Slice:** 1 of N — contracts, registry, propagation, inputs, output contract,
+labelling, refusal framework
 
-## Status: `BANK_MODEL_COMPLETE_NO_REAL_ISSUER_VALUED`
+## Status: `SKELETON_COMPLETE_NO_VALUATION`
 
-Read this before building on Stage 2. The engine's structure is finished, and
-the `BANK` family's mathematics is built and proven against the synthetic-bank
-fixture. **No real issuer is valued.** Every one returns a structured refusal
-naming exactly what is missing.
-
-That is the headline finding of Slice 2, and it was predicted in Slice 1:
-implementing the mathematics did not move Stage 2 toward real output, because
-the constraint was never the code. Resolving the Stage 1 data gaps is what
-would.
+Read this before building on Stage 2. The engine's structure is finished and
+tested. **No valuation mathematics exists, and no issuer is valued.** Every
+real issuer returns a structured refusal naming exactly what is missing.
 
 | | |
 |---|---|
@@ -23,37 +17,17 @@ would.
 | Stage 2 acceptance checks | **53/53 passed** (52 requirement checks + 1 isolation self-check) |
 | Stage 1 regression | **262 passed** (was 259; +3 for the new CI wiring), **71/71** acceptance |
 | Model families registered | **17** — every family declared in `models.yml` |
-| Model families implemented | **1** (`BANK`) |
+| Model families implemented | **0** |
 | Issuers valued | **0** |
-| Formulas registered | **24** — 5 generic primitives, 12 bank drivers, 9 valuation steps |
+| Formulas registered | **5** — generic primitives only |
 | Mode of every output | `FIXTURE_TEST_ONLY`, derived from provenance |
 
-### What these slices are not
+### What this slice is not
 
-No model family other than `BANK`. No thesis, counter-thesis, catalysts, risks
-or breakers. No normalization layer. No UI. Those sections exist in the output
-contract and say `NOT_PRODUCED` with a reason — an explicit absence rather than
-an empty object a reader has to interpret.
-
-### Slice 2 additions
-
-| | |
-|---|---|
-| Driver chain | 12 registered formulas, clean-surplus book roll-forward |
-| Forecast | 5 years, equation-driven from anchors recovered out of history |
-| Scenarios | BEAR / BASE / BULL, offsets signed so bull is favourable |
-| Primary method | Residual income with a fading continuing value |
-| Cross-checks | Justified P/B and Gordon dividend discount |
-| Guards | `r - g` >= 100 bps, persistence < 1, positive discount rate |
-| Reverse solver | Bracketed bisection on the guarded model; refuses with no root |
-| Bridge | Sequential single-factor substitution; unexplained residual reported |
-| Views | Uncle and Analyst, both selections from the same records |
-
-**The three methods reconcile exactly under a steady state** — they are the
-same expression written three ways — and diverge over the explicit forecast
-because residual income fades abnormal returns while the cross-checks assume
-they persist. The divergence is reported, not reconciled away: a cross-check
-that always agrees is measuring nothing.
+No forecast mathematics, no valuation mathematics, no reverse solver, no
+scenarios, no bridge, no narration, no UI. Those are later slices. The sections
+for them exist in the output contract and say `NOT_PRODUCED` with a reason —
+an explicit absence rather than an empty object a reader has to interpret.
 
 ---
 
@@ -109,10 +83,6 @@ adding such a flag later fails the build.
 bank facts, a share count and market data all exist. Even the synthetic bank —
 whose data is complete — is refused unless the synthetic permission is asked for
 by name.
-
-Slice 2 changed nothing about this. `MODEL_IMPLEMENTED` now passes for `BANK`
-and the refusals are identical, which is the clearest evidence available that
-the constraint is the data rather than the engine.
 
 ---
 
@@ -311,19 +281,17 @@ between Python versions, so that test is gated to 3.11, which is what CI pins.)
    a price back to assumptions requires a price, and there is none.
 3. **No TTM aggregation.** `periods.ttm_window()` provides the window; the
    aggregation is still the engine's to build.
-5. **No normalization layer.** `normalized` is `NOT_PRODUCED`.
+4. **No normalization layer.** `normalized` is `NOT_PRODUCED`.
+5. **No narration.** When it arrives, `uncleView` must be a *projection* of the
+   record, never a recomputation, with identity-matching enforced by test.
 6. **No FX.** Inherited from Stage 1 — `assert_same_currency()` raises rather
    than combining currencies, and the engine does not override that.
 7. **Cost-of-capital config is a shape, not a set of values.** `beta`,
-   `equity_risk_premium` and `risk_free` are all `validated: false`. The only
-   usable rate is the `SYNTHETIC` one, and only the test harness can reach it.
-8. **The scenario offsets are stated, not estimated.** They are plausible
-   magnitudes chosen so the monotonicity guarantee is testable, not a view on
-   how any real bank's drivers vary.
+   `equity_risk_premium` and `risk_free` are all `validated: false`.
 
 ---
 
 ## 8. Git status
 
 Nothing has been committed or pushed. All work is uncommitted in the working
-tree of branch `claude/gdt-stage-2-bank-model`, awaiting review.
+tree of branch `claude/gdt-stage-2-engine`, awaiting review.

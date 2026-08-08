@@ -56,8 +56,6 @@ def test_the_refusal_names_insufficient_inputs_as_the_headline(sandbox):
 
 
 def test_the_refusal_lists_every_gate_that_failed(sandbox):
-    """MODEL_IMPLEMENTED is deliberately absent: the BANK mathematics exists
-    now, and the refusal is entirely about the data."""
     _, _, result = _evaluate(sandbox)
     assert set(result.failed_gates) >= {
         GateId.REQUIRED_INPUTS_PRESENT,
@@ -65,8 +63,8 @@ def test_the_refusal_lists_every_gate_that_failed(sandbox):
         GateId.MIN_HISTORY_PERIODS,
         GateId.VALIDATED_RISK_FREE_RATE,
         GateId.MARKET_DATA_AVAILABLE,
+        GateId.MODEL_IMPLEMENTED,
     }
-    assert GateId.MODEL_IMPLEMENTED not in set(result.failed_gates)
 
 
 def test_the_refusal_names_the_missing_metrics(sandbox):
@@ -173,12 +171,9 @@ def test_every_declared_family_is_registered(real_engine):
     assert set(registry) == set(models_config["model_families"])
 
 
-def test_only_the_bank_family_implements_valuation_mathematics(real_engine):
-    """Slice 2 built BANK and nothing else. A second family appearing here
-    without its own tests would be a family valuing issuers on borrowed
-    assumptions."""
+def test_no_family_implements_valuation_mathematics_yet(real_engine):
     registry = build_registry(real_engine.pipeline.models())
-    assert sorted(f for f, m in registry.items() if m.implemented) == ["BANK"]
+    assert [f for f, m in registry.items() if m.implemented] == []
 
 
 def test_an_unmapped_classification_gets_no_model_rather_than_a_default():

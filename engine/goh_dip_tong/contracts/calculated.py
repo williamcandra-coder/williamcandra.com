@@ -148,18 +148,11 @@ class Calculated:
 
     @property
     def ref(self) -> str:
-        """This value's own identity, usable as another calculation's input ref.
-
-        The formula ID is part of the identity, not decoration. Two methods can
-        produce an "equity value" for the same issuer, period and scenario and
-        mean different numbers; a reference that cannot tell them apart is not
-        a reference, and a view resolving one to the other would show the wrong
-        figure while passing every equality check.
-        """
+        """This value's own identity, usable as another calculation's input ref."""
         segment = self.segment or "CONSOLIDATED"
         return (
             f"{self.metric_id}|{self.period.period_type}|{self.period.period_end}"
-            f"|{segment}|{self.scenario}|{self.formula_id}"
+            f"|{segment}|{self.scenario}"
         )
 
     def as_input(self) -> InputRef:
@@ -247,44 +240,6 @@ def from_fact(
     )
 
 
-def from_assumption(
-    driver_id: str,
-    value: float,
-    period: Period,
-    model_version: str,
-    calculated_at: str,
-    unit: str = "RATIO",
-    scenario: ScenarioName = ScenarioName.ACTUAL,
-    note: Optional[str] = None,
-) -> Calculated:
-    """Lift a forecast assumption into the engine's record type.
-
-    Assumptions are inputs to the mathematics but outputs of a derivation from
-    history, so they carry ``source.assumption`` rather than a formula ID. The
-    distinction matters in an audit trail: it marks the boundary between what
-    was observed and what was assumed, which is the first thing anyone
-    disagreeing with a valuation needs to find.
-    """
-    return Calculated(
-        metric_id=driver_id,
-        measure=Measure(
-            value=float(value),
-            unit=unit,
-            currency=None if unit in ("RATIO", "PERIODS") else "IDR",
-            basis=ValueBasis.FORECAST,
-            quality_status=QualityStatus.UNVALIDATED,
-        ),
-        period=period,
-        formula_id="source.assumption",
-        model_version=model_version,
-        calculated_at=calculated_at,
-        scenario=scenario,
-        notes=note,
-        input_refs=(InputRef(ref=f"assumption|{driver_id}|{scenario}",
-                             kind="ASSUMPTION"),),
-    )
-
-
 def fact_key(ticker: str, fact: dict) -> str:
     """Stage 1's factKey shape, rebuilt from a snapshot row.
 
@@ -298,11 +253,4 @@ def fact_key(ticker: str, fact: dict) -> str:
     )
 
 
-__all__ = [
-    "Period",
-    "InputRef",
-    "Calculated",
-    "from_fact",
-    "from_assumption",
-    "fact_key",
-]
+__all__ = ["Period", "InputRef", "Calculated", "from_fact", "fact_key"]

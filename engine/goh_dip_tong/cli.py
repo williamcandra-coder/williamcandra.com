@@ -3,7 +3,7 @@
     python3 -m engine.goh_dip_tong.cli <command> [options]
 
 Commands:
-    research-build   build research snapshots
+    research-build   build research snapshots (refusals, in this engine version)
     registry-hash    print the formula registry fingerprint
     engine-audit     show model families, their gates and their method policy
 
@@ -33,7 +33,6 @@ from . import ENGINE_VERSION, MODEL_VERSION
 from .common import arithmetic as _arithmetic  # noqa: F401  (registers formulas)
 from .contracts.model import ModelContext
 from .contracts.registry import REGISTRY
-from .valuation.guards import load_guards
 from .inputs import loader
 from .models.registry import build_registry, model_for
 from .publishing import snapshot as snapshot_mod
@@ -42,7 +41,7 @@ from .settings import EngineSettings, get_engine_settings
 EXIT_OK, EXIT_VALIDATION_FAILED, EXIT_USAGE = 0, 1, 2
 
 
-def _context(settings: EngineSettings, calculated_at: str) -> ModelContext:
+def _context(settings: EngineSettings) -> ModelContext:
     """Gate configuration for a production build.
 
     ``allow_synthetic_cost_of_equity`` is left at its default of False. It is
@@ -50,26 +49,18 @@ def _context(settings: EngineSettings, calculated_at: str) -> ModelContext:
     assumptions into publishable output is a switch that will eventually be
     used by accident.
     """
-    config = settings.engine_config()
-    gates = config.get("gates") or {}
-    terminal = config.get("terminal") or {}
+    gates = settings.engine_config().get("gates") or {}
     return ModelContext(
         models_config=settings.pipeline.models(),
         min_annual_periods=int(gates.get("min_annual_periods", 3)),
         max_input_age_days=gates.get("max_input_age_days"),
-        cost_of_capital_config=settings.cost_of_capital(),
-        scenario_config=settings.scenarios(),
-        persistence=float(terminal.get("persistence", 0.6)),
-        guards=load_guards(config),
-        model_version=MODEL_VERSION,
-        calculated_at=calculated_at,
     )
 
 
 def cmd_research_build(args) -> int:
     settings = get_engine_settings()
+    context = _context(settings)
     calculated_at = utc_now_iso()
-    context = _context(settings, calculated_at)
 
     if args.all:
         tickers = loader.available_tickers(settings)
@@ -171,11 +162,7 @@ def cmd_engine_audit(args) -> int:
     risk_free = settings.cost_of_capital().get("risk_free") or {}
     print(f"  risk-free validated: {risk_free.get('validated')}  "
           f"instrument={risk_free.get('instrument')}")
-    implemented = sorted(f for f, m in registry.items() if m.implemented)
-    print(f"  families with valuation mathematics: "
-          f"{', '.join(implemented) if implemented else 'none'}")
-    print("  a validated risk-free input is still required before any real "
-          "issuer can be valued")
+    print("  no family implements valuation mathematics in this engine version")
     return EXIT_OK
 
 

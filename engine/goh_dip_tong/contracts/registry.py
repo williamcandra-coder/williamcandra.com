@@ -29,7 +29,6 @@ import textwrap
 from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, Optional, Tuple
 
-from pipeline.goh_dip_tong.contracts.enums import ValueBasis
 from pipeline.goh_dip_tong.contracts.records import ContractError, Measure
 
 from .calculated import Calculated, InputRef, Period
@@ -152,15 +151,8 @@ class FormulaRegistry:
         scenario: ScenarioName = ScenarioName.ACTUAL,
         segment: Optional[str] = None,
         notes: Optional[str] = None,
-        output_metric: Optional[str] = None,
     ) -> Calculated:
-        """Run one formula and wrap the result with its full derivation.
-
-        ``output_metric`` renames the result. Generic formulas — ``core.ratio``,
-        ``core.per_share`` — are reused across many metrics, and without this
-        every value one produced would be called "ratio" or "per_share",
-        which is no name at all in an audit trail.
-        """
+        """Run one formula and wrap the result with its full derivation."""
         formula = self.get(formula_id)
 
         supplied = tuple(sorted(inputs))
@@ -177,10 +169,9 @@ class FormulaRegistry:
         )
 
         result = self._propagate_or_run(formula, inputs)
-        result = self._propagate_basis(result, inputs, formula)
 
         return Calculated(
-            metric_id=output_metric or formula.output_metric,
+            metric_id=formula.output_metric,
             measure=result,
             period=period,
             formula_id=formula_id,
@@ -190,30 +181,6 @@ class FormulaRegistry:
             input_refs=refs,
             segment=segment,
             notes=notes,
-        )
-
-    @staticmethod
-    def _propagate_basis(result: Measure, inputs: Dict[str, Calculated],
-                         formula: Formula) -> Measure:
-        """A figure computed from a forecast is a forecast.
-
-        Spec's shared rules require reported, derived and forecast values to
-        stay visually distinct all the way to the UI. A ratio computed off
-        projected line items is not a derived historical fact, however derived
-        its arithmetic — labelling it DERIVED would let a projection render
-        with the same weight as something a company actually reported.
-        """
-        if result.is_missing or result.basis == ValueBasis.FORECAST:
-            return result
-        forecast_input = any(
-            inputs[name].basis == ValueBasis.FORECAST for name in formula.inputs
-        )
-        if not forecast_input:
-            return result
-        return Measure(
-            value=result.value, unit=result.unit, currency=result.currency,
-            scale=result.scale, basis=ValueBasis.FORECAST,
-            quality_status=result.quality_status,
         )
 
     @staticmethod

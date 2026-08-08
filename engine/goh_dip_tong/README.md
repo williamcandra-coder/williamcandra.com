@@ -1,20 +1,11 @@
 # Goh Dip Tong — Stage 2 calculation and research engine
 
 Deterministic engine that turns validated Stage 1 output into versioned
-research snapshots.
-
-**Slice 1** built the skeleton: contracts, the formula registry, missing-value
-propagation, point-in-time input selection, the output schema, provenance
-labelling and the refusal framework.
-
-**Slice 2** built the `BANK` mathematics: the driver chain, a five-year
-forecast, bear/base/bull scenarios, residual income with justified-P/B and
-dividend-discount cross-checks, terminal guards, the reverse-implied ROE
-solver, the valuation bridge, and the Uncle and Analyst views.
-
-**No real issuer is valued.** The mathematics runs against the synthetic-bank
-fixture only. Every real issuer still fails the data gates and the risk-free
-gate, and returns a structured refusal.
+research snapshots. **This slice builds the skeleton, not the mathematics.**
+Contracts, the formula registry, missing-value propagation, point-in-time input
+selection, the output schema, provenance labelling and the refusal framework
+are complete and tested. Forecast and valuation mathematics are not implemented,
+and every issuer's valuation is refused.
 
 ## Running it
 
@@ -57,21 +48,18 @@ generic FCFF model is worse than an explicit "not covered yet".
 engine/goh_dip_tong/
 ├── cli.py  settings.py
 ├── contracts/    enums  calculated  registry  refusal  model
-├── common/       arithmetic  solvers  bridge
+├── common/       arithmetic          # safe_div / safe_sub / safe_add / safe_mean
 ├── inputs/       loader  point_in_time  provenance
-├── forecasting/  assumptions  bank    # anchors, scenarios, the driver chain
-├── valuation/    cost_of_capital  guards  methods
-├── expectations/ reverse_solver
-├── narration/    views               # projections only; no arithmetic
-├── models/       registry  bank      # 17 families registered, 1 implemented
+├── models/       registry  bank      # 17 families registered, 0 implemented
 ├── publishing/   snapshot
-├── config/       engine.yml  cost-of-capital.yml  scenarios.yml
+├── config/       engine.yml  cost-of-capital.yml
 ├── fixtures/     synthetic-bank/     # TEST-ONLY, never published
-└── tests/        12 modules + acceptance_stage2.sh
+└── tests/        7 modules + acceptance_stage2.sh
 ```
 
-Deliberately absent: `thesis/`. Empty directories for unwritten code are
-scaffolding that looks like progress.
+Deliberately absent: `forecasting/`, `valuation/`, `expectations/`, `thesis/`,
+`narration/`. Empty directories for unwritten code are scaffolding that looks
+like progress.
 
 ## Contracts
 
@@ -104,34 +92,9 @@ than about the code:
 | `VALIDATED_RISK_FREE_RATE` | No validated yield exists. BI_7DRR is a policy rate and is refused as a substitute — see `config/cost-of-capital.yml` |
 | `MARKET_DATA_AVAILABLE` | The price provider is `PRIVATE_RESEARCH_ONLY` |
 
-`MODEL_IMPLEMENTED` now passes for `BANK` — and nothing changes, which was the
-point. Implementing the mathematics does not move Stage 2 toward real output;
-resolving the Stage 1 data gaps does.
-
-## The BANK model
-
-```
-EA_t     = EA_{t-1} x (1 + g)          loans_t = EA_t x loans/EA
-II_t     = EA_t x asset_yield          IE_t    = dep_t x funding_cost
-NII_t    = II_t - IE_t                 fee_t   = NII_t x fee_ratio
-opex_t   = (NII_t + fee_t) x cost_to_income
-prov_t   = loans_t x cost_of_credit
-PPOP_t   = NII_t + fee_t - opex_t      PBT_t   = PPOP_t - prov_t
-NP_t     = PBT_t x (1 - tax)           NPpar_t = NP_t x minority_share
-B_t      = B_{t-1} + NPpar_t - DIV_t   (clean surplus)
-
-V0 = B0 + SUM RI_t/(1+r)^t + CV,   RI_t = NPpar_t - r x B_{t-1}
-CV = omega x RI_T / (1 + r - omega) / (1+r)^T
-```
-
-Cross-checks: justified P/B `(ROE-g)/(r-g)` and Gordon `D1/(r-g)`. Under a
-steady state all three are the same expression, and
-`test_valuation_bank.py` asserts they agree to 1e-12. Over the explicit
-forecast they diverge, because residual income *fades* abnormal returns while
-both cross-checks assume they persist — reported, not reconciled away.
-
-Guards refuse before dividing: `r - g` must clear 100 bps, persistence must
-stay below 1, and the discount rate must be positive.
+`MODEL_IMPLEMENTED` fails too, and is deliberately *last* in the refusal
+precedence: implementing the mathematics would not produce a number while the
+data is absent, so leading with it would point at the wrong problem.
 
 ## Determinism and churn
 

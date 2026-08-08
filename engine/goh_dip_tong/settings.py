@@ -112,9 +112,6 @@ class EngineSettings:
     def cost_of_capital(self) -> dict:
         return self.load_yaml(self.config_dir / "cost-of-capital.yml")
 
-    def scenarios(self) -> dict:
-        return self.load_yaml(self.config_dir / "scenarios.yml")
-
     def rel(self, path: Path) -> str:
         return self.pipeline.rel(path)
 

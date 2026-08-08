@@ -12,28 +12,7 @@ schemaVersion: "1.0.0"
 # Stamped onto every calculated value. Bump together with FORMULA_REGISTRY_HASH
 # in engine/goh_dip_tong/__init__.py whenever a registered formula changes;
 # test_registry.py fails the build if they move apart.
-model_version: "0.2.0"
-
-# Explicit forecast horizon, in years.
-horizon: 5
-
-terminal:
-  # Minimum spread between the discount rate and perpetual growth. Below this,
-  # the continuing value is dominated by the denominator rather than by
-  # anything the analyst believes — and it fails silently, because a very large
-  # number looks like a very confident one.
-  min_spread: 0.01
-
-  # Residual-income persistence. At 1.0 abnormal returns last forever, which
-  # assumes competition never arrives. Values at or above max_persistence are
-  # refused rather than clipped.
-  max_persistence: 0.99
-  min_discount_rate: 0.0001
-
-  # How much of the prior year's residual income survives into the next, past
-  # the explicit horizon. 0.6 fades abnormal returns to roughly a tenth over a
-  # further five years.
-  persistence: 0.6
+model_version: "0.1.0"
 
 gates:
   # Three annual periods is the minimum that distinguishes a trend from a

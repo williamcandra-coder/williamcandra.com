@@ -5,14 +5,10 @@ refusal when anything is short. Putting the gate logic here rather than in each
 family means a new family cannot accidentally ship without the checks, and the
 refusal vocabulary stays consistent across all of them.
 
-``BANK`` implements its mathematics; every other family declares
-``implemented = False`` and fails the ``MODEL_IMPLEMENTED`` gate. That is the
+No valuation mathematics lives in this slice. Every model therefore declares
+``implemented = False`` and the ``MODEL_IMPLEMENTED`` gate fails — which is the
 honest state of affairs and is visible in every snapshot, rather than being an
 absence a reader has to infer.
-
-Passing the gates is necessary but not sufficient for a number to appear: the
-data gates, the risk-free gate and the terminal guards each refuse
-independently, and for every real issuer today several of them do.
 """
 
 from __future__ import annotations
@@ -20,7 +16,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional, Sequence, Tuple
 
-from ..valuation.guards import TerminalGuards
 from .enums import GateId, RefusalReason, ValuationMethod
 from .refusal import GateReport, MethodNotPermitted, ValuationRefusal
 
@@ -60,20 +55,6 @@ class ModelContext:
     min_annual_periods: int = 3
     max_input_age_days: Optional[int] = None
 
-    # ---- valuation configuration ----------------------------------------
-    #: `cost-of-capital.yml`. Carries the risk-free decision and, behind the
-    #: switch above, the SYNTHETIC rate used only by fixtures.
-    cost_of_capital_config: dict = field(default_factory=dict)
-    #: `scenarios.yml`. Offsets, bounds and the pinned scenario order.
-    scenario_config: dict = field(default_factory=dict)
-    #: Residual-income persistence. Guarded to stay below 1: at 1, abnormal
-    #: returns never fade, which assumes competition never arrives.
-    persistence: float = 0.6
-    guards: TerminalGuards = field(default_factory=lambda: TerminalGuards())
-    #: Stamped onto every value the model produces.
-    model_version: str = "0.0.0"
-    calculated_at: str = ""
-
 
 class SectorModel:
     """Base class for every model family."""
@@ -93,12 +74,6 @@ class SectorModel:
     not_applicable_metrics: Tuple[str, ...] = ()
     #: Historical annual periods needed to anchor an equation-driven forecast.
     min_annual_periods: int = 3
-
-    #: Gates that are reported but do not prevent a valuation. A price is
-    #: required to solve the market-implied case; it is not required to value
-    #: a business, and treating it as blocking would make research impossible
-    #: precisely where market data is hardest to license.
-    non_blocking_gates: Tuple[GateId, ...] = (GateId.MARKET_DATA_AVAILABLE,)
 
     # ---- method policy ---------------------------------------------------
     def assert_method_permitted(self, method: ValuationMethod) -> None:
@@ -264,9 +239,7 @@ class SectorModel:
                 f"no defensible cost of equity can be formed. BI_7DRR is a "
                 f"short-term policy rate held as macro context and is refused as "
                 f"a substitute — using it would understate the discount rate and "
-                f"inflate the valuation invisibly. A validated long-dated "
-                f"government bond yield, with a documented source and retrieval "
-                f"date, is what would resolve this."
+                f"inflate the valuation invisibly."
             )
         if reason == RefusalReason.NO_MARKET_DATA:
             return (

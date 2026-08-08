@@ -100,18 +100,6 @@ class GateReport:
     def passed(self) -> bool:
         return not self.failed
 
-    def blocking_failures(self, non_blocking: Sequence[GateId] = ()) -> List[Gate]:
-        """Failed gates that actually prevent a valuation.
-
-        Not every gate blocks. Market data is needed to solve a price back to
-        implied assumptions; it is not needed to value a business. Treating it
-        as blocking would mean no issuer could ever be valued without a price
-        feed, which inverts the relationship between research and the market it
-        is meant to be checked against.
-        """
-        excluded = set(non_blocking)
-        return [g for g in self.failed if g.gate_id not in excluded]
-
     def refusal(self, reason: RefusalReason, note: str,
                 method: Optional[ValuationMethod] = None) -> ValuationRefusal:
         return ValuationRefusal(
