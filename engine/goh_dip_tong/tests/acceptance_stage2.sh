@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Goh Dip Tong — Stage 2 acceptance test (slices 1-3)
+# Goh Dip Tong — Stage 2 acceptance test (slices 1-2)
 #
 #   ./engine/goh_dip_tong/tests/acceptance_stage2.sh
 #
@@ -12,13 +12,6 @@
 # Slice 2: the BANK driver chain, the five-year forecast, bear/base/bull
 # scenarios, residual income with two cross-checks, the terminal guards, the
 # reverse-implied ROE solver, the valuation bridge, and the two views.
-#
-# Slice 3: the deterministic research package (thesis, counter-thesis,
-# catalysts, risks, breakers, evidence and model-audit references, and the
-# valuation-method comparison notes), the finalised Uncle and Analyst views,
-# the six Stage 3 UI-state fixtures, and the publishing guarantees — byte
-# stability, no churn on a later date, and an invalid snapshot never replacing
-# a valid one.
 #
 # It does NOT verify any other model family. None is implemented, and an
 # acceptance script that passed for absent functionality would be worse than
@@ -459,29 +452,14 @@ chk $? "no published file shares a hash with any engine fixture"
 ! grep -rl "SYNTHETIC" "$REPO/data/goh-dip-tong" "$SB/data/goh-dip-tong" 2>/dev/null | grep -q .
 chk $? "no published document carries the SYNTHETIC flag"
 
-py "
-import pathlib, sys; sys.path.insert(0,'$REPO')
-from engine.goh_dip_tong.publishing.ui_states import FIXTURE_TICKERS
-bad = []
-for tree in ('$REPO/data/goh-dip-tong', '$SB/data/goh-dip-tong'):
-    root = pathlib.Path(tree)
-    if not root.is_dir(): continue
-    for path in sorted(root.rglob('*.json')):
-        text = path.read_text(encoding='utf-8')
-        bad += [(str(path), t) for t in FIXTURE_TICKERS if t in text]
-        bad += [(str(path), path.stem) for t in FIXTURE_TICKERS if path.stem == t]
-if bad: print(bad[:5])
-raise SystemExit(0 if not bad else 1)"
-chk $? "no synthetic ticker appears anywhere in the published tree"
-ev "checked SYNB, SYNM, SYNO, SYNP, SYNS, SYNX"
+! find "$REPO/data/goh-dip-tong" "$SB/data/goh-dip-tong" -name "SYNB*" 2>/dev/null | grep -q .
+chk $? "the synthetic ticker appears nowhere in the published tree"
 
 py "
-import json, sys; sys.path.insert(0,'$REPO')
-from engine.goh_dip_tong.publishing.ui_states import FIXTURE_TICKERS
+import json
 u = json.load(open('$REPO/config/goh-dip-tong/idx30.current.json'))
-live = {c['ticker'] for c in u['constituents']}
-raise SystemExit(0 if not (set(FIXTURE_TICKERS) & live) else 1)"
-chk $? "no synthetic ticker is in the IDX30 universe"
+raise SystemExit(0 if 'SYNB' not in {c['ticker'] for c in u['constituents']} else 1)"
+chk $? "the synthetic ticker is not in the IDX30 universe"
 
 # ═══════════════════════════════════════════════════════════════════════════
 hdr "11. Determinism and no churn"
@@ -650,276 +628,7 @@ raise SystemExit(0 if sorted(f for f, m in reg.items() if m.implemented) == ['BA
 chk $? "only BANK implements valuation mathematics"
 
 # ═══════════════════════════════════════════════════════════════════════════
-hdr "13. Research package, views and UI states (slice 3)"
-
-py "
-import sys; sys.path.insert(0,'$REPO')
-from engine.goh_dip_tong import RESEARCH_RULE_REGISTRY_HASH
-from engine.goh_dip_tong.research.rules import RULES
-print('        declared: ' + RESEARCH_RULE_REGISTRY_HASH[:32] + '…')
-raise SystemExit(0 if RULES.registry_hash() == RESEARCH_RULE_REGISTRY_HASH else 1)"
-chk $? "the research-rule registry hash matches the declared constant"
-
-py "
-import ast, pathlib
-BAD = {'Add','Sub','Mult','Div','Pow','FloorDiv','Mod'}
-mods = ['engine/goh_dip_tong/research/rules.py',
-        'engine/goh_dip_tong/research/records.py',
-        'engine/goh_dip_tong/research/package.py',
-        'engine/goh_dip_tong/narration/views.py']
-bad = []
-for m in mods:
-    src = (pathlib.Path('$REPO') / m).read_text(encoding='utf-8')
-    bad += [m + ':' + str(n.lineno) for n in ast.walk(ast.parse(src))
-            if isinstance(n, ast.BinOp) and type(n.op).__name__ in BAD]
-if bad: print(bad[:5])
-raise SystemExit(0 if not bad else 1)"
-chk $? "no narrative module contains arithmetic"
-
-py "
-import json, pathlib
-d = json.loads((pathlib.Path('$REPO')
-    / 'engine/goh_dip_tong/fixtures/ui_states/FULL_RESEARCH.json')
-    .read_text(encoding='utf-8'))
-known = set()
-for r in d['researchRefs']['evidence'] + d['researchRefs']['modelAudit']:
-    known.update(r['supportingEvidence'])
-bad = [r['id'] for r in d['thesis']['records']
-       if not r['supportingEvidence']
-       or not set(r['supportingEvidence']) <= known]
-if bad: print(bad)
-raise SystemExit(0 if d['thesis']['records'] and not bad else 1)"
-chk $? "every thesis statement references registered evidence"
-
-py "
-import json, pathlib
-d = json.loads((pathlib.Path('$REPO')
-    / 'engine/goh_dip_tong/fixtures/ui_states/FULL_RESEARCH.json')
-    .read_text(encoding='utf-8'))
-known = set()
-for r in d['researchRefs']['evidence'] + d['researchRefs']['modelAudit']:
-    known.update(r['supportingEvidence'])
-bad = [r['id'] for r in d['counterThesis']['records']
-       if not r['supportingEvidence']
-       or not set(r['supportingEvidence']) <= known]
-if bad: print(bad)
-raise SystemExit(0 if d['counterThesis']['records'] and not bad else 1)"
-chk $? "every counter-thesis statement references registered evidence"
-
-py "
-import json, pathlib
-d = json.loads((pathlib.Path('$REPO')
-    / 'engine/goh_dip_tong/fixtures/ui_states/FULL_RESEARCH.json')
-    .read_text(encoding='utf-8'))
-items = d['catalysts'] + d['risks'] + d['breakers']
-ids = [r['id'] for r in items]
-ok = bool(items) and len(ids) == len(set(ids)) and all(
-    r['id'].startswith('SYNB.') and r['ruleId'] in r['id'] for r in items)
-print('        catalysts %d  risks %d  breakers %d' % (
-    len(d['catalysts']), len(d['risks']), len(d['breakers'])))
-raise SystemExit(0 if ok else 1)"
-chk $? "every catalyst, risk and breaker has a stable unique ID"
-
-py "
-import json, pathlib
-d = json.loads((pathlib.Path('$REPO')
-    / 'engine/goh_dip_tong/fixtures/ui_states/FULL_RESEARCH.json')
-    .read_text(encoding='utf-8'))
-items = d['catalysts'] + d['risks'] + d['breakers']
-bad = [r['id'] for r in items
-       if not r['supportingEvidence'] or not r['supportingRecords']
-       or not (r.get('severity') or r.get('importance'))]
-if bad: print(bad)
-raise SystemExit(0 if items and not bad else 1)"
-chk $? "every catalyst, risk and breaker is cited and ranked"
-
-py "
-import sys; sys.path.insert(0,'$REPO')
-from engine.goh_dip_tong.research.records import (
-    RecordType, ResearchRecord, UnsupportedClaim)
-base = dict(record_id='X.THESIS.r.ALL', record_type=RecordType.THESIS,
-            statement='A claim.', rule_id='r',
-            supporting_records=('a',), supporting_evidence=('b',),
-            importance='HIGH')
-cases = [dict(base, supporting_evidence=()),
-         dict(base, supporting_records=()),
-         dict(base, statement='This one is undervalued.'),
-         dict(base, rule_id='')]
-for case in cases:
-    try:
-        ResearchRecord(**case)
-    except UnsupportedClaim:
-        continue
-    raise SystemExit(1)
-raise SystemExit(0)"
-chk $? "an unsupported or uncited claim is rejected at construction"
-
-py "
-import json, pathlib
-d = json.loads((pathlib.Path('$REPO')
-    / 'engine/goh_dip_tong/fixtures/ui_states/FULL_RESEARCH.json')
-    .read_text(encoding='utf-8'))
-uncle = {i['ref']: json.dumps(i['value']) for i in d['uncleView']['items']}
-analyst = {i['ref']: json.dumps(i['value']) for i in d['analystView']['items']}
-shared = set(uncle) & set(analyst)
-ok = bool(shared) and set(uncle) <= set(analyst) and all(
-    uncle[r] == analyst[r] for r in shared)
-print('        uncle %d items, analyst %d items, %d shared refs' % (
-    len(uncle), len(analyst), len(shared)))
-raise SystemExit(0 if ok else 1)"
-chk $? "Uncle and Analyst views share calculated-record IDs and identical numbers"
-
-py "
-import json, pathlib
-d = json.loads((pathlib.Path('$REPO')
-    / 'engine/goh_dip_tong/fixtures/ui_states/FULL_RESEARCH.json')
-    .read_text(encoding='utf-8'))
-u = {c['id']: c['statement'] for c in d['uncleView']['conclusions']}
-a = {c['id']: c['statement'] for c in d['analystView']['conclusions']}
-ok = bool(u) and set(u) <= set(a) and all(u[i] == a[i] for i in u)
-raise SystemExit(0 if ok else 1)"
-chk $? "both views project the same research records"
-
-py "
-import json, pathlib, sys; sys.path.insert(0,'$REPO')
-from engine.goh_dip_tong.publishing.ui_states import UI_STATE_CASES
-from engine.goh_dip_tong.settings import get_engine_settings
-from pipeline.goh_dip_tong.validation.schema import validate_document
-s = get_engine_settings()
-root = pathlib.Path('$REPO') / 'engine/goh_dip_tong/fixtures/ui_states'
-bad = []
-for case in UI_STATE_CASES:
-    d = json.loads((root / case.filename).read_text(encoding='utf-8'))
-    r = validate_document('research-snapshot', d, subject=d['ticker'],
-                          settings=s.pipeline)
-    if not r.ok or d['uiState'] != str(case.state):
-        bad.append(case.filename)
-if bad: print(bad)
-raise SystemExit(0 if len(UI_STATE_CASES) == 6 and not bad else 1)"
-chk $? "all six UI-state fixtures exist and validate against the output schema"
-ev "FULL_RESEARCH, MODEL_UNDER_VALIDATION, ONBOARDING, STALE, SUSPENDED, PARTIAL"
-
-py "
-import json, pathlib
-root = pathlib.Path('$REPO') / 'engine/goh_dip_tong/fixtures/ui_states'
-bad = []
-for p in sorted(root.glob('*.json')):
-    d = json.loads(p.read_text(encoding='utf-8'))
-    if (d['mode'] != 'FIXTURE_TEST_ONLY'
-            or 'FIXTURE_TEST_ONLY' not in d['quality']['flags']
-            or not d['disclaimers'][0].startswith('FIXTURE_TEST_ONLY')
-            or 'not live, current or authoritative' not in d['disclaimers'][0]):
-        bad.append(p.name)
-if bad: print(bad)
-raise SystemExit(0 if not bad else 1)"
-chk $? "every UI fixture is FIXTURE_TEST_ONLY and carries a visible disclaimer"
-
-py "
-import json, pathlib
-root = pathlib.Path('$REPO') / 'engine/goh_dip_tong/fixtures/ui_states'
-bad = []
-for p in sorted(root.glob('*.json')):
-    d = json.loads(p.read_text(encoding='utf-8'))
-    if not (d.get('freshness') and d.get('quality') and d.get('evidence')
-            and d['researchRefs']['status'] == 'PRODUCED'
-            and d['modelAudit'].get('ruleRegistryHash')
-            and d['modelAudit'].get('formulaRegistryHash')):
-        bad.append(p.name)
-if bad: print(bad)
-raise SystemExit(0 if not bad else 1)"
-chk $? "every UI fixture carries freshness, quality, evidence and model audit"
-
-py "
-import json, pathlib
-root = pathlib.Path('$REPO') / 'engine/goh_dip_tong/fixtures/ui_states'
-valued = {}
-for p in sorted(root.glob('*.json')):
-    d = json.loads(p.read_text(encoding='utf-8'))
-    if d['valuation']['status'] == 'VALUED':
-        valued[p.stem] = d['ticker']
-print('        valued: ' + repr(valued))
-raise SystemExit(0 if valued == {'FULL_RESEARCH': 'SYNB'} else 1)"
-chk $? "only the synthetic bank is valued, and no fixture names a real issuer"
-
-SB=$(mk_sandbox uifixtures)
-(cd "$SB" && python3 -m engine.goh_dip_tong.cli ui-fixtures \
-             --write-mode commit >/dev/null 2>&1)
-py "
-import pathlib
-a = pathlib.Path('$REPO') / 'engine/goh_dip_tong/fixtures/ui_states'
-b = pathlib.Path('$SB') / 'engine/goh_dip_tong/fixtures/ui_states'
-bad = [p.name for p in sorted(a.glob('*.json'))
-       if p.read_bytes() != (b / p.name).read_bytes()]
-if bad: print(bad)
-raise SystemExit(0 if not bad else 1)"
-chk $? "regenerating every UI fixture reproduces it byte for byte"
-
-SB=$(mk_sandbox realissuers)
-(cd "$SB" && python3 -m engine.goh_dip_tong.cli research-build --all \
-             --as-of 2026-07-31 --write-mode commit >/dev/null 2>&1)
-py "
-import json, pathlib
-root = pathlib.Path('$SB') / 'data/goh-dip-tong/research-snapshots'
-bad = []
-seen = 0
-for p in sorted(root.rglob('*/*/*.json')):
-    d = json.loads(p.read_text(encoding='utf-8'))
-    seen += 1
-    text = json.dumps(d)
-    if (d['valuation']['status'] != 'REFUSED'
-            or d['marketImplied']['available'] is not False
-            or d['marketImplied']['cases'] != {}
-            or 'valuePerShare' in text or 'targetPrice' in text
-            or d['thesis']['status'] != 'NOT_PRODUCED'
-            or d['catalysts'] or d['risks'] or d['breakers']):
-        bad.append(d['ticker'])
-print('        issuers checked: %d' % seen)
-if bad: print(bad)
-raise SystemExit(0 if seen and not bad else 1)"
-chk $? "every real issuer refuses, with no target price and no market-implied case"
-
-py "
-import json, pathlib
-root = pathlib.Path('$SB') / 'data/goh-dip-tong/research-snapshots'
-bad = [p.name for p in sorted((root / 'current').glob('*.json'))
-       if not json.loads(p.read_text(encoding='utf-8')).get('uiState')]
-if bad: print(bad)
-states = sorted({json.loads(p.read_text(encoding='utf-8'))['uiState']
-                 for p in sorted((root / 'current').glob('*.json'))})
-print('        pointer uiState: ' + repr(states))
-raise SystemExit(0 if not bad else 1)"
-chk $? "every current pointer names the state a UI would render"
-
-py "
-import copy, json, sys; sys.path.insert(0,'$SB')
-from engine.goh_dip_tong.contracts.model import ModelContext
-from engine.goh_dip_tong.inputs import loader
-from engine.goh_dip_tong.models.registry import model_for
-from engine.goh_dip_tong.publishing import snapshot as snap
-from engine.goh_dip_tong.settings import EngineSettings
-from engine.goh_dip_tong import MODEL_VERSION
-from pipeline.goh_dip_tong.settings import Settings
-s = EngineSettings(pipeline=Settings(repo_root='$SB'))
-ei = loader.load(s, 'BBCA', as_of='2026-07-31',
-                 model_version=MODEL_VERSION, calculated_at='x')
-m = model_for(s.pipeline.models(), ei.identity.get('modelFamily'))
-doc = snap.build(s, ei, m, ModelContext(models_config=s.pipeline.models()), 'x')
-path = s.output_snapshot('BBCA', doc['asOf'], doc['modelVersion'])
-pointer = s.output_current / 'BBCA.json'
-before = (path.read_bytes(), pointer.read_bytes())
-corrupt = copy.deepcopy(doc)
-corrupt['researchStatus'] = 'NOT_A_STATUS'
-corrupt['contentHash'] = 'a' * 64
-try:
-    snap.write(s, corrupt)
-except snap.InvalidSnapshot:
-    after = (path.read_bytes(), pointer.read_bytes())
-    raise SystemExit(0 if after == before else 1)
-raise SystemExit(1)"
-chk $? "an invalid snapshot cannot replace the last valid one"
-
-# ═══════════════════════════════════════════════════════════════════════════
-hdr "14. Boundaries"
+hdr "13. Boundaries"
 
 ! grep -rlw "BBCA" "$REPO/engine" --include="*.py" | grep -qv tests/
 chk $? "no ticker is hard-coded in engine source (tests excluded)"
@@ -968,8 +677,8 @@ ev "every write went to a throwaway sandbox under \$(mktemp -d), now removed"
 printf '\n\033[1m%s\033[0m\n%s\n' "RESULT" "$(printf '─%.0s' $(seq 1 78))"
 printf "  checks passed: %d\n  checks failed: %d\n" "$PASS" "$FAIL"
 if [ "$FAIL" = "0" ]; then
-  printf "  \033[32mSTAGE 2 SLICES 1-3 ACCEPTANCE: PASS\033[0m\n"
+  printf "  \033[32mSTAGE 2 SLICES 1-2 ACCEPTANCE: PASS\033[0m\n"
   exit 0
 fi
-printf "  \033[31mSTAGE 2 SLICES 1-3 ACCEPTANCE: FAIL\033[0m\n"
+printf "  \033[31mSTAGE 2 SLICES 1-2 ACCEPTANCE: FAIL\033[0m\n"
 exit 1

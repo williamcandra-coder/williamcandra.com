@@ -12,7 +12,7 @@ schemaVersion: "1.0.0"
 # Stamped onto every calculated value. Bump together with FORMULA_REGISTRY_HASH
 # in engine/goh_dip_tong/__init__.py whenever a registered formula changes;
 # test_registry.py fails the build if they move apart.
-model_version: "0.3.0"
+model_version: "0.2.0"
 
 # Explicit forecast horizon, in years.
 horizon: 5

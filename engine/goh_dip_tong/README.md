@@ -12,15 +12,9 @@ forecast, bear/base/bull scenarios, residual income with justified-P/B and
 dividend-discount cross-checks, terminal guards, the reverse-implied ROE
 solver, the valuation bridge, and the Uncle and Analyst views.
 
-**Slice 3** built the research package — thesis, counter-thesis, catalysts,
-risks, breakers, evidence and model-audit references, method-comparison notes —
-finalised both views, added the `uiState` vocabulary and its six Stage 3
-fixtures, and closed the publishing rules.
-
 **No real issuer is valued.** The mathematics runs against the synthetic-bank
 fixture only. Every real issuer still fails the data gates and the risk-free
-gate, and returns a structured refusal. `docs/goh-dip-tong/HANDOFF_STAGE_2.md`
-is the Stage 3 contract.
+gate, and returns a structured refusal.
 
 ## Running it
 
@@ -29,11 +23,9 @@ python3 -m pip install -r pipeline/goh_dip_tong/requirements.txt   # no new deps
 
 python3 -m engine.goh_dip_tong.cli engine-audit
 python3 -m engine.goh_dip_tong.cli registry-hash --verbose
-python3 -m engine.goh_dip_tong.cli registry-hash --rules
 python3 -m engine.goh_dip_tong.cli research-build --all --verbose
 python3 -m engine.goh_dip_tong.cli research-build --ticker BBCA --as-of 2026-07-25
 python3 -m engine.goh_dip_tong.cli research-build --all --write-mode commit
-python3 -m engine.goh_dip_tong.cli ui-fixtures --write-mode commit
 
 python3 -m pytest engine/goh_dip_tong/tests -q
 ./engine/goh_dip_tong/tests/acceptance_stage2.sh
@@ -67,59 +59,19 @@ engine/goh_dip_tong/
 ├── contracts/    enums  calculated  registry  refusal  model
 ├── common/       arithmetic  solvers  bridge
 ├── inputs/       loader  point_in_time  provenance
-├── forecasting/  assumptions  bank      # anchors, scenarios, the driver chain
-├── valuation/    cost_of_capital  guards  methods  comparison
+├── forecasting/  assumptions  bank    # anchors, scenarios, the driver chain
+├── valuation/    cost_of_capital  guards  methods
 ├── expectations/ reverse_solver
-├── research/     records  rules  package # 25 rules; no arithmetic
-├── narration/    views                 # projections only; no arithmetic
-├── models/       registry  bank        # 17 families registered, 1 implemented
-├── publishing/   snapshot  ui_states
+├── narration/    views               # projections only; no arithmetic
+├── models/       registry  bank      # 17 families registered, 1 implemented
+├── publishing/   snapshot
 ├── config/       engine.yml  cost-of-capital.yml  scenarios.yml
-├── fixtures/     synthetic-bank/       # TEST-ONLY input, never published
-│                 ui_states/            # TEST-ONLY output, the Stage 3 contract
-└── tests/        15 modules + acceptance_stage2.sh
+├── fixtures/     synthetic-bank/     # TEST-ONLY, never published
+└── tests/        12 modules + acceptance_stage2.sh
 ```
 
-`valuation/comparison.py` exists because of a constraint the research layer
-places on itself: a rule may compare two numbers but may not produce a third.
-Anything a rule needs beyond the records the valuation already made is computed
-there, through the formula registry, so it arrives with a `formula_id` attached.
-
-## The research package
-
-Every conclusion is emitted by a named rule whose condition is a comparison
-between calculated records. **No language model is involved at any point.**
-
-A `ResearchRecord` cannot be constructed uncited (a claim must name at least one
-calculated record *and* one evidence ref), untraceable (no `rule_id`, no
-record), unranked, or as a recommendation — "target price", "buy",
-"undervalued" and fifteen other phrases are refused outright. A fifth check runs
-at assembly: every cited ID must exist in what the engine actually produced.
-
-For a refused issuer the claim rules **never run**. Not filtered afterwards —
-never run, so there is no unsupported thesis to remove. The citation index is
-still produced, because a pointer carries no claim.
-
-`RESEARCH_RULE_REGISTRY_HASH` fingerprints every rule's identity and logic, the
-same way `FORMULA_REGISTRY_HASH` does for arithmetic: a published conclusion
-carries the `ruleId` that produced it, and following that ID must reach the rule
-that actually ran.
-
-## `uiState`
-
-Three vocabularies, one owner each. `coverageStatus` is Stage 1's view of a
-company; `researchStatus` is the engine's view of how far research has got;
-`uiState` is what to render. The third exists because a template that
-recombined the first two itself would recombine them slightly differently on the
-next screen.
-
-Six states — `FULL_RESEARCH`, `MODEL_UNDER_VALIDATION`, `PARTIAL`,
-`ONBOARDING`, `STALE`, `SUSPENDED` — derived in one function with a fixed
-precedence, with a worked fixture for each under `fixtures/ui_states/`. The
-fixtures are regenerated and compared byte for byte by the test suite.
-
-Deliberately absent: empty directories for unwritten code. Scaffolding that
-looks like progress is worse than a gap you can see.
+Deliberately absent: `thesis/`. Empty directories for unwritten code are
+scaffolding that looks like progress.
 
 ## Contracts
 
@@ -128,7 +80,6 @@ looks like progress is worse than a gap you can see.
 | Reads | `data/goh-dip-tong/research-snapshots/sample/<TICKER>.json` (Stage 1's `research-input` contract), plus the fact store and restatement log for any historical cutoff |
 | Writes | `data/goh-dip-tong/research-snapshots/<TICKER>/<YYYY-MM-DD>/<model-version>.json` and `current/<TICKER>.json` |
 | Output schema | `schemas/goh-dip-tong/research-snapshot.schema.json` — **not** the input schema |
-| Stage 3 reads | the picker config, `current/<TICKER>.json`, the dated snapshot, and the output schema. Nothing else — see `docs/goh-dip-tong/HANDOFF_STAGE_2.md` |
 
 The input snapshot carries only the latest revision of each fact, so it cannot
 answer "what did we believe in July". Point-in-time reproducibility therefore
@@ -155,9 +106,7 @@ than about the code:
 
 `MODEL_IMPLEMENTED` now passes for `BANK` — and nothing changes, which was the
 point. Implementing the mathematics does not move Stage 2 toward real output;
-resolving the Stage 1 data gaps does. Slice 3 is the second demonstration of
-the same thing: the research package is built and every real issuer's refusal is
-unchanged, because there is nothing to have a thesis about.
+resolving the Stage 1 data gaps does.
 
 ## The BANK model
 

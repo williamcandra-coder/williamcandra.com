@@ -23,7 +23,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from .. import ENGINE_VERSION, FORMULA_REGISTRY_HASH
 from ..common import bridge as bridge_mod
 from ..contracts.calculated import Calculated, Period, from_assumption
 from ..contracts.enums import (
@@ -39,8 +38,6 @@ from ..expectations import reverse_solver
 from ..forecasting import assumptions as assumptions_mod
 from ..forecasting import bank as forecast_mod
 from ..narration import views as views_mod
-from ..research import package as research_mod
-from ..valuation import comparison as comparison_mod
 from ..valuation import cost_of_capital, methods
 from ..valuation.guards import TerminalAssumptionInvalid, TerminalGuards
 
@@ -95,10 +92,6 @@ class BankValuation:
     implied: Optional[reverse_solver.ImpliedExpectation] = None
     market_implied_note: str = ""
     guards: Optional[TerminalGuards] = None
-    #: Role-keyed calculated records the research rules and both views cite.
-    comparison: Dict[str, Calculated] = field(default_factory=dict)
-    #: The deterministic research package built from those records.
-    research: Optional[research_mod.ResearchPackage] = None
 
     @property
     def outcome(self) -> ValuationOutcome:
@@ -219,40 +212,19 @@ class BankModel(SectorModel):
                 projection, equity_cost, context.persistence, context.guards,
                 context.model_version, context.calculated_at)
 
-        # Comparison records first, then the research package, then the views.
-        # The order is the dependency chain: a rule may only cite a record that
-        # already exists, and a view may only show a conclusion a rule produced.
-        comparison = comparison_mod.build(
-            valuations, order, projections, context.model_version,
-            context.calculated_at)
-
-        research = research_mod.build(
-            ticker=engine_input.ticker,
-            family=self.family,
-            valued=True,
-            comparison_records=comparison,
-            fact_keys=research_mod.fact_keys_for(engine_input),
-            audit_refs=research_mod.audit_refs_for(
-                ENGINE_VERSION, context.model_version, FORMULA_REGISTRY_HASH,
-                equity_cost.basis),
-            scenario_order=order,
-            cost_of_equity_basis=equity_cost.basis,
-        )
-
         views = {
             "uncle": views_mod.uncle_view(
                 valuations["BASE"], valuations["BEAR"], valuations["BULL"],
-                str(engine_input.provenance.mode), research),
+                str(engine_input.provenance.mode)),
             "analyst": views_mod.analyst_view(
                 valuations["BASE"], valuations["BEAR"], valuations["BULL"],
-                str(engine_input.provenance.mode), research, comparison),
+                str(engine_input.provenance.mode)),
         }
 
         result = BankValuation(
             method=ValuationMethod.RESIDUAL_INCOME,
             scenarios=valuations, scenario_order=order,
             projections=projections, views=views, guards=context.guards,
-            comparison=comparison, research=research,
         )
 
         market = engine_input.market_context or {}

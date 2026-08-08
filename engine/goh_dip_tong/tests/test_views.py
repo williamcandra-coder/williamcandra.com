@@ -23,15 +23,8 @@ def valued(synthetic_bank):
 
 
 def _records(result):
-    """Every calculated record the valuation produced, keyed by ref.
-
-    The comparison map is the authority — it is what the Analyst View is built
-    from and what the research rules cite — so it is indexed first. The
-    scenario walk below is kept because it reaches the records independently,
-    which is the point: if the two disagreed about a ref, this index would show
-    it rather than paper over it.
-    """
-    index = {record.ref: record for record in result.comparison.values()}
+    """Every calculated record the valuation produced, keyed by ref."""
+    index = {}
     for name in result.scenario_order:
         valuation = result.scenarios[name]
         for record in (valuation.primary.equity_value,
@@ -156,82 +149,3 @@ def test_views_are_deterministic(synthetic_bank):
     first = evaluate(synthetic_bank).views["analyst"].to_json()
     second = evaluate(synthetic_bank).views["analyst"].to_json()
     assert first == second
-
-
-# --- the two views are projections of one record set ----------------------
-
-
-def test_uncle_view_refs_are_a_subset_of_analyst_view_refs(valued):
-    """Not "similar". Every ref Uncle View shows, Analyst View shows too — so
-    the two can be checked against each other rather than merely looking
-    consistent."""
-    uncle = set(valued.views["uncle"].numerics())
-    analyst = set(valued.views["analyst"].numerics())
-    assert uncle
-    assert uncle <= analyst, sorted(uncle - analyst)
-
-
-def test_shared_numbers_are_byte_identical_in_both_views(valued):
-    """Compared as serialised bytes, not as floats. Two views that agree to
-    fifteen decimals and render differently still disagree on screen."""
-    import json
-
-    uncle = {i.ref: json.dumps(i.value) for i in valued.views["uncle"].items}
-    analyst = {i.ref: json.dumps(i.value) for i in valued.views["analyst"].items}
-    shared = set(uncle) & set(analyst)
-    assert shared
-    for ref in sorted(shared):
-        assert uncle[ref] == analyst[ref], ref
-
-
-def test_both_views_draw_conclusions_from_the_same_package(valued):
-    uncle_ids = {c["id"] for c in valued.views["uncle"].conclusions}
-    analyst_ids = {c["id"] for c in valued.views["analyst"].conclusions}
-    assert uncle_ids
-    assert uncle_ids <= analyst_ids, sorted(uncle_ids - analyst_ids)
-
-
-def test_a_conclusion_says_the_same_thing_in_both_views(valued):
-    analyst = {c["id"]: c["statement"]
-               for c in valued.views["analyst"].conclusions}
-    for conclusion in valued.views["uncle"].conclusions:
-        assert conclusion["statement"] == analyst[conclusion["id"]]
-
-
-def test_the_uncle_view_carries_conclusions_without_their_citations(valued):
-    """A plain-language reader will not follow a fact key. The same record is
-    one click away in the Analyst View, under the same id."""
-    for conclusion in valued.views["uncle"].conclusions:
-        assert "supportingRecords" not in conclusion
-        assert conclusion["ruleId"]
-
-
-def test_the_analyst_view_carries_the_citations(valued):
-    for conclusion in valued.views["analyst"].conclusions:
-        assert "supportingRecords" in conclusion
-        assert "supportingEvidence" in conclusion
-    assert valued.views["analyst"].evidence
-
-
-def test_every_conclusion_cited_record_is_one_the_analyst_view_shows(valued):
-    shown = set(valued.views["analyst"].numerics())
-    for conclusion in valued.views["analyst"].conclusions:
-        for ref in conclusion.get("supportingRecords") or []:
-            assert ref in shown, (conclusion["id"], ref)
-
-
-def test_the_uncle_view_stays_short_even_with_conclusions(valued):
-    from engine.goh_dip_tong.narration.views import UNCLE_CONCLUSION_LIMIT
-
-    assert len(valued.views["uncle"].conclusions) <= UNCLE_CONCLUSION_LIMIT
-    assert (len(valued.views["analyst"].conclusions)
-            > len(valued.views["uncle"].conclusions))
-
-
-def test_the_uncle_view_leads_with_the_most_important_conclusions(valued):
-    """Ordering is by importance, not by the order the rules happened to fire.
-    Adding a rule must not silently reorder what a reader sees first."""
-    importances = [c["importance"] for c in valued.views["uncle"].conclusions]
-    high = [i for i, v in enumerate(importances) if v == "HIGH"]
-    other = [i for i, v in enumerate(importances) if v != "HIGH"]
-    assert not (high and other) or max(high) < min(other)

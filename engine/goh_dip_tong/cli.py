@@ -4,9 +4,8 @@
 
 Commands:
     research-build   build research snapshots
-    registry-hash    print the formula and research-rule registry fingerprints
+    registry-hash    print the formula registry fingerprint
     engine-audit     show model families, their gates and their method policy
-    ui-fixtures      regenerate the six Stage 3 UI-state fixtures
 
 ``--write-mode validate_only`` (the default) builds and validates everything
 and writes nothing, matching Stage 1's convention. Exit codes match too:
@@ -26,8 +25,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-import tempfile
-from pathlib import Path
 from typing import List, Optional
 
 from pipeline.goh_dip_tong.settings import utc_now_iso
@@ -40,8 +37,6 @@ from .valuation.guards import load_guards
 from .inputs import loader
 from .models.registry import build_registry, model_for
 from .publishing import snapshot as snapshot_mod
-from .publishing import ui_states as ui_states_mod
-from .research.rules import RULES
 from .settings import EngineSettings, get_engine_settings
 
 EXIT_OK, EXIT_VALIDATION_FAILED, EXIT_USAGE = 0, 1, 2
@@ -146,51 +141,12 @@ def _build_one(settings, context, ticker: str, args, calculated_at: str) -> int:
 
 
 def cmd_registry_hash(args) -> int:
-    """Print one bare hash, so the output stays usable in a shell comparison.
-
-    ``--rules`` switches to the research-rule registry rather than adding a
-    second line: a command whose output shape depends on how much there is to
-    say is a command every caller has to parse.
-    """
-    print(RULES.registry_hash() if args.rules else REGISTRY.registry_hash())
+    print(REGISTRY.registry_hash())
     if args.verbose:
         for formula_id in REGISTRY.ids():
             formula = REGISTRY.get(formula_id)
             print(f"  {formula_id:<20} ({', '.join(formula.inputs)}) -> "
                   f"{formula.output_metric}")
-        for rule_id in RULES.ids():
-            rule = RULES.get(rule_id)
-            print(f"  {rule_id:<48} -> {rule.record_type}")
-    return EXIT_OK
-
-
-def cmd_ui_fixtures(args) -> int:
-    """Regenerate the six Stage 3 UI-state fixtures.
-
-    Writes only under ``engine/goh_dip_tong/fixtures/ui_states/``. The engine
-    runs against a throwaway sandbox, because generating a fixture requires
-    writing input snapshots and one of those deposited in ``data/`` would be
-    indistinguishable from one Stage 1 produced.
-    """
-    settings = get_engine_settings()
-    with tempfile.TemporaryDirectory() as work:
-        if args.write_mode == "commit":
-            written = ui_states_mod.write_all(settings.repo_root, Path(work))
-            print(f"[ui-fixtures] wrote {len(written)} fixtures")
-            for path in written:
-                print(f"        wrote: {settings.rel(path)}")
-            return EXIT_OK
-
-        sandbox = ui_states_mod.prepare_sandbox(Path(work), settings.repo_root)
-        source = ui_states_mod.source_document(settings)
-        documents = ui_states_mod.build_all(sandbox, source)
-
-    print(f"[ui-fixtures] engine {ENGINE_VERSION}, model {MODEL_VERSION}, "
-          f"write-mode {args.write_mode}")
-    for state, document in documents.items():
-        print(f"  {document['ticker']}  uiState={state:<24} "
-              f"researchStatus={document['researchStatus']:<24} "
-              f"valuation={document['valuation']['status']}")
     return EXIT_OK
 
 
@@ -245,19 +201,9 @@ def build_parser() -> argparse.ArgumentParser:
                        default="validate_only")
     build.set_defaults(func=cmd_research_build)
 
-    registry_hash = sub.add_parser(
-        "registry-hash", parents=[common],
-        help="print the formula registry fingerprint (--rules for the rules)")
-    registry_hash.add_argument(
-        "--rules", action="store_true",
-        help="print the research-rule registry fingerprint instead")
+    registry_hash = sub.add_parser("registry-hash", parents=[common],
+                                   help="print the formula registry fingerprint")
     registry_hash.set_defaults(func=cmd_registry_hash)
-
-    fixtures = sub.add_parser("ui-fixtures", parents=[common],
-                              help="regenerate the Stage 3 UI-state fixtures")
-    fixtures.add_argument("--write-mode", choices=["validate_only", "commit"],
-                          default="validate_only")
-    fixtures.set_defaults(func=cmd_ui_fixtures)
 
     audit = sub.add_parser("engine-audit", parents=[common],
                            help="show families, gates and method policy")

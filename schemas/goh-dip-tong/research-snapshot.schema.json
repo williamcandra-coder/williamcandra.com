@@ -12,7 +12,6 @@
     "modelVersion",
     "engineVersion",
     "researchStatus",
-    "uiState",
     "company",
     "coverage",
     "freshness",
@@ -75,18 +74,6 @@
         "FULL_RESEARCH",
         "MODEL_SUSPENDED",
         "STALE"
-      ]
-    },
-    "uiState": {
-      "description": "What Stage 3 renders. Derived in one place from coverageStatus, researchStatus, the valuation outcome and the refusal reason, so exactly one state applies to any document and a template never has to combine three vocabularies itself.",
-      "type": "string",
-      "enum": [
-        "FULL_RESEARCH",
-        "MODEL_UNDER_VALIDATION",
-        "ONBOARDING",
-        "STALE",
-        "SUSPENDED",
-        "PARTIAL"
       ]
     },
     "company": {
@@ -269,14 +256,10 @@
       "$ref": "#/$defs/sectionOrNotProduced"
     },
     "thesis": {
-      "$ref": "#/$defs/researchSectionOrNotProduced"
+      "$ref": "#/$defs/sectionOrNotProduced"
     },
     "counterThesis": {
-      "$ref": "#/$defs/researchSectionOrNotProduced"
-    },
-    "methodComparison": {
-      "description": "How each cross-check compares with the primary method, and why they differ. Notes about the methods, not claims about the issuer.",
-      "$ref": "#/$defs/researchSectionOrNotProduced"
+      "$ref": "#/$defs/sectionOrNotProduced"
     },
     "uncleView": {
       "$ref": "#/$defs/viewOrNotProduced"
@@ -325,47 +308,19 @@
     "catalysts": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/researchRecord"
+        "type": "object"
       }
     },
     "risks": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/researchRecord"
+        "type": "object"
       }
     },
     "breakers": {
       "type": "array",
       "items": {
-        "$ref": "#/$defs/researchRecord"
-      }
-    },
-    "researchRefs": {
-      "description": "The citation index: one entry per metric the engine read, plus the audit identifiers needed to reproduce the document. Produced even when nothing was valued, because a pointer carries no claim.",
-      "type": "object",
-      "required": [
-        "status",
-        "evidence",
-        "modelAudit"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "status": {
-          "type": "string",
-          "const": "PRODUCED"
-        },
-        "evidence": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/researchRecord"
-          }
-        },
-        "modelAudit": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/researchRecord"
-          }
-        }
+        "type": "object"
       }
     },
     "evidence": {
@@ -421,21 +376,6 @@
         "formulaCount": {
           "type": "integer",
           "minimum": 0
-        },
-        "ruleRegistryHash": {
-          "description": "Fingerprint of every research rule's identity and logic. Changing what a rule concludes moves this, so a published conclusion's ruleId always leads to the rule that actually ran.",
-          "type": "string",
-          "pattern": "^[0-9a-f]{64}$"
-        },
-        "ruleCount": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "rulesFired": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         },
         "asOf": {
           "type": "string"
@@ -726,125 +666,6 @@
         }
       ]
     },
-    "researchRecord": {
-      "description": "One research conclusion with its full derivation. A claim type (THESIS, COUNTER_THESIS, CATALYST, RISK, BREAKER) must cite at least one calculated record and at least one evidence reference, and must be ranked — the engine refuses to construct one that is not, so a document reaching here has already passed those checks.",
-      "type": "object",
-      "required": [
-        "id",
-        "type",
-        "statement",
-        "ruleId",
-        "supportingRecords",
-        "supportingEvidence"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "description": "Stable across runs: issuer, type, rule, scenario. Never a position in a list.",
-          "type": "string",
-          "minLength": 1
-        },
-        "type": {
-          "type": "string",
-          "enum": [
-            "THESIS",
-            "COUNTER_THESIS",
-            "CATALYST",
-            "RISK",
-            "BREAKER",
-            "EVIDENCE_REF",
-            "MODEL_AUDIT_REF",
-            "METHOD_COMPARISON"
-          ]
-        },
-        "statement": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 320
-        },
-        "ruleId": {
-          "description": "The deterministic rule that produced this. No language model is involved at any point.",
-          "type": "string",
-          "minLength": 1
-        },
-        "supportingRecords": {
-          "description": "Calculated record refs. Every number behind the claim.",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "supportingEvidence": {
-          "description": "Stage 1 fact keys, macro series or audit identifiers.",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "minLength": 1
-          }
-        },
-        "scenario": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "importance": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "enum": [
-            "LOW",
-            "MEDIUM",
-            "HIGH",
-            null
-          ]
-        },
-        "severity": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "enum": [
-            "LOW",
-            "MEDIUM",
-            "HIGH",
-            null
-          ]
-        }
-      }
-    },
-    "researchSection": {
-      "type": "object",
-      "required": [
-        "status",
-        "records"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "status": {
-          "type": "string",
-          "const": "PRODUCED"
-        },
-        "records": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/researchRecord"
-          }
-        }
-      }
-    },
-    "researchSectionOrNotProduced": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/notProduced"
-        },
-        {
-          "$ref": "#/$defs/researchSection"
-        }
-      ]
-    },
     "valuationRefusal": {
       "type": "object",
       "required": [
@@ -969,26 +790,6 @@
           ]
         },
         "notes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "conclusions": {
-          "description": "Research records as this view carries them. Uncle View drops the citation lists; the same record under the same id appears in Analyst View with them.",
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "id",
-              "type",
-              "statement",
-              "ruleId"
-            ]
-          }
-        },
-        "evidence": {
-          "description": "Analyst View only: every evidence ref behind the conclusions.",
           "type": "array",
           "items": {
             "type": "string"

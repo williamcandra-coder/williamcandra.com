@@ -200,14 +200,6 @@ class ScenarioValuation:
     sustainable_growth: float = 0.0
     residual_income: List[Calculated] = field(default_factory=list)
 
-    #: The same three quantities as calculated records rather than floats.
-    #: The floats above are convenient for the solver and the bridge; a
-    #: research rule that wants to cite one needs the record, because a claim
-    #: has to point at something with a formula ID behind it.
-    cost_of_equity_record: Optional[Calculated] = None
-    growth_record: Optional[Calculated] = None
-    terminal_roe_record: Optional[Calculated] = None
-
     def to_json(self) -> dict:
         primary = self.primary.value_per_share.value
         return {
@@ -354,8 +346,6 @@ def value(
         scenario=projection.scenario, primary=primary, cross_checks=cross_checks,
         cost_of_equity=cost_of_equity, sustainable_roe=sustainable_roe,
         sustainable_growth=growth, residual_income=residual_incomes,
-        cost_of_equity_record=rate, growth_record=growth_measure,
-        terminal_roe_record=terminal["roe"],
     )
 
 
